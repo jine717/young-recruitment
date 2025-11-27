@@ -2,49 +2,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, ArrowRight, ArrowLeft, Building2 } from "lucide-react";
-
-// Mock data - will be replaced with database
-const jobs = [
-  {
-    id: "1",
-    title: "Growth Marketing Manager",
-    department: "Marketing",
-    location: "Amsterdam, NL",
-    type: "Full-time",
-    description: "Lead growth initiatives across our portfolio companies, driving user acquisition and retention strategies.",
-    tags: ["Marketing", "Growth", "Strategy"],
-  },
-  {
-    id: "2",
-    title: "Investment Analyst",
-    department: "Investments",
-    location: "Remote",
-    type: "Full-time",
-    description: "Analyze potential investment opportunities, conduct due diligence, and support portfolio company growth.",
-    tags: ["Finance", "Analysis", "Due Diligence"],
-  },
-  {
-    id: "3",
-    title: "Operations Lead",
-    department: "Operations",
-    location: "Amsterdam, NL",
-    type: "Full-time",
-    description: "Optimize operational processes across our ventures, ensuring scalability and efficiency.",
-    tags: ["Operations", "Strategy", "Leadership"],
-  },
-  {
-    id: "4",
-    title: "Product Designer",
-    department: "Design",
-    location: "Remote",
-    type: "Full-time",
-    description: "Shape the user experience of our portfolio products, from concept to launch.",
-    tags: ["Design", "UX/UI", "Product"],
-  },
-];
+import { MapPin, Clock, ArrowRight, ArrowLeft, Building2, Loader2 } from "lucide-react";
+import { useJobs } from "@/hooks/useJobs";
 
 const Jobs = () => {
+  const { data: jobs, isLoading, error } = useJobs();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -58,7 +21,7 @@ const Jobs = () => {
               Open Positions
             </Link>
             <Button asChild>
-              <Link to="/jobs">Join Us</Link>
+              <Link to="/auth">Join Us</Link>
             </Button>
           </div>
         </div>
@@ -81,49 +44,67 @@ const Jobs = () => {
       {/* Job Listings */}
       <section className="pb-20 px-6">
         <div className="container mx-auto max-w-5xl">
-          <div className="space-y-6">
-            {jobs.map((job) => (
-              <Card key={job.id} className="group hover:border-primary/50 transition-colors">
-                <CardHeader>
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div>
-                      <CardTitle className="text-2xl font-display mb-2">{job.title}</CardTitle>
-                      <CardDescription className="flex flex-wrap items-center gap-4 text-base">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4" />
-                          {job.department}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {job.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {job.type}
-                        </span>
-                      </CardDescription>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <p className="text-destructive mb-4">Failed to load jobs. Please try again later.</p>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          ) : jobs && jobs.length > 0 ? (
+            <div className="space-y-6">
+              {jobs.map((job) => (
+                <Card key={job.id} className="group hover:border-primary/50 transition-colors">
+                  <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="text-2xl font-display mb-2">{job.title}</CardTitle>
+                        <CardDescription className="flex flex-wrap items-center gap-4 text-base">
+                          <span className="flex items-center gap-1">
+                            <Building2 className="h-4 w-4" />
+                            {job.departments?.name || 'General'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {job.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {job.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        </CardDescription>
+                      </div>
+                      <Button asChild className="shrink-0">
+                        <Link to={`/jobs/${job.id}`}>
+                          Apply Now
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
-                    <Button asChild className="shrink-0">
-                      <Link to={`/jobs/${job.id}`}>
-                        Apply Now
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{job.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {job.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">{job.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {job.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-lg">No positions available at the moment.</p>
+              <p className="text-muted-foreground">Check back soon!</p>
+            </div>
+          )}
         </div>
       </section>
 
