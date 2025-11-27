@@ -103,7 +103,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                   ) : (
                     <Sparkles className="w-4 h-4 mr-2" />
                   )}
-                  {cvAnalysis?.status === 'completed' ? 'Re-analyze' : 'Analyze'}
+                  {cvAnalysis?.status === 'completed' || cvAnalysis?.status === 'failed' ? 'Re-analyze' : 'Analyze'}
                 </Button>
                 <Button
                   variant="outline"
@@ -146,7 +146,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                   ) : (
                     <Sparkles className="w-4 h-4 mr-2" />
                   )}
-                  {discAnalysis?.status === 'completed' ? 'Re-analyze' : 'Analyze'}
+                  {discAnalysis?.status === 'completed' || discAnalysis?.status === 'failed' ? 'Re-analyze' : 'Analyze'}
                 </Button>
                 <Button
                   variant="outline"
