@@ -11,6 +11,22 @@ export interface InterviewQuestion {
   created_at: string;
 }
 
+export interface CreateInterviewQuestion {
+  application_id: string;
+  question_text: string;
+  category: string;
+  reasoning?: string;
+  priority: number;
+}
+
+export interface UpdateInterviewQuestion {
+  id: string;
+  question_text?: string;
+  category?: string;
+  reasoning?: string;
+  priority?: number;
+}
+
 export function useInterviewQuestions(applicationId: string | undefined) {
   return useQuery({
     queryKey: ['interview-questions', applicationId],
@@ -46,6 +62,66 @@ export function useGenerateInterviewQuestions() {
     },
     onSuccess: (_, applicationId) => {
       queryClient.invalidateQueries({ queryKey: ['interview-questions', applicationId] });
+    },
+  });
+}
+
+export function useCreateInterviewQuestion() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (question: CreateInterviewQuestion) => {
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .insert(question)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as InterviewQuestion;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['interview-questions', data.application_id] });
+    },
+  });
+}
+
+export function useUpdateInterviewQuestion() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: UpdateInterviewQuestion) => {
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as InterviewQuestion;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['interview-questions', data.application_id] });
+    },
+  });
+}
+
+export function useDeleteInterviewQuestion() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, applicationId }: { id: string; applicationId: string }) => {
+      const { error } = await supabase
+        .from('interview_questions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { id, applicationId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['interview-questions', data.applicationId] });
     },
   });
 }
