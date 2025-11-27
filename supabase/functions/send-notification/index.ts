@@ -252,14 +252,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing notification: ${type} for application: ${applicationId}`);
 
-    // Fetch application with job and candidate details
+    // Fetch application with job details
     const { data: application, error: appError } = await supabase
       .from("applications")
       .select(`
         id,
         candidate_id,
-        jobs (title),
-        profiles:candidate_id (full_name, email)
+        jobs (title)
       `)
       .eq("id", applicationId)
       .single();
@@ -269,9 +268,24 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Application not found");
     }
 
-    const candidateName = (application.profiles as any)?.full_name || "Candidate";
-    const candidateEmail = (application.profiles as any)?.email;
+    console.log("Application found:", application);
+
+    // Fetch candidate profile separately using candidate_id
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", application.candidate_id)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+    }
+
+    const candidateName = profile?.full_name || "Candidate";
+    const candidateEmail = profile?.email;
     const jobTitle = (application.jobs as any)?.title || "Position";
+
+    console.log(`Candidate: ${candidateName}, Email: ${candidateEmail}, Job: ${jobTitle}`);
 
     if (!candidateEmail) {
       throw new Error("Candidate email not found");
