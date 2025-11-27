@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Briefcase, Building2, Users, LayoutDashboard, ArrowLeft } from 'lucide-react';
+import { Briefcase, Building2, Users, LayoutDashboard, ArrowLeft, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/admin/departments', label: 'Departments', icon: Building2 },
   { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
