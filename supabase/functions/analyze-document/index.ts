@@ -100,9 +100,30 @@ serve(async (req) => {
     // Get signed URL for the document
     const bucketName = documentType === 'cv' ? 'cvs' : 'disc-assessments';
     
+    // Extract relative path from full URL if needed
+    let relativePath = documentPath;
+    if (documentPath.includes('storage/v1/object/public/')) {
+      // Extract path after bucket name
+      const regex = new RegExp(`storage/v1/object/public/${bucketName}/(.+)$`);
+      const match = documentPath.match(regex);
+      if (match) {
+        relativePath = match[1];
+      }
+    } else if (documentPath.includes('storage/v1/object/sign/')) {
+      const regex = new RegExp(`storage/v1/object/sign/${bucketName}/(.+?)\\?`);
+      const match = documentPath.match(regex);
+      if (match) {
+        relativePath = match[1];
+      }
+    }
+    
+    console.log('Document path:', documentPath);
+    console.log('Relative path:', relativePath);
+    console.log('Bucket:', bucketName);
+    
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(bucketName)
-      .createSignedUrl(documentPath, 3600);
+      .createSignedUrl(relativePath, 3600);
 
     if (signedUrlError || !signedUrlData?.signedUrl) {
       console.error('Error getting signed URL:', signedUrlError);
