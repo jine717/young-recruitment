@@ -56,8 +56,22 @@ export function VideoRecorder({
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1,
+        },
       });
+      
+      // Verify audio tracks
+      const audioTracks = mediaStream.getAudioTracks();
+      console.log('Audio tracks count:', audioTracks.length);
+      if (audioTracks.length > 0) {
+        console.log('Audio track settings:', audioTracks[0].getSettings());
+        console.log('Audio track enabled:', audioTracks[0].enabled);
+      }
       
       setStream(mediaStream);
       if (videoRef.current) {
@@ -85,8 +99,15 @@ export function VideoRecorder({
     chunksRef.current = [];
     audioChunksRef.current = [];
 
-    // VIDEO RECORDER
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    // VIDEO RECORDER - Use codecs with opus audio
+    let videoMimeType = 'video/webm;codecs=vp8,opus';
+    if (!MediaRecorder.isTypeSupported(videoMimeType)) {
+      videoMimeType = 'video/webm';
+      console.log('Fallback to basic video/webm');
+    }
+    console.log('Using video mimeType:', videoMimeType);
+    
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: videoMimeType });
     
     mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) {
@@ -96,6 +117,7 @@ export function VideoRecorder({
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      console.log('Video blob created - Size:', blob.size, 'bytes, Chunks:', chunksRef.current.length);
       setRecordedBlob(blob);
       setHasRecording(true);
       
@@ -109,7 +131,14 @@ export function VideoRecorder({
 
     // AUDIO RECORDER - Separate recorder for audio only
     const audioStream = new MediaStream(stream.getAudioTracks());
-    const audioRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+    let audioMimeType = 'audio/webm;codecs=opus';
+    if (!MediaRecorder.isTypeSupported(audioMimeType)) {
+      audioMimeType = 'audio/webm';
+      console.log('Fallback to basic audio/webm');
+    }
+    console.log('Using audio mimeType:', audioMimeType);
+    
+    const audioRecorder = new MediaRecorder(audioStream, { mimeType: audioMimeType });
 
     audioRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) {
@@ -119,15 +148,16 @@ export function VideoRecorder({
 
     audioRecorder.onstop = () => {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      console.log('Audio blob created - Size:', audioBlob.size, 'bytes');
+      console.log('Audio blob created - Size:', audioBlob.size, 'bytes, Chunks:', audioChunksRef.current.length);
       setRecordedAudioBlob(audioBlob);
     };
 
     audioRecorderRef.current = audioRecorder;
 
-    // Start both recorders
-    mediaRecorder.start();
-    audioRecorder.start();
+    // Start both recorders with timeslice for better chunking
+    mediaRecorder.start(1000);
+    audioRecorder.start(1000);
+    console.log('Recording started with 1s timeslice');
     setIsRecording(true);
   }, [stream, startCamera]);
 
