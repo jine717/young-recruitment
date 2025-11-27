@@ -239,6 +239,50 @@ export type Database = {
         }
         Relationships: []
       }
+      document_analyses: {
+        Row: {
+          analysis: Json | null
+          application_id: string
+          created_at: string
+          document_type: string
+          error_message: string | null
+          id: string
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          analysis?: Json | null
+          application_id: string
+          created_at?: string
+          document_type: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analysis?: Json | null
+          application_id?: string
+          created_at?: string
+          document_type?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analyses_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiring_decisions: {
         Row: {
           application_id: string
