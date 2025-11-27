@@ -18,6 +18,7 @@ import JobEditor from "./pages/admin/JobEditor";
 import BusinessCaseEditor from "./pages/admin/BusinessCaseEditor";
 import DepartmentsManager from "./pages/admin/DepartmentsManager";
 import UsersManager from "./pages/admin/UsersManager";
+import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 import CandidateDashboard from "./pages/candidate/CandidateDashboard";
 import ApplicationDetail from "./pages/candidate/ApplicationDetail";
 import NotFound from "./pages/NotFound";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/admin/jobs/:id/business-case" element={<BusinessCaseEditor />} />
             <Route path="/admin/departments" element={<DepartmentsManager />} />
             <Route path="/admin/users" element={<UsersManager />} />
+            <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
             {/* Candidate Routes */}
             <Route path="/candidate" element={<CandidateDashboard />} />
             <Route path="/candidate/application/:id" element={<ApplicationDetail />} />
