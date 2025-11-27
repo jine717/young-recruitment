@@ -42,6 +42,10 @@ serve(async (req) => {
     const binaryAudio = base64ToUint8Array(audio);
     console.log(`Audio size: ${binaryAudio.length} bytes`);
     
+    // Verify webm header (magic bytes: 0x1A 0x45 0xDF 0xA3 for EBML)
+    const header = Array.from(binaryAudio.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    console.log(`Audio header bytes: ${header}`);
+    
     // Determine file extension based on content type
     const fileExtension = contentType === 'audio/wav' ? 'wav' : 'webm';
     const fileName = `audio.${fileExtension}`;
