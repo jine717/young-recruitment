@@ -95,6 +95,7 @@ export default function CandidateProfile() {
   const { data: aiEvaluation, isLoading: aiLoading } = useAIEvaluation(applicationId);
   const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(applicationId);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   if (authLoading || isLoading) {
     return (
@@ -136,8 +137,6 @@ export default function CandidateProfile() {
         return null;
     }
   };
-
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdatingStatus(true);
