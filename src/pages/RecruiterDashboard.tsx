@@ -52,6 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
+import { InterviewQuestionsCard } from "@/components/recruiter/InterviewQuestionsCard";
 
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
@@ -449,8 +450,9 @@ const RecruiterDashboard = () => {
                               <CollapsibleContent asChild>
                                 <TableRow>
                                   <TableCell colSpan={8} className="bg-muted/30 p-0">
-                                    <div className="p-4">
+                                    <div className="p-4 space-y-4">
                                       <AIEvaluationCard evaluation={evaluation} />
+                                      <InterviewQuestionsCard applicationId={app.id} />
                                     </div>
                                   </TableCell>
                                 </TableRow>
