@@ -339,17 +339,57 @@ export default function BusinessCase() {
                 </Button>
 
                 {currentResponse ? (
-                  <Button
-                    onClick={() => {
-                      if (currentQuestionIndex < businessCases.length - 1) {
-                        setCurrentQuestionIndex(prev => prev + 1);
-                      }
-                    }}
-                    disabled={currentQuestionIndex === businessCases.length - 1}
-                  >
-                    Next
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  currentQuestionIndex === businessCases.length - 1 ? (
+                    // Last question already answered - show complete button
+                    <Button
+                      onClick={async () => {
+                        setIsSubmitting(true);
+                        try {
+                          await completeBusinessCase.mutateAsync(applicationId!);
+                          
+                          // Trigger AI analysis in the background
+                          supabase.functions.invoke('analyze-candidate', {
+                            body: { applicationId },
+                          }).catch(err => {
+                            console.error('AI analysis trigger failed:', err);
+                          });
+
+                          // Send completion notification
+                          sendNotification.mutate({
+                            applicationId: applicationId!,
+                            type: 'status_update',
+                            customMessage: 'Your business case has been successfully submitted and is now under review by our team.',
+                          });
+                          
+                          toast({
+                            title: "Business Case Completed!",
+                            description: "Your application is now under review. Our AI is analyzing your responses.",
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to complete business case. Please try again.",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Complete Business Case
+                      <CheckCircle2 className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : (
+                    // Not last question - show next button
+                    <Button
+                      onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                    >
+                      Next
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )
                 ) : (
                   <Button
                     onClick={handleSubmitResponse}
