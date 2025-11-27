@@ -161,16 +161,15 @@ For each question, provide:
                     items: {
                       type: 'object',
                       properties: {
-                        question_text: { type: 'string', description: 'The interview question to ask' },
+                        question_text: { type: 'string' },
                         category: { 
                           type: 'string', 
-                          enum: ['skills_verification', 'concern_probing', 'cultural_fit', 'experience', 'motivation'],
-                          description: 'Category of the question'
+                          enum: ['skills_verification', 'concern_probing', 'cultural_fit', 'experience', 'motivation']
                         },
-                        reasoning: { type: 'string', description: 'Why this question is important' },
-                        priority: { type: 'integer', enum: [1, 2, 3], description: '1=must ask, 2=recommended, 3=if time permits' }
+                        reasoning: { type: 'string' },
+                        priority: { type: 'number' }
                       },
-                      required: ['question_text', 'category', 'reasoning', 'priority']
+                      additionalProperties: false
                     }
                   }
                 },
