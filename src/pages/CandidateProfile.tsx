@@ -214,6 +214,7 @@ export default function CandidateProfile() {
           {/* Left Column - Documents & Business Case */}
           <div className="lg:col-span-2 space-y-6">
             <DocumentsSection
+              applicationId={application.id}
               cvUrl={application.cv_url}
               discUrl={application.disc_url}
             />
