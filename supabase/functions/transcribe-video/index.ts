@@ -23,13 +23,14 @@ serve(async (req) => {
   }
 
   try {
-    const { audio } = await req.json();
+    const { audio, language = 'en' } = await req.json();
     
     if (!audio) {
       throw new Error('No audio data provided');
     }
 
     console.log('Received audio data, processing...');
+    console.log(`Language specified: ${language}`);
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -38,13 +39,16 @@ serve(async (req) => {
 
     // Decode base64 audio
     const binaryAudio = base64ToUint8Array(audio);
-    console.log(`Audio size: ${binaryAudio.length} bytes`);
+    console.log(`File size: ${binaryAudio.length} bytes`);
     
     // Prepare form data for Whisper API
     const formData = new FormData();
-    const file = new File([binaryAudio as unknown as BlobPart], 'audio.webm', { type: 'audio/webm' });
+    // Use video/webm since we're sending the full video file
+    const file = new File([binaryAudio as unknown as BlobPart], 'video.webm', { type: 'video/webm' });
     formData.append('file', file);
     formData.append('model', 'whisper-1');
+    formData.append('language', language); // Specify language explicitly for better accuracy
+    formData.append('response_format', 'verbose_json'); // Get detailed output
 
     console.log('Sending to OpenAI Whisper API...');
 
@@ -65,6 +69,7 @@ serve(async (req) => {
 
     const result = await response.json();
     console.log('Transcription successful');
+    console.log('Transcription result:', JSON.stringify(result, null, 2));
 
     return new Response(
       JSON.stringify({ text: result.text }),
