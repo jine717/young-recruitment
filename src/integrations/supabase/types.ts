@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       applications: {
         Row: {
+          business_case_completed: boolean
+          business_case_completed_at: string | null
           candidate_id: string
           created_at: string
           cv_url: string | null
@@ -26,6 +28,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          business_case_completed?: boolean
+          business_case_completed_at?: string | null
           candidate_id: string
           created_at?: string
           cv_url?: string | null
@@ -36,6 +40,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          business_case_completed?: boolean
+          business_case_completed_at?: string | null
           candidate_id?: string
           created_at?: string
           cv_url?: string | null
@@ -48,6 +54,95 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_case_responses: {
+        Row: {
+          application_id: string
+          business_case_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          text_response: string | null
+          video_url: string | null
+        }
+        Insert: {
+          application_id: string
+          business_case_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          text_response?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          application_id?: string
+          business_case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          text_response?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_case_responses_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_case_responses_business_case_id_fkey"
+            columns: ["business_case_id"]
+            isOneToOne: false
+            referencedRelation: "business_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_cases: {
+        Row: {
+          created_at: string
+          has_text_response: boolean
+          id: string
+          job_id: string
+          question_description: string
+          question_number: number
+          question_title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          has_text_response?: boolean
+          id?: string
+          job_id: string
+          question_description: string
+          question_number: number
+          question_title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          has_text_response?: boolean
+          id?: string
+          job_id?: string
+          question_description?: string
+          question_number?: number
+          question_title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_cases_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
