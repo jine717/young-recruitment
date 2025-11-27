@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const signInSchema = z.object({
@@ -21,8 +22,30 @@ const signUpSchema = signInSchema.extend({
   path: ['confirmPassword'],
 });
 
+const getRedirectPath = async (userId: string): Promise<string> => {
+  const { data: roles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId);
+
+  const userRoles = roles?.map(r => r.role) || [];
+
+  if (userRoles.includes('admin')) return '/admin';
+  if (userRoles.includes('recruiter')) return '/dashboard';
+  if (userRoles.includes('candidate')) return '/candidate';
+
+  // If no role exists, assign 'candidate' role automatically
+  await supabase.from('user_roles').insert({
+    user_id: userId,
+    role: 'candidate'
+  });
+  
+  return '/candidate';
+};
+
 export default function Auth() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(searchParams.get('signup') === 'true');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,7 +59,8 @@ export default function Auth() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/');
+      // Redirect based on user role
+      getRedirectPath(user.id).then(path => navigate(path));
     }
   }, [user, loading, navigate]);
 
