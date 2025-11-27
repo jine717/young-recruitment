@@ -16,7 +16,7 @@ const Index = () => {
               Open Positions
             </Link>
             <Button asChild>
-              <Link to="/jobs">Join Us</Link>
+              <Link to="/auth">Join Us</Link>
             </Button>
           </div>
         </div>

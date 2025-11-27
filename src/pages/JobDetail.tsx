@@ -2,152 +2,27 @@ import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Clock, ArrowLeft, Building2, CheckCircle, ExternalLink } from "lucide-react";
-
-// Mock data - will be replaced with database
-const jobs: Record<string, {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  type: string;
-  description: string;
-  tags: string[];
-  responsibilities: string[];
-  requirements: string[];
-  benefits: string[];
-}> = {
-  "1": {
-    id: "1",
-    title: "Growth Marketing Manager",
-    department: "Marketing",
-    location: "Amsterdam, NL",
-    type: "Full-time",
-    description: "Lead growth initiatives across our portfolio companies, driving user acquisition and retention strategies. You'll work directly with founders and leadership teams to scale their businesses through data-driven marketing.",
-    tags: ["Marketing", "Growth", "Strategy"],
-    responsibilities: [
-      "Develop and execute growth strategies for portfolio companies",
-      "Analyze user data and market trends to identify opportunities",
-      "Lead cross-functional teams to implement growth initiatives",
-      "Establish KPIs and measure campaign performance",
-      "Mentor junior team members and share best practices",
-    ],
-    requirements: [
-      "5+ years of experience in growth marketing or related field",
-      "Proven track record of scaling B2B or B2C companies",
-      "Strong analytical skills and data-driven mindset",
-      "Experience with marketing automation and analytics tools",
-      "Excellent communication and leadership skills",
-    ],
-    benefits: [
-      "Competitive salary and equity participation",
-      "Flexible working arrangements",
-      "Direct impact on multiple ventures",
-      "Learning and development budget",
-      "International team environment",
-    ],
-  },
-  "2": {
-    id: "2",
-    title: "Investment Analyst",
-    department: "Investments",
-    location: "Remote",
-    type: "Full-time",
-    description: "Analyze potential investment opportunities, conduct due diligence, and support portfolio company growth. You'll be at the forefront of identifying the next generation of disruptive businesses.",
-    tags: ["Finance", "Analysis", "Due Diligence"],
-    responsibilities: [
-      "Source and evaluate investment opportunities",
-      "Conduct financial modeling and due diligence",
-      "Support portfolio companies with strategic initiatives",
-      "Prepare investment memos and presentations",
-      "Build relationships with entrepreneurs and co-investors",
-    ],
-    requirements: [
-      "3+ years in venture capital, private equity, or investment banking",
-      "Strong financial modeling and analytical skills",
-      "Understanding of startup ecosystems and business models",
-      "Excellent written and verbal communication",
-      "Entrepreneurial mindset and self-starter attitude",
-    ],
-    benefits: [
-      "Exposure to diverse industries and business models",
-      "Direct involvement in investment decisions",
-      "Network access to top entrepreneurs and investors",
-      "Flexible remote work policy",
-      "Performance-based bonuses",
-    ],
-  },
-  "3": {
-    id: "3",
-    title: "Operations Lead",
-    department: "Operations",
-    location: "Amsterdam, NL",
-    type: "Full-time",
-    description: "Optimize operational processes across our ventures, ensuring scalability and efficiency. You'll work hands-on with portfolio companies to build systems that enable rapid growth.",
-    tags: ["Operations", "Strategy", "Leadership"],
-    responsibilities: [
-      "Design and implement operational frameworks",
-      "Identify bottlenecks and optimize processes",
-      "Lead operational due diligence for new investments",
-      "Build and manage relationships with vendors and partners",
-      "Develop playbooks and best practices for portfolio companies",
-    ],
-    requirements: [
-      "5+ years in operations, consulting, or similar roles",
-      "Experience scaling operations in high-growth environments",
-      "Strong project management and organizational skills",
-      "Ability to work across multiple projects simultaneously",
-      "Problem-solving mindset and attention to detail",
-    ],
-    benefits: [
-      "Strategic role with high visibility",
-      "Work with diverse portfolio companies",
-      "Competitive compensation package",
-      "Professional development opportunities",
-      "Collaborative team culture",
-    ],
-  },
-  "4": {
-    id: "4",
-    title: "Product Designer",
-    department: "Design",
-    location: "Remote",
-    type: "Full-time",
-    description: "Shape the user experience of our portfolio products, from concept to launch. You'll collaborate closely with founders and product teams to create intuitive, impactful designs.",
-    tags: ["Design", "UX/UI", "Product"],
-    responsibilities: [
-      "Lead end-to-end design projects for portfolio companies",
-      "Conduct user research and translate insights into designs",
-      "Create wireframes, prototypes, and high-fidelity mockups",
-      "Collaborate with developers to ensure design quality",
-      "Establish and maintain design systems",
-    ],
-    requirements: [
-      "4+ years of product design experience",
-      "Strong portfolio demonstrating UX/UI expertise",
-      "Proficiency in Figma and prototyping tools",
-      "Understanding of design systems and accessibility",
-      "Excellent collaboration and communication skills",
-    ],
-    benefits: [
-      "Work on diverse products and industries",
-      "Creative freedom and autonomy",
-      "Remote-first work environment",
-      "Design tools and resources budget",
-      "Regular team offsites",
-    ],
-  },
-};
+import { MapPin, Clock, ArrowLeft, Building2, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
+import { useJob } from "@/hooks/useJobs";
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const job = id ? jobs[id] : null;
+  const { data: job, isLoading, error } = useJob(id);
 
-  if (!job) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !job) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-display text-4xl mb-4">JOB NOT FOUND</h1>
+          <p className="text-muted-foreground mb-6">This position may no longer be available.</p>
           <Button asChild>
             <Link to="/jobs">View All Positions</Link>
           </Button>
@@ -155,6 +30,10 @@ const JobDetail = () => {
       </div>
     );
   }
+
+  const formatType = (type: string) => {
+    return type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,7 +75,7 @@ const JobDetail = () => {
           <div className="flex flex-wrap items-center gap-6 text-muted-foreground mb-8">
             <span className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              {job.department}
+              {job.departments?.name || 'General'}
             </span>
             <span className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
@@ -204,7 +83,7 @@ const JobDetail = () => {
             </span>
             <span className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              {job.type}
+              {formatType(job.type)}
             </span>
           </div>
           
@@ -219,55 +98,61 @@ const JobDetail = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="grid gap-8">
             {/* Responsibilities */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-2xl">WHAT YOU'LL DO</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {job.responsibilities.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            {job.responsibilities.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-display text-2xl">WHAT YOU'LL DO</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {job.responsibilities.map((item, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Requirements */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-2xl">WHAT WE'RE LOOKING FOR</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {job.requirements.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            {job.requirements.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-display text-2xl">WHAT WE'RE LOOKING FOR</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {job.requirements.map((item, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Benefits */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-2xl">WHAT WE OFFER</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {job.benefits.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            {job.benefits.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-display text-2xl">WHAT WE OFFER</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {job.benefits.map((item, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
