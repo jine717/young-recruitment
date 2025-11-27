@@ -10,6 +10,8 @@ export interface ApplicationWithDetails {
   disc_url: string | null;
   business_case_completed: boolean;
   business_case_completed_at: string | null;
+  ai_score: number | null;
+  ai_evaluation_status: 'pending' | 'processing' | 'completed' | 'failed' | null;
   created_at: string;
   updated_at: string;
   jobs: {

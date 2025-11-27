@@ -14,8 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_evaluations: {
+        Row: {
+          application_id: string
+          communication_score: number | null
+          concerns: string[] | null
+          created_at: string
+          cultural_fit_score: number | null
+          id: string
+          overall_score: number | null
+          raw_response: Json | null
+          recommendation:
+            | Database["public"]["Enums"]["ai_recommendation"]
+            | null
+          skills_match_score: number | null
+          strengths: string[] | null
+          summary: string | null
+        }
+        Insert: {
+          application_id: string
+          communication_score?: number | null
+          concerns?: string[] | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          id?: string
+          overall_score?: number | null
+          raw_response?: Json | null
+          recommendation?:
+            | Database["public"]["Enums"]["ai_recommendation"]
+            | null
+          skills_match_score?: number | null
+          strengths?: string[] | null
+          summary?: string | null
+        }
+        Update: {
+          application_id?: string
+          communication_score?: number | null
+          concerns?: string[] | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          id?: string
+          overall_score?: number | null
+          raw_response?: Json | null
+          recommendation?:
+            | Database["public"]["Enums"]["ai_recommendation"]
+            | null
+          skills_match_score?: number | null
+          strengths?: string[] | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_evaluations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
+          ai_evaluation_status:
+            | Database["public"]["Enums"]["ai_evaluation_status"]
+            | null
+          ai_score: number | null
           business_case_completed: boolean
           business_case_completed_at: string | null
           candidate_id: string
@@ -28,6 +91,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_evaluation_status?:
+            | Database["public"]["Enums"]["ai_evaluation_status"]
+            | null
+          ai_score?: number | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_id: string
@@ -40,6 +107,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_evaluation_status?:
+            | Database["public"]["Enums"]["ai_evaluation_status"]
+            | null
+          ai_score?: number | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_id?: string
@@ -289,6 +360,8 @@ export type Database = {
       }
     }
     Enums: {
+      ai_evaluation_status: "pending" | "processing" | "completed" | "failed"
+      ai_recommendation: "proceed" | "review" | "reject"
       app_role: "candidate" | "recruiter" | "admin"
       application_status:
         | "pending"
@@ -425,6 +498,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_evaluation_status: ["pending", "processing", "completed", "failed"],
+      ai_recommendation: ["proceed", "review", "reject"],
       app_role: ["candidate", "recruiter", "admin"],
       application_status: [
         "pending",
