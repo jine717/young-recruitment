@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Settings } from "lucide-react";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { InterviewQuestionsCard } from "@/components/recruiter/InterviewQuestionsCard";
 import { NotificationCard } from "@/components/recruiter/NotificationCard";
+import { supabase } from "@/integrations/supabase/client";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-primary/20 text-primary-foreground",
@@ -52,6 +53,21 @@ const RecruiterDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminRole() {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!data);
+    }
+    checkAdminRole();
+  }, [user]);
   const applicationIds = applications?.map(a => a.id) || [];
   const {
     data: aiEvaluations = []
@@ -168,6 +184,12 @@ const RecruiterDashboard = () => {
             <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
               Open Positions
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             <span className="text-sm text-muted-foreground">{user.email}</span>
           </div>
         </div>
