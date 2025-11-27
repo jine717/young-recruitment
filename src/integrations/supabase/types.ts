@@ -386,6 +386,62 @@ export type Database = {
           },
         ]
       }
+      interviews: {
+        Row: {
+          application_id: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          internal_notes: string | null
+          interview_date: string
+          interview_type: Database["public"]["Enums"]["interview_type"]
+          location: string | null
+          meeting_link: string | null
+          notes_for_candidate: string | null
+          scheduled_by: string
+          status: Database["public"]["Enums"]["interview_status"]
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          internal_notes?: string | null
+          interview_date: string
+          interview_type?: Database["public"]["Enums"]["interview_type"]
+          location?: string | null
+          meeting_link?: string | null
+          notes_for_candidate?: string | null
+          scheduled_by: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          internal_notes?: string | null
+          interview_date?: string
+          interview_type?: Database["public"]["Enums"]["interview_type"]
+          location?: string | null
+          meeting_link?: string | null
+          notes_for_candidate?: string | null
+          scheduled_by?: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           benefits: string[] | null
@@ -601,6 +657,8 @@ export type Database = {
         | "hire"
         | "no_hire"
         | "strong_no_hire"
+      interview_status: "scheduled" | "completed" | "cancelled" | "rescheduled"
+      interview_type: "phone" | "video" | "in_person"
       job_status: "draft" | "published" | "closed"
       job_type: "full-time" | "part-time" | "contract" | "internship"
     }
@@ -747,6 +805,8 @@ export const Constants = {
         "no_hire",
         "strong_no_hire",
       ],
+      interview_status: ["scheduled", "completed", "cancelled", "rescheduled"],
+      interview_type: ["phone", "video", "in_person"],
       job_status: ["draft", "published", "closed"],
       job_type: ["full-time", "part-time", "contract", "internship"],
     },
