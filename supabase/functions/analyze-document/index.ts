@@ -156,12 +156,18 @@ serve(async (req) => {
         { type: 'image_url', image_url: { url: `data:${contentType};base64,${base64Content}` } }
       ];
     } else if (isPdf) {
-      // For PDFs, we'll describe what we're analyzing and ask AI to extract from base64
-      // Note: Some AI models can handle PDF content directly
+      // Gemini 2.5 Flash supports native PDF processing via data URL format
+      console.log('Processing PDF document, size:', base64Content.length, 'characters');
       userContent = [
         { 
           type: 'text', 
-          text: `Please analyze this ${documentType === 'cv' ? 'CV/Resume' : 'DISC Assessment'} document. The document is a PDF file encoded in base64. Extract all relevant information and provide your analysis.\n\nBase64 PDF content (first 50000 chars): ${base64Content.substring(0, 50000)}` 
+          text: `Please carefully analyze this ${documentType === 'cv' ? 'CV/Resume' : 'DISC Assessment'} PDF document. Extract ALL information EXACTLY as it appears in the document. Do not invent or assume any data - only report what you can actually read from the document.`
+        },
+        { 
+          type: 'image_url', 
+          image_url: { 
+            url: `data:application/pdf;base64,${base64Content}` 
+          } 
         }
       ];
     } else {
