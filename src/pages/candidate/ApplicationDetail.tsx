@@ -2,7 +2,10 @@ import { useParams, Link } from 'react-router-dom';
 import { CandidateLayout } from '@/components/candidate-portal/CandidateLayout';
 import { ApplicationTimeline } from '@/components/candidate-portal/ApplicationTimeline';
 import { StatusIndicator } from '@/components/candidate-portal/StatusIndicator';
+import { InterviewDetails } from '@/components/candidate-portal/InterviewDetails';
 import { useCandidateApplication } from '@/hooks/useCandidateApplications';
+import { useInterviews } from '@/hooks/useInterviews';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +23,9 @@ import {
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: application, isLoading } = useCandidateApplication(id);
+  const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(id);
 
   if (isLoading) {
     return (
@@ -206,8 +211,8 @@ export default function ApplicationDetail() {
             )}
           </div>
 
-          {/* Sidebar - Timeline */}
-          <div>
+          {/* Sidebar - Timeline & Interviews */}
+          <div className="space-y-6">
             <Card className="sticky top-8">
               <CardContent className="p-6">
                 <ApplicationTimeline
@@ -218,6 +223,14 @@ export default function ApplicationDetail() {
                 />
               </CardContent>
             </Card>
+
+            {/* Interview Schedule */}
+            <InterviewDetails
+              interviews={interviews}
+              jobTitle={application.jobs?.title || 'Position'}
+              candidateName={user?.email || 'Candidate'}
+              isLoading={interviewsLoading}
+            />
           </div>
         </div>
       </div>

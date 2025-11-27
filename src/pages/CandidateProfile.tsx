@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUpdateApplicationStatus } from '@/hooks/useApplications';
 import { useAIEvaluation, useTriggerAIAnalysis } from '@/hooks/useAIEvaluations';
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
+import { useInterviews } from '@/hooks/useInterviews';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { DocumentsSection } from '@/components/candidate-profile/DocumentsSection';
 import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
@@ -15,11 +16,13 @@ import { InterviewEvaluationForm } from '@/components/candidate-profile/Intervie
 import { InterviewEvaluationsCard } from '@/components/candidate-profile/InterviewEvaluationCard';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { DecisionHistory } from '@/components/candidate-profile/DecisionHistory';
+import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
+import { InterviewScheduleCard } from '@/components/candidate-profile/InterviewScheduleCard';
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
 import { InterviewQuestionsCard } from '@/components/recruiter/InterviewQuestionsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Brain, Loader2 } from 'lucide-react';
+import { Brain, Loader2, CalendarPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationDetail {
@@ -90,6 +93,8 @@ export default function CandidateProfile() {
   });
 
   const { data: aiEvaluation, isLoading: aiLoading } = useAIEvaluation(applicationId);
+  const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(applicationId);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   if (authLoading || isLoading) {
     return (
@@ -188,9 +193,22 @@ export default function CandidateProfile() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
+          <Button onClick={() => setShowScheduleModal(true)}>
+            <CalendarPlus className="w-4 h-4 mr-2" />
+            Schedule Interview
+          </Button>
           <InterviewEvaluationForm applicationId={application.id} />
           <HiringDecisionModal applicationId={application.id} />
         </div>
+
+        {/* Schedule Interview Modal */}
+        <ScheduleInterviewModal
+          open={showScheduleModal}
+          onOpenChange={setShowScheduleModal}
+          applicationId={application.id}
+          candidateName={application.profile.full_name || 'Candidate'}
+          jobTitle={application.job.title}
+        />
 
         {/* Main Content */}
         <div className="grid lg:grid-cols-3 gap-6">
@@ -234,6 +252,12 @@ export default function CandidateProfile() {
                 </Button>
               </div>
             )}
+
+            {/* Scheduled Interviews */}
+            <InterviewScheduleCard 
+              interviews={interviews} 
+              isLoading={interviewsLoading} 
+            />
 
             {/* Interview Evaluations */}
             <InterviewEvaluationsCard applicationId={application.id} />
