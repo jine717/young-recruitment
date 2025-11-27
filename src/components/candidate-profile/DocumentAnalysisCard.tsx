@@ -25,7 +25,7 @@ const DISC_LABELS = {
 };
 
 export function DocumentAnalysisCard({ analysis }: DocumentAnalysisCardProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (analysis.status !== 'completed' || !analysis.analysis) {
     return null;
