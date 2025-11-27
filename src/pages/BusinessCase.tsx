@@ -125,9 +125,17 @@ export default function BusinessCase() {
       } else {
         // All questions completed
         await completeBusinessCase.mutateAsync(applicationId);
+        
+        // Trigger AI analysis in the background
+        supabase.functions.invoke('analyze-candidate', {
+          body: { applicationId },
+        }).catch(err => {
+          console.error('AI analysis trigger failed:', err);
+        });
+        
         toast({
           title: "Business Case Completed!",
-          description: "Your application is now under review.",
+          description: "Your application is now under review. Our AI is analyzing your responses.",
         });
       }
     } catch (error) {

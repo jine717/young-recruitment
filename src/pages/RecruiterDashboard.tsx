@@ -24,6 +24,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { 
   ArrowLeft, 
   Loader2, 
@@ -34,13 +39,19 @@ import {
   Clock,
   XCircle,
   Users,
-  Briefcase
+  Briefcase,
+  ChevronDown,
+  Sparkles,
+  RefreshCw
 } from "lucide-react";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
+import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
+import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
@@ -64,8 +75,17 @@ const RecruiterDashboard = () => {
   const updateStatus = useUpdateApplicationStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const triggerAIAnalysis = useTriggerAIAnalysis();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const applicationIds = applications?.map(a => a.id) || [];
+  const { data: aiEvaluations = [] } = useAIEvaluations(applicationIds);
+  
+  const evaluationsMap = new Map<string, AIEvaluation>(
+    aiEvaluations.map(e => [e.application_id, e])
+  );
 
   const filteredApplications = applications?.filter((app) => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
@@ -84,7 +104,7 @@ const RecruiterDashboard = () => {
     total: applications?.length || 0,
     pending: applications?.filter((a) => a.status === "pending").length || 0,
     underReview: applications?.filter((a) => a.status === "under_review").length || 0,
-    businessCaseComplete: applications?.filter((a) => a.business_case_completed).length || 0,
+    aiAnalyzed: aiEvaluations.length,
   };
 
   const handleStatusChange = async (applicationId: string, newStatus: ApplicationWithDetails['status']) => {
@@ -102,6 +122,34 @@ const RecruiterDashboard = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleRetryAI = async (applicationId: string) => {
+    try {
+      await triggerAIAnalysis.mutateAsync(applicationId);
+      toast({
+        title: "AI Analysis Started",
+        description: "The candidate is being analyzed...",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to start AI analysis",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   if (!user) {
@@ -190,12 +238,12 @@ const RecruiterDashboard = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Business Case Done
+                  <Sparkles className="h-4 w-4" />
+                  AI Analyzed
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-display">{stats.businessCaseComplete}</p>
+                <p className="text-3xl font-display">{stats.aiAnalyzed}</p>
               </CardContent>
             </Card>
           </div>
@@ -256,6 +304,7 @@ const RecruiterDashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[60px]">AI</TableHead>
                       <TableHead>Candidate</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Status</TableHead>
@@ -266,106 +315,151 @@ const RecruiterDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredApplications.map((app) => (
-                      <TableRow key={app.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{app.profiles?.full_name || "Unknown"}</p>
-                            <p className="text-sm text-muted-foreground">{app.profiles?.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{app.jobs?.title || "Unknown"}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {app.jobs?.departments?.name || "General"}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[app.status]}>
-                            {statusLabels[app.status]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {app.business_case_completed ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span className="text-sm">Complete</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <XCircle className="h-4 w-4" />
-                              <span className="text-sm">Incomplete</span>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {app.cv_url && (
-                              <a
-                                href={app.cv_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:text-primary/80"
-                                title="View CV"
-                              >
-                                <FileText className="h-5 w-5" />
-                              </a>
+                    {filteredApplications.map((app) => {
+                      const evaluation = evaluationsMap.get(app.id);
+                      const isExpanded = expandedRows.has(app.id);
+                      
+                      return (
+                        <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
+                          <>
+                            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => evaluation && toggleRow(app.id)}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <AIScoreBadge 
+                                    score={app.ai_score ?? null} 
+                                    status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null}
+                                    size="sm"
+                                  />
+                                  {evaluation && (
+                                    <CollapsibleTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                      </Button>
+                                    </CollapsibleTrigger>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{app.profiles?.full_name || "Unknown"}</p>
+                                  <p className="text-sm text-muted-foreground">{app.profiles?.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{app.jobs?.title || "Unknown"}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {app.jobs?.departments?.name || "General"}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={statusColors[app.status]}>
+                                  {statusLabels[app.status]}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {app.business_case_completed ? (
+                                  <div className="flex items-center gap-1 text-green-600">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    <span className="text-sm">Complete</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <XCircle className="h-4 w-4" />
+                                    <span className="text-sm">Incomplete</span>
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  {app.cv_url && (
+                                    <a
+                                      href={app.cv_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:text-primary/80"
+                                      title="View CV"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <FileText className="h-5 w-5" />
+                                    </a>
+                                  )}
+                                  {app.disc_url && (
+                                    <a
+                                      href={app.disc_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-secondary hover:text-secondary/80"
+                                      title="View DISC"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <FileText className="h-5 w-5" />
+                                    </a>
+                                  )}
+                                  {app.business_case_completed && (
+                                    <Link
+                                      to={`/business-case/${app.id}`}
+                                      className="text-accent hover:text-accent/80"
+                                      title="View Responses"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Video className="h-5 w-5" />
+                                    </Link>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm">
+                                {format(new Date(app.created_at), "MMM d, yyyy")}
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {(app.ai_evaluation_status === 'failed' || (app.business_case_completed && !app.ai_evaluation_status)) && (
+                                      <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                        Run AI Analysis
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
+                                      Mark Under Review
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
+                                      Move to Interview
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
+                                      Mark as Hired
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleStatusChange(app.id, "rejected")}
+                                      className="text-destructive"
+                                    >
+                                      Reject
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                            {evaluation && (
+                              <CollapsibleContent asChild>
+                                <TableRow>
+                                  <TableCell colSpan={8} className="bg-muted/30 p-0">
+                                    <div className="p-4">
+                                      <AIEvaluationCard evaluation={evaluation} />
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              </CollapsibleContent>
                             )}
-                            {app.disc_url && (
-                              <a
-                                href={app.disc_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-secondary hover:text-secondary/80"
-                                title="View DISC"
-                              >
-                                <FileText className="h-5 w-5" />
-                              </a>
-                            )}
-                            {app.business_case_completed && (
-                              <Link
-                                to={`/business-case/${app.id}`}
-                                className="text-accent hover:text-accent/80"
-                                title="View Responses"
-                              >
-                                <Video className="h-5 w-5" />
-                              </Link>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {format(new Date(app.created_at), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
-                                Mark Under Review
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
-                                Move to Interview
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
-                                Mark as Hired
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleStatusChange(app.id, "rejected")}
-                                className="text-destructive"
-                              >
-                                Reject
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </>
+                        </Collapsible>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ) : (
