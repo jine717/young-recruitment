@@ -239,6 +239,44 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_questions: {
+        Row: {
+          application_id: string
+          category: string
+          created_at: string
+          id: string
+          priority: number
+          question_text: string
+          reasoning: string | null
+        }
+        Insert: {
+          application_id: string
+          category: string
+          created_at?: string
+          id?: string
+          priority?: number
+          question_text: string
+          reasoning?: string | null
+        }
+        Update: {
+          application_id?: string
+          category?: string
+          created_at?: string
+          id?: string
+          priority?: number
+          question_text?: string
+          reasoning?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           benefits: string[] | null
