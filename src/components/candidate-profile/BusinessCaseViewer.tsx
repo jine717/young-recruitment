@@ -61,6 +61,18 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
     enabled: !!applicationId,
   });
 
+  // Extract path from full URL or return as-is if already a path
+  const extractVideoPath = (videoUrl: string): string => {
+    const bucketName = 'business-case-videos';
+    const publicUrlPattern = `/storage/v1/object/public/${bucketName}/`;
+    const index = videoUrl.indexOf(publicUrlPattern);
+    if (index !== -1) {
+      return videoUrl.substring(index + publicUrlPattern.length);
+    }
+    // If it's already just a path, return as-is
+    return videoUrl;
+  };
+
   useEffect(() => {
     const getSignedUrls = async () => {
       if (!responses) return;
@@ -68,9 +80,10 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
       const urls: Record<string, string> = {};
       for (const response of responses) {
         if (response.video_url) {
+          const path = extractVideoPath(response.video_url);
           const { data, error } = await supabase.storage
             .from('business-case-videos')
-            .createSignedUrl(response.video_url, 3600);
+            .createSignedUrl(path, 3600);
 
           if (!error && data) {
             urls[response.id] = data.signedUrl;

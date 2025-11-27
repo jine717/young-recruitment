@@ -88,11 +88,8 @@ export default function BusinessCase() {
       return null;
     }
 
-    const { data } = supabase.storage
-      .from('business-case-videos')
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
+    // Return just the path, not the full URL (for proper signed URL generation later)
+    return fileName;
   };
 
   const handleSubmitResponse = async () => {
