@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Upload, Loader2, CheckCircle } from 'lucide-react';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useJob } from '@/hooks/useJobs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSendNotification } from '@/hooks/useNotifications';
 import { z } from 'zod';
 
 const applicationSchema = z.object({
@@ -22,6 +22,7 @@ export default function Apply() {
   const { user, loading: authLoading } = useAuth();
   const { data: job, isLoading: jobLoading } = useJob(id);
   const { toast } = useToast();
+  const sendNotification = useSendNotification();
 
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [discFile, setDiscFile] = useState<File | null>(null);
@@ -127,6 +128,16 @@ export default function Apply() {
           throw error;
         }
       } else {
+        // Send automatic emails (fire and forget)
+        sendNotification.mutate({ 
+          applicationId: application.id, 
+          type: 'application_received' 
+        });
+        sendNotification.mutate({ 
+          applicationId: application.id, 
+          type: 'business_case_invite' 
+        });
+
         toast({
           title: 'Step 1 Complete!',
           description: 'Now complete the Business Case to finish your application.',
