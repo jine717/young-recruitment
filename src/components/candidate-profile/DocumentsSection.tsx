@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Download, Sparkles, Loader2 } from 'lucide-react';
@@ -14,8 +15,11 @@ interface DocumentsSectionProps {
 
 export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSectionProps) {
   const { toast } = useToast();
-  const { data: analyses, isLoading: loadingAnalyses } = useDocumentAnalyses(applicationId);
+  const { data: analyses } = useDocumentAnalyses(applicationId);
   const triggerAnalysis = useTriggerDocumentAnalysis();
+  
+  const [analyzingCv, setAnalyzingCv] = useState(false);
+  const [analyzingDisc, setAnalyzingDisc] = useState(false);
 
   const cvAnalysis = analyses?.find(a => a.document_type === 'cv');
   const discAnalysis = analyses?.find(a => a.document_type === 'disc');
@@ -44,6 +48,9 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
   const handleAnalyze = async (documentType: 'cv' | 'disc', documentPath: string | null) => {
     if (!documentPath) return;
 
+    const setLoading = documentType === 'cv' ? setAnalyzingCv : setAnalyzingDisc;
+    setLoading(true);
+
     try {
       await triggerAnalysis.mutateAsync({
         applicationId,
@@ -61,11 +68,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
         description: 'Failed to analyze document. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
-
-  const isAnalyzingCv = triggerAnalysis.isPending && triggerAnalysis.variables?.documentType === 'cv';
-  const isAnalyzingDisc = triggerAnalysis.isPending && triggerAnalysis.variables?.documentType === 'disc';
 
   return (
     <Card>
@@ -96,14 +102,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                   variant="outline"
                   size="sm"
                   onClick={() => handleAnalyze('cv', cvUrl)}
-                  disabled={isAnalyzingCv || cvAnalysis?.status === 'processing'}
+                  disabled={analyzingCv}
                 >
-                  {isAnalyzingCv || cvAnalysis?.status === 'processing' ? (
+                  {analyzingCv ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Sparkles className="w-4 h-4 mr-2" />
                   )}
-                  {cvAnalysis?.status === 'completed' || cvAnalysis?.status === 'failed' ? 'Re-analyze' : 'Analyze'}
+                  {cvAnalysis?.status === 'completed' ? 'Re-analyze' : 'Analyze'}
                 </Button>
                 <Button
                   variant="outline"
@@ -116,7 +122,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
               </div>
             )}
           </div>
-          {cvAnalysis && <DocumentAnalysisCard analysis={cvAnalysis} />}
+          {cvAnalysis && cvAnalysis.status === 'completed' && <DocumentAnalysisCard analysis={cvAnalysis} />}
         </div>
 
         {/* DISC Section */}
@@ -139,14 +145,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                   variant="outline"
                   size="sm"
                   onClick={() => handleAnalyze('disc', discUrl)}
-                  disabled={isAnalyzingDisc || discAnalysis?.status === 'processing'}
+                  disabled={analyzingDisc}
                 >
-                  {isAnalyzingDisc || discAnalysis?.status === 'processing' ? (
+                  {analyzingDisc ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Sparkles className="w-4 h-4 mr-2" />
                   )}
-                  {discAnalysis?.status === 'completed' || discAnalysis?.status === 'failed' ? 'Re-analyze' : 'Analyze'}
+                  {discAnalysis?.status === 'completed' ? 'Re-analyze' : 'Analyze'}
                 </Button>
                 <Button
                   variant="outline"
@@ -159,7 +165,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
               </div>
             )}
           </div>
-          {discAnalysis && <DocumentAnalysisCard analysis={discAnalysis} />}
+          {discAnalysis && discAnalysis.status === 'completed' && <DocumentAnalysisCard analysis={discAnalysis} />}
         </div>
       </CardContent>
     </Card>
