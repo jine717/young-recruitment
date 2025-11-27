@@ -23,14 +23,15 @@ serve(async (req) => {
   }
 
   try {
-    const { audio, language = 'en' } = await req.json();
+    const { audio, contentType = 'audio/wav', language = 'en' } = await req.json();
     
     if (!audio) {
       throw new Error('No audio data provided');
     }
 
     console.log('Received audio data, processing...');
-    console.log(`Language specified: ${language}`);
+    console.log(`Content type: ${contentType}`);
+    console.log(`Language: ${language}`);
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -39,18 +40,20 @@ serve(async (req) => {
 
     // Decode base64 audio
     const binaryAudio = base64ToUint8Array(audio);
-    console.log(`File size: ${binaryAudio.length} bytes`);
+    console.log(`Audio size: ${binaryAudio.length} bytes`);
+    
+    // Determine file extension based on content type
+    const fileExtension = contentType === 'audio/wav' ? 'wav' : 'webm';
+    const fileName = `audio.${fileExtension}`;
     
     // Prepare form data for Whisper API
     const formData = new FormData();
-    // Use video/webm since we're sending the full video file
-    const file = new File([binaryAudio as unknown as BlobPart], 'video.webm', { type: 'video/webm' });
+    const file = new File([binaryAudio as unknown as BlobPart], fileName, { type: contentType });
     formData.append('file', file);
     formData.append('model', 'whisper-1');
-    formData.append('language', language); // Specify language explicitly for better accuracy
-    formData.append('response_format', 'verbose_json'); // Get detailed output
+    formData.append('language', language);
 
-    console.log('Sending to OpenAI Whisper API...');
+    console.log(`Sending ${fileName} (${contentType}) to OpenAI Whisper API...`);
 
     // Send to OpenAI Whisper
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -69,7 +72,7 @@ serve(async (req) => {
 
     const result = await response.json();
     console.log('Transcription successful');
-    console.log('Transcription result:', JSON.stringify(result, null, 2));
+    console.log('Transcription text:', result.text);
 
     return new Response(
       JSON.stringify({ text: result.text }),
