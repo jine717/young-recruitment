@@ -156,17 +156,21 @@ export function VideoRecorder({
     setIsTranscribing(true);
     try {
       console.log('Starting transcription - Audio size:', audioBlob.size, 'bytes');
+      console.log('Audio type:', audioBlob.type);
       
-      // Convert audio blob to base64
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      let binary = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < uint8Array.length; i += chunkSize) {
-        const chunk = uint8Array.slice(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, Array.from(chunk));
-      }
-      const base64Audio = btoa(binary);
+      // Use FileReader for reliable base64 conversion
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          // Extract only the base64 part (remove "data:audio/webm;base64,")
+          const base64 = dataUrl.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(audioBlob);
+      });
+      
       console.log('Audio converted to base64 - Length:', base64Audio.length);
 
       const { data, error } = await supabase.functions.invoke('transcribe-video', {
