@@ -365,6 +365,11 @@ export default function BusinessCase() {
                             title: "Business Case Completed!",
                             description: "Your application is now under review. Our AI is analyzing your responses.",
                           });
+                          
+                          // Redirect after a short delay so user sees the toast
+                          setTimeout(() => {
+                            navigate(`/candidate/application/${applicationId}`);
+                          }, 1500);
                         } catch (error) {
                           toast({
                             title: "Error",
