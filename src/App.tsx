@@ -10,6 +10,7 @@ import JobDetail from "./pages/JobDetail";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
 import BusinessCase from "./pages/BusinessCase";
+import RecruiterDashboard from "./pages/RecruiterDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply/:id" element={<Apply />} />
             <Route path="/business-case/:applicationId" element={<BusinessCase />} />
+            <Route path="/dashboard" element={<RecruiterDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
