@@ -1,7 +1,29 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Square, Upload, RotateCcw, Loader2, Sparkles } from 'lucide-react';
+import { Video, Square, Upload, RotateCcw, Loader2, Sparkles, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const SUPPORTED_LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'pt', label: 'Português' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'zh', label: '中文' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+];
 
 interface VideoRecorderProps {
   onVideoReady: (blob: Blob) => void;
@@ -22,6 +44,7 @@ export function VideoRecorder({
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -150,7 +173,7 @@ export function VideoRecorder({
         body: { 
           audio: base64Audio,
           contentType: 'audio/webm',
-          language: 'en'
+          language: selectedLanguage
         },
       });
 
@@ -167,7 +190,7 @@ export function VideoRecorder({
     } finally {
       setIsTranscribing(false);
     }
-  }, []);
+  }, [selectedLanguage]);
 
   const confirmRecording = useCallback(async () => {
     if (recordedBlob) {
@@ -181,7 +204,7 @@ export function VideoRecorder({
         }
       }
     }
-  }, [recordedBlob, recordedAudioBlob, onVideoReady, enableTranscription, onTranscriptReady, transcribeAudio]);
+  }, [recordedBlob, recordedAudioBlob, onVideoReady, enableTranscription, onTranscriptReady, transcribeAudio, selectedLanguage]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -296,10 +319,27 @@ export function VideoRecorder({
       </div>
 
       {enableTranscription && onTranscriptReady && (
-        <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          AI will automatically transcribe your video response
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            AI will automatically transcribe your video response
+          </p>
+        </div>
       )}
     </div>
   );
