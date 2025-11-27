@@ -1,17 +1,26 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Square, Upload, RotateCcw } from 'lucide-react';
+import { Video, Square, Upload, RotateCcw, Loader2, Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoRecorderProps {
   onVideoReady: (blob: Blob) => void;
+  onTranscriptReady?: (transcript: string) => void;
   disabled?: boolean;
+  enableTranscription?: boolean;
 }
 
-export function VideoRecorder({ onVideoReady, disabled }: VideoRecorderProps) {
+export function VideoRecorder({ 
+  onVideoReady, 
+  onTranscriptReady,
+  disabled,
+  enableTranscription = true 
+}: VideoRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecording, setHasRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -88,13 +97,53 @@ export function VideoRecorder({ onVideoReady, disabled }: VideoRecorderProps) {
     await startCamera();
   }, [startCamera]);
 
-  const confirmRecording = useCallback(() => {
+  const transcribeVideo = useCallback(async (blob: Blob): Promise<string | null> => {
+    setIsTranscribing(true);
+    try {
+      // Convert blob to base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.slice(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      const base64Audio = btoa(binary);
+
+      const { data, error } = await supabase.functions.invoke('transcribe-video', {
+        body: { audio: base64Audio },
+      });
+
+      if (error) {
+        console.error('Transcription error:', error);
+        return null;
+      }
+
+      return data?.text || null;
+    } catch (err) {
+      console.error('Failed to transcribe:', err);
+      return null;
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
+
+  const confirmRecording = useCallback(async () => {
     if (recordedBlob) {
       onVideoReady(recordedBlob);
+      
+      // Transcribe if enabled and callback provided
+      if (enableTranscription && onTranscriptReady) {
+        const transcript = await transcribeVideo(recordedBlob);
+        if (transcript) {
+          onTranscriptReady(transcript);
+        }
+      }
     }
-  }, [recordedBlob, onVideoReady]);
+  }, [recordedBlob, onVideoReady, enableTranscription, onTranscriptReady, transcribeVideo]);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
       setRecordedBlob(file);
@@ -130,6 +179,18 @@ export function VideoRecorder({ onVideoReady, disabled }: VideoRecorderProps) {
           <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm">
             <span className="w-2 h-2 bg-destructive-foreground rounded-full animate-pulse" />
             Recording
+          </div>
+        )}
+
+        {isTranscribing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Transcribing your response...
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -175,16 +236,30 @@ export function VideoRecorder({ onVideoReady, disabled }: VideoRecorderProps) {
 
         {hasRecording && (
           <>
-            <Button onClick={resetRecording} variant="outline" disabled={disabled}>
+            <Button onClick={resetRecording} variant="outline" disabled={disabled || isTranscribing}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Re-record
             </Button>
-            <Button onClick={confirmRecording} disabled={disabled}>
-              Use This Video
+            <Button onClick={confirmRecording} disabled={disabled || isTranscribing}>
+              {isTranscribing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Transcribing...
+                </>
+              ) : (
+                'Use This Video'
+              )}
             </Button>
           </>
         )}
       </div>
+
+      {enableTranscription && onTranscriptReady && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          AI will automatically transcribe your video response
+        </p>
+      )}
     </div>
   );
 }

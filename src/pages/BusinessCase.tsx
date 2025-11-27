@@ -37,6 +37,7 @@ export default function BusinessCase() {
   const [textResponse, setTextResponse] = useState('');
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranscribed, setIsTranscribed] = useState(false);
 
   const isLoading = authLoading || appLoading || casesLoading || responsesLoading;
   const currentCase = businessCases[currentQuestionIndex];
@@ -124,6 +125,7 @@ export default function BusinessCase() {
         setCurrentQuestionIndex(prev => prev + 1);
         setTextResponse('');
         setVideoBlob(null);
+        setIsTranscribed(false);
       } else {
         // All questions completed
         await completeBusinessCase.mutateAsync(applicationId);
@@ -277,8 +279,20 @@ export default function BusinessCase() {
                   <div>
                     <h3 className="font-medium mb-2">Record Your Response</h3>
                     <VideoRecorder 
-                      onVideoReady={setVideoBlob} 
+                      onVideoReady={(blob) => {
+                        setVideoBlob(blob);
+                        setIsTranscribed(false);
+                      }}
+                      onTranscriptReady={(transcript) => {
+                        setTextResponse(transcript);
+                        setIsTranscribed(true);
+                        toast({
+                          title: "Transcription Complete",
+                          description: "Your video has been transcribed. Feel free to edit the text.",
+                        });
+                      }}
                       disabled={isSubmitting}
+                      enableTranscription={currentCase.has_text_response}
                     />
                     {videoBlob && (
                       <p className="mt-2 text-sm text-primary">
@@ -290,11 +304,21 @@ export default function BusinessCase() {
                   {/* Text Response (if required) */}
                   {currentCase.has_text_response && (
                     <div>
-                      <h3 className="font-medium mb-2">Written Response</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium">Written Response</h3>
+                        {isTranscribed && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            AI Transcribed
+                          </span>
+                        )}
+                      </div>
                       <Textarea
-                        placeholder="Type your response here..."
+                        placeholder="Type your response here or record a video to auto-transcribe..."
                         value={textResponse}
-                        onChange={(e) => setTextResponse(e.target.value)}
+                        onChange={(e) => {
+                          setTextResponse(e.target.value);
+                          if (isTranscribed) setIsTranscribed(false);
+                        }}
                         rows={4}
                         disabled={isSubmitting}
                       />
