@@ -7,7 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Settings } from "lucide-react";
+import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
+import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +57,8 @@ const RecruiterDashboard = () => {
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
   useEffect(() => {
     async function checkAdminRole() {
@@ -163,6 +168,44 @@ const RecruiterDashboard = () => {
       return newSet;
     });
   };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!filteredApplications) return;
+    if (selectedIds.size === filteredApplications.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredApplications.map(a => a.id)));
+    }
+  };
+
+  const handleBulkStatusChange = async (status: ApplicationWithDetails['status']) => {
+    await bulkUpdateStatus(Array.from(selectedIds), status);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkNotification = async (type: string) => {
+    await bulkSendNotification(Array.from(selectedIds), type);
+  };
+
+  const handleExport = () => {
+    if (!filteredApplications) return;
+    const selectedApps = selectedIds.size > 0
+      ? filteredApplications.filter(a => selectedIds.has(a.id))
+      : filteredApplications;
+    exportApplications(selectedApps);
+  };
   if (!user) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
@@ -264,7 +307,7 @@ const RecruiterDashboard = () => {
       {/* Filters */}
       <section className="pb-4 px-6">
         <div className="container mx-auto max-w-7xl">
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-4 mb-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
@@ -290,6 +333,16 @@ const RecruiterDashboard = () => {
               </SelectContent>
             </Select>
           </div>
+          {selectedIds.size > 0 && (
+            <BulkActionsToolbar
+              selectedCount={selectedIds.size}
+              onClearSelection={() => setSelectedIds(new Set())}
+              onStatusChange={handleBulkStatusChange}
+              onSendNotification={handleBulkNotification}
+              onExport={handleExport}
+              isUpdating={isUpdating}
+            />
+          )}
         </div>
       </section>
 
@@ -308,6 +361,12 @@ const RecruiterDashboard = () => {
                 </div> : filteredApplications && filteredApplications.length > 0 ? <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox
+                          checked={filteredApplications.length > 0 && selectedIds.size === filteredApplications.length}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="w-[60px]">AI</TableHead>
                       <TableHead>Candidate</TableHead>
                       <TableHead>Position</TableHead>
@@ -322,9 +381,16 @@ const RecruiterDashboard = () => {
                     {filteredApplications.map(app => {
                   const evaluation = evaluationsMap.get(app.id);
                   const isExpanded = expandedRows.has(app.id);
+                  const isSelected = selectedIds.has(app.id);
                   return <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
                           <>
-                            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => evaluation && toggleRow(app.id)}>
+                            <TableRow className={`cursor-pointer hover:bg-muted/50 ${isSelected ? 'bg-primary/5' : ''}`} onClick={() => evaluation && toggleRow(app.id)}>
+                              <TableCell onClick={e => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelection(app.id)}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <AIScoreBadge score={app.ai_score ?? null} status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null} size="sm" />
@@ -417,7 +483,7 @@ const RecruiterDashboard = () => {
                             </TableRow>
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
-                                  <TableCell colSpan={8} className="bg-muted/30 p-0">
+                                  <TableCell colSpan={9} className="bg-muted/30 p-0">
                                     <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       <div className="lg:col-span-2 space-y-4">
                                         <AIEvaluationCard evaluation={evaluation} />
