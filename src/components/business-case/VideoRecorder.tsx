@@ -10,6 +10,93 @@ interface VideoRecorderProps {
   enableTranscription?: boolean;
 }
 
+// Convert AudioBuffer to WAV format
+const audioBufferToWav = (buffer: AudioBuffer): Blob => {
+  const numChannels = 1; // Mono
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+  
+  // Get audio data from first channel (mono)
+  const audioData = buffer.getChannelData(0);
+  
+  // Calculate sizes
+  const dataLength = audioData.length * (bitDepth / 8);
+  const bufferLength = 44 + dataLength;
+  
+  // Create WAV file
+  const wavBuffer = new ArrayBuffer(bufferLength);
+  const view = new DataView(wavBuffer);
+  
+  // Write WAV header
+  const writeString = (offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+  
+  writeString(0, 'RIFF');
+  view.setUint32(4, bufferLength - 8, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true); // byte rate
+  view.setUint16(32, numChannels * (bitDepth / 8), true); // block align
+  view.setUint16(34, bitDepth, true);
+  writeString(36, 'data');
+  view.setUint32(40, dataLength, true);
+  
+  // Write audio data
+  let offset = 44;
+  for (let i = 0; i < audioData.length; i++) {
+    const sample = Math.max(-1, Math.min(1, audioData[i]));
+    const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+    view.setInt16(offset, intSample, true);
+    offset += 2;
+  }
+  
+  return new Blob([wavBuffer], { type: 'audio/wav' });
+};
+
+// Extract audio from video blob
+const extractAudioFromVideo = async (videoBlob: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(videoBlob);
+    video.src = url;
+    
+    video.onloadedmetadata = async () => {
+      try {
+        const audioContext = new AudioContext();
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        console.log('Audio extracted - Duration:', audioBuffer.duration, 'seconds, Sample rate:', audioBuffer.sampleRate);
+        
+        const wavBlob = audioBufferToWav(audioBuffer);
+        console.log('WAV blob created - Size:', wavBlob.size, 'bytes');
+        
+        URL.revokeObjectURL(url);
+        audioContext.close();
+        resolve(wavBlob);
+      } catch (error) {
+        URL.revokeObjectURL(url);
+        console.error('Error extracting audio:', error);
+        reject(error);
+      }
+    };
+    
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load video'));
+    };
+  });
+};
+
 export function VideoRecorder({ 
   onVideoReady, 
   onTranscriptReady,
@@ -100,8 +187,14 @@ export function VideoRecorder({
   const transcribeVideo = useCallback(async (blob: Blob): Promise<string | null> => {
     setIsTranscribing(true);
     try {
-      // Convert blob to base64
-      const arrayBuffer = await blob.arrayBuffer();
+      console.log('Starting transcription - Video size:', blob.size, 'bytes');
+      
+      // Extract audio from video
+      const audioBlob = await extractAudioFromVideo(blob);
+      console.log('Audio extracted - Size:', audioBlob.size, 'bytes');
+      
+      // Convert audio blob to base64
+      const arrayBuffer = await audioBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       let binary = '';
       const chunkSize = 8192;
@@ -110,9 +203,14 @@ export function VideoRecorder({
         binary += String.fromCharCode.apply(null, Array.from(chunk));
       }
       const base64Audio = btoa(binary);
+      console.log('Audio converted to base64 - Length:', base64Audio.length);
 
       const { data, error } = await supabase.functions.invoke('transcribe-video', {
-        body: { audio: base64Audio },
+        body: { 
+          audio: base64Audio,
+          contentType: 'audio/wav',
+          language: 'en'
+        },
       });
 
       if (error) {
@@ -120,6 +218,7 @@ export function VideoRecorder({
         return null;
       }
 
+      console.log('Transcription result:', data?.text);
       return data?.text || null;
     } catch (err) {
       console.error('Failed to transcribe:', err);
