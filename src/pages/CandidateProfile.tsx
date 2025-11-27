@@ -11,6 +11,10 @@ import { DocumentsSection } from '@/components/candidate-profile/DocumentsSectio
 import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
 import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
 import { NotificationHistory } from '@/components/candidate-profile/NotificationHistory';
+import { InterviewEvaluationForm } from '@/components/candidate-profile/InterviewEvaluationForm';
+import { InterviewEvaluationsCard } from '@/components/candidate-profile/InterviewEvaluationCard';
+import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
+import { DecisionHistory } from '@/components/candidate-profile/DecisionHistory';
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
 import { InterviewQuestionsCard } from '@/components/recruiter/InterviewQuestionsCard';
 import { Button } from '@/components/ui/button';
@@ -182,6 +186,12 @@ export default function CandidateProfile() {
           isUpdating={isUpdatingStatus}
         />
 
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3">
+          <InterviewEvaluationForm applicationId={application.id} />
+          <HiringDecisionModal applicationId={application.id} />
+        </div>
+
         {/* Main Content */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Documents & Business Case */}
@@ -225,8 +235,14 @@ export default function CandidateProfile() {
               </div>
             )}
 
+            {/* Interview Evaluations */}
+            <InterviewEvaluationsCard applicationId={application.id} />
+
             {/* Interview Questions */}
             <InterviewQuestionsCard applicationId={application.id} />
+
+            {/* Decision History */}
+            <DecisionHistory applicationId={application.id} />
 
             {/* Recruiter Notes */}
             <RecruiterNotes applicationId={application.id} />

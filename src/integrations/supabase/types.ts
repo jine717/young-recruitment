@@ -239,6 +239,115 @@ export type Database = {
         }
         Relationships: []
       }
+      hiring_decisions: {
+        Row: {
+          application_id: string
+          created_at: string
+          decision: Database["public"]["Enums"]["hiring_decision_type"]
+          decision_maker_id: string
+          id: string
+          reasoning: string
+          rejection_reason: string | null
+          salary_offered: string | null
+          start_date: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          decision: Database["public"]["Enums"]["hiring_decision_type"]
+          decision_maker_id: string
+          id?: string
+          reasoning: string
+          rejection_reason?: string | null
+          salary_offered?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["hiring_decision_type"]
+          decision_maker_id?: string
+          id?: string
+          reasoning?: string
+          rejection_reason?: string | null
+          salary_offered?: string | null
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_decisions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_evaluations: {
+        Row: {
+          application_id: string
+          areas_for_improvement: string[] | null
+          communication_score: number | null
+          created_at: string
+          cultural_fit_score: number | null
+          evaluator_id: string
+          id: string
+          interview_date: string
+          overall_impression: string | null
+          problem_solving_score: number | null
+          recommendation:
+            | Database["public"]["Enums"]["interview_recommendation"]
+            | null
+          strengths: string[] | null
+          technical_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          areas_for_improvement?: string[] | null
+          communication_score?: number | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          evaluator_id: string
+          id?: string
+          interview_date?: string
+          overall_impression?: string | null
+          problem_solving_score?: number | null
+          recommendation?:
+            | Database["public"]["Enums"]["interview_recommendation"]
+            | null
+          strengths?: string[] | null
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          areas_for_improvement?: string[] | null
+          communication_score?: number | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          evaluator_id?: string
+          id?: string
+          interview_date?: string
+          overall_impression?: string | null
+          problem_solving_score?: number | null
+          recommendation?:
+            | Database["public"]["Enums"]["interview_recommendation"]
+            | null
+          strengths?: string[] | null
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_evaluations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_questions: {
         Row: {
           application_id: string
@@ -486,6 +595,12 @@ export type Database = {
         | "interview"
         | "rejected"
         | "hired"
+      hiring_decision_type: "hired" | "rejected" | "on_hold"
+      interview_recommendation:
+        | "strong_hire"
+        | "hire"
+        | "no_hire"
+        | "strong_no_hire"
       job_status: "draft" | "published" | "closed"
       job_type: "full-time" | "part-time" | "contract" | "internship"
     }
@@ -624,6 +739,13 @@ export const Constants = {
         "interview",
         "rejected",
         "hired",
+      ],
+      hiring_decision_type: ["hired", "rejected", "on_hold"],
+      interview_recommendation: [
+        "strong_hire",
+        "hire",
+        "no_hire",
+        "strong_no_hire",
       ],
       job_status: ["draft", "published", "closed"],
       job_type: ["full-time", "part-time", "contract", "internship"],
