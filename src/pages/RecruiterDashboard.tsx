@@ -365,7 +365,13 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <p className="font-medium">{app.profiles?.full_name || "Unknown"}</p>
+                                  <Link 
+                                    to={`/dashboard/candidate/${app.id}`} 
+                                    className="font-medium hover:text-primary hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {app.profiles?.full_name || "Unknown"}
+                                  </Link>
                                   <p className="text-sm text-muted-foreground">{app.profiles?.email}</p>
                                 </div>
                               </TableCell>
@@ -444,6 +450,12 @@ const RecruiterDashboard = () => {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/dashboard/candidate/${app.id}`}>
+                                        <Users className="h-4 w-4 mr-2" />
+                                        View Full Profile
+                                      </Link>
+                                    </DropdownMenuItem>
                                     {(app.ai_evaluation_status === 'failed' || (app.business_case_completed && !app.ai_evaluation_status)) && (
                                       <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
                                         <RefreshCw className="h-4 w-4 mr-2" />
