@@ -57,21 +57,27 @@ const RecruiterDashboard = () => {
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
   useEffect(() => {
-    async function checkAdminRole() {
-      if (!user) return;
+    async function checkRoles() {
+      if (!user) {
+        setHasAccess(false);
+        return;
+      }
       const { data } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      setIsAdmin(!!data);
+        .in('role', ['recruiter', 'admin']);
+      
+      const roles = data?.map(r => r.role) || [];
+      setHasAccess(roles.length > 0);
+      setIsAdmin(roles.includes('admin'));
     }
-    checkAdminRole();
+    checkRoles();
   }, [user]);
   const applicationIds = applications?.map(a => a.id) || [];
   const {
@@ -213,6 +219,25 @@ const RecruiterDashboard = () => {
             <p className="text-muted-foreground mb-4">Please sign in to access the dashboard</p>
             <Button asChild>
               <Link to="/auth">Sign In</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>;
+  }
+
+  if (hasAccess === null) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>;
+  }
+
+  if (!hasAccess) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">You don't have permission to access this dashboard.</p>
+            <Button asChild>
+              <Link to="/candidate">Go to Candidate Portal</Link>
             </Button>
           </CardContent>
         </Card>
