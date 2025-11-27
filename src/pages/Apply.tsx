@@ -104,7 +104,7 @@ export default function Apply() {
       const discUrl = await uploadFile(discFile!, 'disc-assessments', user.id);
 
       // Create application
-      const { error } = await supabase
+      const { data: application, error } = await supabase
         .from('applications')
         .insert({
           job_id: job.id,
@@ -112,7 +112,9 @@ export default function Apply() {
           cv_url: cvUrl,
           disc_url: discUrl,
           status: 'pending',
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -126,10 +128,11 @@ export default function Apply() {
         }
       } else {
         toast({
-          title: 'Application submitted!',
-          description: 'We will review your application and get back to you soon.',
+          title: 'Step 1 Complete!',
+          description: 'Now complete the Business Case to finish your application.',
         });
-        navigate('/jobs');
+        // Redirect to business case
+        navigate(`/business-case/${application.id}`);
       }
     } catch (error) {
       toast({
