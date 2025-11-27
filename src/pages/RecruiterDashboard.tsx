@@ -49,6 +49,7 @@ import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hoo
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useSendNotification, NotificationType } from "@/hooks/useNotifications";
 import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
@@ -78,6 +79,7 @@ const RecruiterDashboard = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const triggerAIAnalysis = useTriggerAIAnalysis();
+  const sendNotification = useSendNotification();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -109,13 +111,33 @@ const RecruiterDashboard = () => {
     aiAnalyzed: aiEvaluations.length,
   };
 
+  const getNotificationTypeForStatus = (status: ApplicationWithDetails['status']): NotificationType | null => {
+    switch (status) {
+      case 'interview': return 'interview_scheduled';
+      case 'hired': return 'decision_offer';
+      case 'rejected': return 'decision_rejection';
+      case 'under_review': return 'status_update';
+      default: return null;
+    }
+  };
+
   const handleStatusChange = async (applicationId: string, newStatus: ApplicationWithDetails['status']) => {
     try {
       await updateStatus(applicationId, newStatus);
       queryClient.invalidateQueries({ queryKey: ['applications'] });
+      
+      // Auto-send notification for status change
+      const notificationType = getNotificationTypeForStatus(newStatus);
+      if (notificationType) {
+        sendNotification.mutate({
+          applicationId,
+          type: notificationType,
+        });
+      }
+
       toast({
         title: "Status updated",
-        description: `Application status changed to ${statusLabels[newStatus]}`,
+        description: `Application status changed to ${statusLabels[newStatus]}. Notification sent.`,
       });
     } catch (err) {
       toast({

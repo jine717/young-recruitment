@@ -15,6 +15,7 @@ import {
   useSubmitBusinessCaseResponse,
   useCompleteBusinessCase,
 } from '@/hooks/useBusinessCase';
+import { useSendNotification } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export default function BusinessCase() {
   
   const submitResponse = useSubmitBusinessCaseResponse();
   const completeBusinessCase = useCompleteBusinessCase();
+  const sendNotification = useSendNotification();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [textResponse, setTextResponse] = useState('');
@@ -131,6 +133,13 @@ export default function BusinessCase() {
           body: { applicationId },
         }).catch(err => {
           console.error('AI analysis trigger failed:', err);
+        });
+
+        // Send completion notification (fire and forget)
+        sendNotification.mutate({
+          applicationId,
+          type: 'status_update',
+          customMessage: 'Your business case has been successfully submitted and is now under review by our team.',
         });
         
         toast({
