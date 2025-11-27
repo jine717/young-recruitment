@@ -3,47 +3,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  FileText, 
-  Video, 
-  MoreHorizontal,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Users,
-  Briefcase,
-  ChevronDown,
-  Sparkles,
-  RefreshCw
-} from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw } from "lucide-react";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,115 +19,123 @@ import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { InterviewQuestionsCard } from "@/components/recruiter/InterviewQuestionsCard";
 import { NotificationCard } from "@/components/recruiter/NotificationCard";
-
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-primary/20 text-primary-foreground",
   interview: "bg-secondary/20 text-secondary-foreground",
   rejected: "bg-destructive/20 text-destructive",
-  hired: "bg-green-500/20 text-green-700",
+  hired: "bg-green-500/20 text-green-700"
 };
-
 const statusLabels: Record<ApplicationWithDetails['status'], string> = {
   pending: "Pending",
   under_review: "Under Review",
   interview: "Interview",
   rejected: "Rejected",
-  hired: "Hired",
+  hired: "Hired"
 };
-
 const RecruiterDashboard = () => {
-  const { data: applications, isLoading, error } = useApplications();
-  const { user } = useAuth();
+  const {
+    data: applications,
+    isLoading,
+    error
+  } = useApplications();
+  const {
+    user
+  } = useAuth();
   const updateStatus = useUpdateApplicationStatus();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const triggerAIAnalysis = useTriggerAIAnalysis();
   const sendNotification = useSendNotification();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
   const applicationIds = applications?.map(a => a.id) || [];
-  const { data: aiEvaluations = [] } = useAIEvaluations(applicationIds);
-  
-  const evaluationsMap = new Map<string, AIEvaluation>(
-    aiEvaluations.map(e => [e.application_id, e])
-  );
-
-  const filteredApplications = applications?.filter((app) => {
+  const {
+    data: aiEvaluations = []
+  } = useAIEvaluations(applicationIds);
+  const evaluationsMap = new Map<string, AIEvaluation>(aiEvaluations.map(e => [e.application_id, e]));
+  const filteredApplications = applications?.filter(app => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
     return true;
   });
-
   const uniqueJobs = applications?.reduce((acc, app) => {
-    if (app.jobs && !acc.find((j) => j.id === app.job_id)) {
-      acc.push({ id: app.job_id, title: app.jobs.title });
+    if (app.jobs && !acc.find(j => j.id === app.job_id)) {
+      acc.push({
+        id: app.job_id,
+        title: app.jobs.title
+      });
     }
     return acc;
-  }, [] as { id: string; title: string }[]) || [];
-
+  }, [] as {
+    id: string;
+    title: string;
+  }[]) || [];
   const stats = {
     total: applications?.length || 0,
-    pending: applications?.filter((a) => a.status === "pending").length || 0,
-    underReview: applications?.filter((a) => a.status === "under_review").length || 0,
-    aiAnalyzed: aiEvaluations.length,
+    pending: applications?.filter(a => a.status === "pending").length || 0,
+    underReview: applications?.filter(a => a.status === "under_review").length || 0,
+    aiAnalyzed: aiEvaluations.length
   };
-
   const getNotificationTypeForStatus = (status: ApplicationWithDetails['status']): NotificationType | null => {
     switch (status) {
-      case 'interview': return 'interview_scheduled';
-      case 'hired': return 'decision_offer';
-      case 'rejected': return 'decision_rejection';
-      case 'under_review': return 'status_update';
-      default: return null;
+      case 'interview':
+        return 'interview_scheduled';
+      case 'hired':
+        return 'decision_offer';
+      case 'rejected':
+        return 'decision_rejection';
+      case 'under_review':
+        return 'status_update';
+      default:
+        return null;
     }
   };
-
   const handleStatusChange = async (applicationId: string, newStatus: ApplicationWithDetails['status']) => {
     try {
       await updateStatus(applicationId, newStatus);
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      
+      queryClient.invalidateQueries({
+        queryKey: ['applications']
+      });
+
       // Auto-send notification for status change
       const notificationType = getNotificationTypeForStatus(newStatus);
       if (notificationType) {
         sendNotification.mutate({
           applicationId,
-          type: notificationType,
+          type: notificationType
         });
       }
-
       toast({
         title: "Status updated",
-        description: `Application status changed to ${statusLabels[newStatus]}. Notification sent.`,
+        description: `Application status changed to ${statusLabels[newStatus]}. Notification sent.`
       });
     } catch (err) {
       toast({
         title: "Error",
         description: "Failed to update status",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleRetryAI = async (applicationId: string) => {
     try {
       await triggerAIAnalysis.mutateAsync(applicationId);
       toast({
         title: "AI Analysis Started",
-        description: "The candidate is being analyzed...",
+        description: "The candidate is being analyzed..."
       });
     } catch (err) {
       toast({
         title: "Error",
         description: "Failed to start AI analysis",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
@@ -175,10 +147,8 @@ const RecruiterDashboard = () => {
       return newSet;
     });
   };
-
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">Please sign in to access the dashboard</p>
@@ -187,18 +157,13 @@ const RecruiterDashboard = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-display text-3xl tracking-tight">
-            YOUNG.
-          </Link>
+          <Link to="/" className="font-display text-3xl tracking-tight">YOUNG RECRUITMENT</Link>
           <div className="flex items-center gap-6">
             <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
               Open Positions
@@ -297,11 +262,9 @@ const RecruiterDashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Jobs</SelectItem>
-                {uniqueJobs.map((job) => (
-                  <SelectItem key={job.id} value={job.id}>
+                {uniqueJobs.map(job => <SelectItem key={job.id} value={job.id}>
                     {job.title}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -313,19 +276,14 @@ const RecruiterDashboard = () => {
         <div className="container mx-auto max-w-7xl">
           <Card>
             <CardContent className="p-0">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-20">
+              {isLoading ? <div className="flex items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-20">
+                </div> : error ? <div className="text-center py-20">
                   <p className="text-destructive mb-4">Failed to load applications</p>
                   <Button variant="outline" onClick={() => window.location.reload()}>
                     Retry
                   </Button>
-                </div>
-              ) : filteredApplications && filteredApplications.length > 0 ? (
-                <Table>
+                </div> : filteredApplications && filteredApplications.length > 0 ? <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[60px]">AI</TableHead>
@@ -339,37 +297,25 @@ const RecruiterDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredApplications.map((app) => {
-                      const evaluation = evaluationsMap.get(app.id);
-                      const isExpanded = expandedRows.has(app.id);
-                      
-                      return (
-                        <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
+                    {filteredApplications.map(app => {
+                  const evaluation = evaluationsMap.get(app.id);
+                  const isExpanded = expandedRows.has(app.id);
+                  return <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
                           <>
                             <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => evaluation && toggleRow(app.id)}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <AIScoreBadge 
-                                    score={app.ai_score ?? null} 
-                                    status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null}
-                                    size="sm"
-                                  />
-                                  {evaluation && (
-                                    <CollapsibleTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                                  <AIScoreBadge score={app.ai_score ?? null} status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null} size="sm" />
+                                  {evaluation && <CollapsibleTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={e => e.stopPropagation()}>
                                         <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                       </Button>
-                                    </CollapsibleTrigger>
-                                  )}
+                                    </CollapsibleTrigger>}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <Link 
-                                    to={`/dashboard/candidate/${app.id}`} 
-                                    className="font-medium hover:text-primary hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
+                                  <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
                                     {app.profiles?.full_name || "Unknown"}
                                   </Link>
                                   <p className="text-sm text-muted-foreground">{app.profiles?.email}</p>
@@ -389,54 +335,25 @@ const RecruiterDashboard = () => {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {app.business_case_completed ? (
-                                  <div className="flex items-center gap-1 text-green-600">
+                                {app.business_case_completed ? <div className="flex items-center gap-1 text-green-600">
                                     <CheckCircle2 className="h-4 w-4" />
                                     <span className="text-sm">Complete</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                  </div> : <div className="flex items-center gap-1 text-muted-foreground">
                                     <XCircle className="h-4 w-4" />
                                     <span className="text-sm">Incomplete</span>
-                                  </div>
-                                )}
+                                  </div>}
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  {app.cv_url && (
-                                    <a
-                                      href={app.cv_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-primary hover:text-primary/80"
-                                      title="View CV"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
+                                  {app.cv_url && <a href={app.cv_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80" title="View CV" onClick={e => e.stopPropagation()}>
                                       <FileText className="h-5 w-5" />
-                                    </a>
-                                  )}
-                                  {app.disc_url && (
-                                    <a
-                                      href={app.disc_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-secondary hover:text-secondary/80"
-                                      title="View DISC"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
+                                    </a>}
+                                  {app.disc_url && <a href={app.disc_url} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary/80" title="View DISC" onClick={e => e.stopPropagation()}>
                                       <FileText className="h-5 w-5" />
-                                    </a>
-                                  )}
-                                  {app.business_case_completed && (
-                                    <Link
-                                      to={`/business-case/${app.id}`}
-                                      className="text-accent hover:text-accent/80"
-                                      title="View Responses"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
+                                    </a>}
+                                  {app.business_case_completed && <Link to={`/business-case/${app.id}`} className="text-accent hover:text-accent/80" title="View Responses" onClick={e => e.stopPropagation()}>
                                       <Video className="h-5 w-5" />
-                                    </Link>
-                                  )}
+                                    </Link>}
                                 </div>
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
@@ -445,7 +362,7 @@ const RecruiterDashboard = () => {
                               <TableCell>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="icon" onClick={e => e.stopPropagation()}>
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -456,12 +373,10 @@ const RecruiterDashboard = () => {
                                         View Full Profile
                                       </Link>
                                     </DropdownMenuItem>
-                                    {(app.ai_evaluation_status === 'failed' || (app.business_case_completed && !app.ai_evaluation_status)) && (
-                                      <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
+                                    {(app.ai_evaluation_status === 'failed' || app.business_case_completed && !app.ai_evaluation_status) && <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
                                         <RefreshCw className="h-4 w-4 mr-2" />
                                         Run AI Analysis
-                                      </DropdownMenuItem>
-                                    )}
+                                      </DropdownMenuItem>}
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
                                       Mark Under Review
                                     </DropdownMenuItem>
@@ -471,18 +386,14 @@ const RecruiterDashboard = () => {
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
                                       Mark as Hired
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => handleStatusChange(app.id, "rejected")}
-                                      className="text-destructive"
-                                    >
+                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "rejected")} className="text-destructive">
                                       Reject
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </TableCell>
                             </TableRow>
-                            {evaluation && (
-                              <CollapsibleContent asChild>
+                            {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
                                   <TableCell colSpan={8} className="bg-muted/30 p-0">
                                     <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -491,28 +402,19 @@ const RecruiterDashboard = () => {
                                         <InterviewQuestionsCard applicationId={app.id} />
                                       </div>
                                       <div>
-                                        <NotificationCard 
-                                          applicationId={app.id}
-                                          candidateName={app.profiles?.full_name || "Candidate"}
-                                          hasBusinessCase={app.business_case_completed}
-                                        />
+                                        <NotificationCard applicationId={app.id} candidateName={app.profiles?.full_name || "Candidate"} hasBusinessCase={app.business_case_completed} />
                                       </div>
                                     </div>
                                   </TableCell>
                                 </TableRow>
-                              </CollapsibleContent>
-                            )}
+                              </CollapsibleContent>}
                           </>
-                        </Collapsible>
-                      );
-                    })}
+                        </Collapsible>;
+                })}
                   </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-20">
+                </Table> : <div className="text-center py-20">
                   <p className="text-muted-foreground text-lg">No applications found</p>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
         </div>
@@ -527,8 +429,6 @@ const RecruiterDashboard = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default RecruiterDashboard;
