@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,7 @@ import {
   useUpdateBusinessCase,
   useDeleteBusinessCase,
 } from '@/hooks/useBusinessCasesMutation';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, Trash2, ArrowLeft, ArrowUp, ArrowDown, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -37,6 +38,25 @@ interface QuestionForm {
 export default function RecruiterBusinessCase() {
   const { id: jobId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkRoles() {
+      if (!user) {
+        setHasAccess(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['recruiter', 'admin']);
+      
+      setHasAccess((data?.length || 0) > 0);
+    }
+    checkRoles();
+  }, [user]);
 
   const { data: job } = useQuery({
     queryKey: ['recruiter-job', jobId],
@@ -153,10 +173,40 @@ export default function RecruiterBusinessCase() {
     });
   };
 
-  if (isLoading) {
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">Please sign in to access this page</p>
+            <Button asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasAccess === null || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">You don't have permission to access this page.</p>
+            <Button asChild>
+              <Link to="/">Go Home</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

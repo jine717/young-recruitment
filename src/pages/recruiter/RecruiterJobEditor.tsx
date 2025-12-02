@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, X, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,10 +25,29 @@ export default function RecruiterJobEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const { user } = useAuth();
 
   const { data: departments } = useDepartments();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkRoles() {
+      if (!user) {
+        setHasAccess(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['recruiter', 'admin']);
+      
+      setHasAccess((data?.length || 0) > 0);
+    }
+    checkRoles();
+  }, [user]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -124,10 +144,40 @@ export default function RecruiterJobEditor() {
     navigate('/dashboard/jobs');
   };
 
-  if (loading) {
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">Please sign in to access this page</p>
+            <Button asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasAccess === null || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">You don't have permission to access this page.</p>
+            <Button asChild>
+              <Link to="/">Go Home</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

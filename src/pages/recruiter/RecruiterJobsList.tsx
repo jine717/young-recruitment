@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,11 +27,32 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function RecruiterJobsList() {
+  const { user } = useAuth();
   const { data: jobs, isLoading } = useAllJobs();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkRoles() {
+      if (!user) {
+        setHasAccess(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['recruiter', 'admin']);
+      
+      setHasAccess((data?.length || 0) > 0);
+    }
+    checkRoles();
+  }, [user]);
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
   const navigate = useNavigate();
@@ -80,6 +101,44 @@ export default function RecruiterJobsList() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">Please sign in to access this page</p>
+            <Button asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasAccess === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">You don't have permission to access this page.</p>
+            <Button asChild>
+              <Link to="/">Go Home</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
