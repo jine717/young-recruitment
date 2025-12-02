@@ -9,7 +9,6 @@ import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
-import BusinessCase from "./pages/BusinessCase";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import CandidateProfile from "./pages/CandidateProfile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -19,8 +18,6 @@ import BusinessCaseEditor from "./pages/admin/BusinessCaseEditor";
 import DepartmentsManager from "./pages/admin/DepartmentsManager";
 import UsersManager from "./pages/admin/UsersManager";
 import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
-import CandidateDashboard from "./pages/candidate/CandidateDashboard";
-import ApplicationDetail from "./pages/candidate/ApplicationDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +35,6 @@ const App = () => (
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply/:id" element={<Apply />} />
-            <Route path="/business-case/:applicationId" element={<BusinessCase />} />
             <Route path="/dashboard" element={<RecruiterDashboard />} />
             <Route path="/dashboard/candidate/:applicationId" element={<CandidateProfile />} />
             {/* Admin Routes */}
@@ -50,9 +46,6 @@ const App = () => (
             <Route path="/admin/departments" element={<DepartmentsManager />} />
             <Route path="/admin/users" element={<UsersManager />} />
             <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
-            {/* Candidate Routes */}
-            <Route path="/candidate" element={<CandidateDashboard />} />
-            <Route path="/candidate/application/:id" element={<ApplicationDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

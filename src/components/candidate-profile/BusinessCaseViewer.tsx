@@ -1,11 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { VideoPlayer } from '@/components/business-case/VideoPlayer';
-import { Video, FileText, CheckCircle, Clock } from 'lucide-react';
+import { FileText, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useEffect, useState } from 'react';
 
 interface BusinessCaseViewerProps {
   applicationId: string;
@@ -30,8 +28,6 @@ interface BusinessCaseResponse {
 }
 
 export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerProps) {
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-
   const { data: businessCases, isLoading: casesLoading } = useQuery({
     queryKey: ['business-cases-recruiter', jobId],
     queryFn: async () => {
@@ -61,41 +57,6 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
     enabled: !!applicationId,
   });
 
-  // Extract path from full URL or return as-is if already a path
-  const extractVideoPath = (videoUrl: string): string => {
-    const bucketName = 'business-case-videos';
-    const publicUrlPattern = `/storage/v1/object/public/${bucketName}/`;
-    const index = videoUrl.indexOf(publicUrlPattern);
-    if (index !== -1) {
-      return videoUrl.substring(index + publicUrlPattern.length);
-    }
-    // If it's already just a path, return as-is
-    return videoUrl;
-  };
-
-  useEffect(() => {
-    const getSignedUrls = async () => {
-      if (!responses) return;
-
-      const urls: Record<string, string> = {};
-      for (const response of responses) {
-        if (response.video_url) {
-          const path = extractVideoPath(response.video_url);
-          const { data, error } = await supabase.storage
-            .from('business-case-videos')
-            .createSignedUrl(path, 3600);
-
-          if (!error && data) {
-            urls[response.id] = data.signedUrl;
-          }
-        }
-      }
-      setSignedUrls(urls);
-    };
-
-    getSignedUrls();
-  }, [responses]);
-
   const isLoading = casesLoading || responsesLoading;
 
   if (isLoading) {
@@ -103,7 +64,7 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Video className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" />
             Business Case Responses
           </CardTitle>
         </CardHeader>
@@ -127,7 +88,7 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Video className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" />
             Business Case Responses
           </CardTitle>
           <Badge variant={completedCount === totalCount ? 'default' : 'secondary'}>
@@ -176,19 +137,12 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
                       Candidate Response
                     </p>
 
-                    {response.video_url && signedUrls[response.id] && (
-                      <VideoPlayer
-                        src={signedUrls[response.id]}
-                        title="Video Response"
-                      />
-                    )}
-
                     {response.text_response && (
                       <div className="bg-muted/50 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <FileText className="w-4 h-4 text-muted-foreground" />
                           <span className="text-xs font-medium text-muted-foreground">
-                            Text Response
+                            Written Response
                           </span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap">
@@ -197,7 +151,7 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
                       </div>
                     )}
 
-                    {!response.video_url && !response.text_response && (
+                    {!response.text_response && (
                       <p className="text-sm text-muted-foreground italic">
                         No response submitted yet.
                       </p>
