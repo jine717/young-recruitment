@@ -16,16 +16,10 @@ import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
-import { Plus, X, Save, ArrowLeft, Loader2, User, LogOut, Settings } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+import { Plus, X, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
+import { DashboardNavbar } from '@/components/DashboardNavbar';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -60,11 +54,6 @@ export default function RecruiterJobEditor() {
   const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
   const [loading, setLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  };
 
   // Load existing business cases when editing
   useEffect(() => {
@@ -247,44 +236,7 @@ export default function RecruiterJobEditor() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-display text-3xl tracking-tight">YOUNG.</Link>
-          <div className="flex items-center gap-4">
-            <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
-              Open Positions
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Account'}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {isAdmin && (
-                  <>
-                    <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to="/admin">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </nav>
+      <DashboardNavbar user={user} isAdmin={isAdmin} />
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
