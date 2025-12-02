@@ -166,7 +166,7 @@ export default function RecruiterJobsList() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} />
+      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
