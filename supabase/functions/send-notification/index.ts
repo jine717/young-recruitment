@@ -47,7 +47,7 @@ function getEmailTemplate(
   // Brand text logo in Bold Black with Young-style typography
   const logoHtml = `
     <div style="text-align: center; margin: 0 auto 30px;">
-      <span style="font-family: 'Arial Black', Helvetica, sans-serif; font-size: 36px; font-weight: 900; color: ${brandColors.boldBlack}; letter-spacing: 6px;">YOUNG</span>
+      <span style="font-family: 'Arial Black', Helvetica, sans-serif; font-size: 36px; font-weight: 900; color: ${brandColors.boldBlack}; letter-spacing: 6px;">YOUNG.</span>
     </div>
   `;
 
