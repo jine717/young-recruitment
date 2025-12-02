@@ -15,8 +15,10 @@ import {
 import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
+import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
 import { Plus, X, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -28,8 +30,12 @@ export default function RecruiterJobEditor() {
   const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
 
   const { data: departments } = useDepartments();
+  const { data: existingBusinessCases, isLoading: businessCasesLoading } = useJobBusinessCases(id);
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
+  const createBusinessCase = useCreateBusinessCase();
+  const updateBusinessCase = useUpdateBusinessCase();
+  const deleteBusinessCase = useDeleteBusinessCase();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -44,7 +50,25 @@ export default function RecruiterJobEditor() {
     status: 'draft' as JobStatus,
   });
 
+  const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
   const [loading, setLoading] = useState(isEditing);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load existing business cases when editing
+  useEffect(() => {
+    if (existingBusinessCases && !businessCasesLoading) {
+      setBusinessCaseQuestions(
+        existingBusinessCases.map((bc) => ({
+          id: bc.id,
+          question_number: bc.question_number,
+          question_title: bc.question_title,
+          question_description: bc.question_description,
+          has_text_response: bc.has_text_response,
+          video_url: bc.video_url,
+        }))
+      );
+    }
+  }, [existingBusinessCases, businessCasesLoading]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -104,26 +128,69 @@ export default function RecruiterJobEditor() {
     setFormData({ ...formData, [field]: newArray.length ? newArray : [''] });
   };
 
-  const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'published') => {
-    e.preventDefault();
-
-    const jobData = {
-      ...formData,
-      department_id: formData.department_id || null,
-      status: saveAs,
-      responsibilities: formData.responsibilities.filter((r) => r.trim()),
-      requirements: formData.requirements.filter((r) => r.trim()),
-      benefits: formData.benefits.filter((b) => b.trim()),
-      tags: formData.tags.filter((t) => t.trim()),
-    };
-
-    if (isEditing && id) {
-      await updateJob.mutateAsync({ id, ...jobData });
-    } else {
-      await createJob.mutateAsync(jobData);
+  const saveBusinessCases = async (jobId: string) => {
+    const existingIds = existingBusinessCases?.map((bc) => bc.id) || [];
+    const currentIds = businessCaseQuestions.filter((q) => q.id).map((q) => q.id!);
+    
+    // Delete removed questions
+    const toDelete = existingIds.filter((id) => !currentIds.includes(id));
+    for (const bcId of toDelete) {
+      await deleteBusinessCase.mutateAsync({ id: bcId, jobId });
     }
 
-    navigate('/dashboard/jobs');
+    // Create or update questions
+    for (const question of businessCaseQuestions) {
+      const data = {
+        job_id: jobId,
+        question_number: question.question_number,
+        question_title: question.question_title,
+        question_description: question.question_description,
+        has_text_response: question.has_text_response,
+        video_url: question.video_url,
+      };
+
+      if (question.id) {
+        await updateBusinessCase.mutateAsync({ id: question.id, ...data });
+      } else {
+        await createBusinessCase.mutateAsync(data);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'published') => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const jobData = {
+        ...formData,
+        department_id: formData.department_id || null,
+        status: saveAs,
+        responsibilities: formData.responsibilities.filter((r) => r.trim()),
+        requirements: formData.requirements.filter((r) => r.trim()),
+        benefits: formData.benefits.filter((b) => b.trim()),
+        tags: formData.tags.filter((t) => t.trim()),
+      };
+
+      let jobId: string;
+
+      if (isEditing && id) {
+        await updateJob.mutateAsync({ id, ...jobData });
+        jobId = id;
+      } else {
+        const newJob = await createJob.mutateAsync(jobData);
+        jobId = newJob.id;
+      }
+
+      // Save business case questions
+      await saveBusinessCases(jobId);
+
+      navigate('/dashboard/jobs');
+    } catch (error) {
+      console.error('Error saving job:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!user) {
@@ -163,6 +230,8 @@ export default function RecruiterJobEditor() {
       </div>
     );
   }
+
+  const isSubmitting = isSaving || createJob.isPending || updateJob.isPending;
 
   return (
     <div className="min-h-screen bg-background">
@@ -416,6 +485,13 @@ export default function RecruiterJobEditor() {
                 </CardContent>
               </Card>
 
+              {/* Business Case Questions Section */}
+              <BusinessCaseQuestionsEditor
+                questions={businessCaseQuestions}
+                onChange={setBusinessCaseQuestions}
+                disabled={isSubmitting}
+              />
+
               <div className="flex gap-4 justify-end">
                 <Button type="button" variant="outline" onClick={() => navigate('/dashboard/jobs')}>
                   Cancel
@@ -424,16 +500,21 @@ export default function RecruiterJobEditor() {
                   type="button"
                   variant="secondary"
                   onClick={(e) => handleSubmit(e, 'draft')}
-                  disabled={createJob.isPending || updateJob.isPending}
+                  disabled={isSubmitting}
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Save as Draft
                 </Button>
                 <Button
                   type="button"
                   onClick={(e) => handleSubmit(e, 'published')}
-                  disabled={createJob.isPending || updateJob.isPending}
+                  disabled={isSubmitting}
                 >
+                  {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {isEditing ? 'Update & Publish' : 'Publish'}
                 </Button>
               </div>
