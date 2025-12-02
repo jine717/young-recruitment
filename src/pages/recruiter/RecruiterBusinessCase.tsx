@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import {
   useUpdateBusinessCase,
   useDeleteBusinessCase,
 } from '@/hooks/useBusinessCasesMutation';
-import { useAuth } from '@/hooks/useAuth';
+import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { Plus, Trash2, ArrowLeft, ArrowUp, ArrowDown, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -38,25 +38,7 @@ interface QuestionForm {
 export default function RecruiterBusinessCase() {
   const { id: jobId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    async function checkRoles() {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['recruiter', 'admin']);
-      
-      setHasAccess((data?.length || 0) > 0);
-    }
-    checkRoles();
-  }, [user]);
+  const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
 
   const { data: job } = useQuery({
     queryKey: ['recruiter-job', jobId],
@@ -188,7 +170,7 @@ export default function RecruiterBusinessCase() {
     );
   }
 
-  if (hasAccess === null || isLoading) {
+  if (roleLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
