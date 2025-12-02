@@ -233,12 +233,9 @@ export default function Apply() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-4">
           <Link to="/" className="font-display text-3xl tracking-tight">
             YOUNG.
-          </Link>
-          <Link to="/jobs">
-            <Button variant="outline">View Jobs</Button>
           </Link>
         </div>
       </nav>
