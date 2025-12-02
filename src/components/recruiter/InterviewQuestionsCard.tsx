@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2, ChevronDown, StickyNote } from 'lucide-react';
 import { 
   InterviewQuestion, 
   useInterviewQuestions, 
@@ -14,7 +16,6 @@ import {
   useUpdateInterviewQuestion,
   useDeleteInterviewQuestion
 } from '@/hooks/useInterviewQuestions';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface InterviewQuestionsCardProps {
@@ -76,6 +77,9 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<InterviewQuestion | null>(null);
   const [formData, setFormData] = useState<QuestionFormData>(defaultFormData);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   const handleGenerate = async () => {
     try {
@@ -179,6 +183,34 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
     }
   };
 
+  const startEditingNote = (question: InterviewQuestion) => {
+    setEditingNoteId(question.id);
+    setNoteText(question.recruiter_note || '');
+  };
+
+  const saveNote = async (questionId: string) => {
+    try {
+      await updateQuestion.mutateAsync({
+        id: questionId,
+        recruiter_note: noteText.trim() || null,
+      });
+      setEditingNoteId(null);
+      setNoteText('');
+      toast({ title: "Note saved" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save note",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelEditingNote = () => {
+    setEditingNoteId(null);
+    setNoteText('');
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
@@ -239,99 +271,153 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
   return (
     <>
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Interview Questions ({questions.length})
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={openAddDialog}>
-                <Plus className="h-3 w-3 mr-1" />
-                Add
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleCopyAll}>
-                <Copy className="h-3 w-3 mr-1" />
-                Copy All
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleGenerate}
-                disabled={generateQuestions.isPending}
-              >
-                {generateQuestions.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <>
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Regenerate
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {questions.map((question, index) => (
-            <div 
-              key={question.id} 
-              className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Q{index + 1}
-                    </span>
-                    <Badge className={categoryColors[question.category] || 'bg-muted'} variant="secondary">
-                      {categoryLabels[question.category] || question.category}
-                    </Badge>
-                    <Badge className={priorityColors[question.priority]} variant="secondary">
-                      {priorityLabels[question.priority]}
-                    </Badge>
-                  </div>
-                  <p className="text-sm font-medium">{question.question_text}</p>
-                  {question.reasoning && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      {question.reasoning}
-                    </p>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Interview Questions ({questions.length})
+                </CardTitle>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={openAddDialog}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleCopyAll}>
+                  <Copy className="h-3 w-3 mr-1" />
+                  Copy All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleGenerate}
+                  disabled={generateQuestions.isPending}
+                >
+                  {generateQuestions.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Regenerate
+                    </>
                   )}
-                </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => openEditDialog(question)}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(question)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleCopy(question)}
-                  >
-                    {copiedId === question.id ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
+                </Button>
               </div>
             </div>
-          ))}
-        </CardContent>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="space-y-3">
+              {questions.map((question, index) => (
+                <div 
+                  key={question.id} 
+                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Q{index + 1}
+                        </span>
+                        <Badge className={categoryColors[question.category] || 'bg-muted'} variant="secondary">
+                          {categoryLabels[question.category] || question.category}
+                        </Badge>
+                        <Badge className={priorityColors[question.priority]} variant="secondary">
+                          {priorityLabels[question.priority]}
+                        </Badge>
+                      </div>
+                      <p className="text-sm font-medium">{question.question_text}</p>
+                      {question.reasoning && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          {question.reasoning}
+                        </p>
+                      )}
+                      
+                      {/* Recruiter Note Section */}
+                      <div className="mt-2">
+                        {editingNoteId === question.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="Add your note for this question..."
+                              value={noteText}
+                              onChange={(e) => setNoteText(e.target.value)}
+                              rows={2}
+                              className="text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => saveNote(question.id)}
+                                disabled={updateQuestion.isPending}
+                              >
+                                {updateQuestion.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditingNote}>
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : question.recruiter_note ? (
+                          <div 
+                            className="mt-2 p-2 rounded bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+                            onClick={() => startEditingNote(question)}
+                          >
+                            <div className="flex items-start gap-2">
+                              <StickyNote className="h-3 w-3 mt-0.5 text-primary" />
+                              <p className="text-xs text-foreground/80">{question.recruiter_note}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs text-muted-foreground mt-1"
+                            onClick={() => startEditingNote(question)}
+                          >
+                            <StickyNote className="h-3 w-3 mr-1" />
+                            Add note
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => openEditDialog(question)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(question)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => handleCopy(question)}
+                      >
+                        {copiedId === question.id ? (
+                          <Check className="h-3 w-3 text-green-600" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
       <QuestionDialog 
         isOpen={isDialogOpen}
