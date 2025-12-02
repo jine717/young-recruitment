@@ -95,19 +95,6 @@ const Jobs = () => {
         </div>
       </section>
 
-      {/* No Fit CTA */}
-      <section className="py-16 px-6 bg-muted/30">
-        <div className="container mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-3xl md:text-4xl mb-4">DON'T SEE THE RIGHT FIT?</h2>
-          <p className="text-muted-foreground text-lg mb-6">
-            We're always looking for exceptional talent. Send us your application and tell us how you'd like to contribute.
-          </p>
-          <Button variant="outline" size="lg">
-            Send Open Application
-          </Button>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );
