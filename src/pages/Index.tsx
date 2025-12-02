@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Target, Zap, Award } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -124,15 +125,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-10 px-6 border-t border-border">
-        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-display text-2xl">YOUNG.</p>
-          <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Young. Unite to Disrupt.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
