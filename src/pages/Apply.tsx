@@ -403,10 +403,9 @@ export default function Apply() {
                         placeholder="Write your answer here..."
                         rows={5}
                         disabled={isSubmitting}
-                        className="ml-11"
                       />
                       {errors[`response_${bc.id}`] && (
-                        <p className="text-sm text-destructive ml-11">{errors[`response_${bc.id}`]}</p>
+                        <p className="text-sm text-destructive">{errors[`response_${bc.id}`]}</p>
                       )}
                     </div>
                   ))}
