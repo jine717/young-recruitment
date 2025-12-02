@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
-import { useAuth } from '@/hooks/useAuth';
+import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { Plus, X, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,29 +25,11 @@ export default function RecruiterJobEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  const { user } = useAuth();
+  const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
 
   const { data: departments } = useDepartments();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    async function checkRoles() {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['recruiter', 'admin']);
-      
-      setHasAccess((data?.length || 0) > 0);
-    }
-    checkRoles();
-  }, [user]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -159,7 +141,7 @@ export default function RecruiterJobEditor() {
     );
   }
 
-  if (hasAccess === null || loading) {
+  if (roleLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

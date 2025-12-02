@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
-import { useAuth } from "@/hooks/useAuth";
+import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSendNotification, NotificationType } from "@/hooks/useNotifications";
@@ -22,7 +22,6 @@ import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { InterviewQuestionsCard } from "@/components/recruiter/InterviewQuestionsCard";
 import { NotificationCard } from "@/components/recruiter/NotificationCard";
-import { supabase } from "@/integrations/supabase/client";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-primary/20 text-primary-foreground",
@@ -43,9 +42,7 @@ const RecruiterDashboard = () => {
     isLoading,
     error
   } = useApplications();
-  const {
-    user
-  } = useAuth();
+  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
   const updateStatus = useUpdateApplicationStatus();
   const queryClient = useQueryClient();
   const {
@@ -56,29 +53,9 @@ const RecruiterDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
-  useEffect(() => {
-    async function checkRoles() {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['recruiter', 'admin']);
-      
-      const roles = data?.map(r => r.role) || [];
-      setHasAccess(roles.length > 0);
-      setIsAdmin(roles.includes('admin'));
-    }
-    checkRoles();
-  }, [user]);
   const applicationIds = applications?.map(a => a.id) || [];
   const {
     data: aiEvaluations = []
@@ -212,6 +189,12 @@ const RecruiterDashboard = () => {
       : filteredApplications;
     exportApplications(selectedApps);
   };
+  if (roleLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>;
+  }
+
   if (!user) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
@@ -222,12 +205,6 @@ const RecruiterDashboard = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>;
-  }
-
-  if (hasAccess === null) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>;
   }
 

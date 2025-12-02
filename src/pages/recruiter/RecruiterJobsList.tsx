@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,32 +27,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function RecruiterJobsList() {
-  const { user } = useAuth();
+  const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
   const { data: jobs, isLoading } = useAllJobs();
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    async function checkRoles() {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['recruiter', 'admin']);
-      
-      setHasAccess((data?.length || 0) > 0);
-    }
-    checkRoles();
-  }, [user]);
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
   const navigate = useNavigate();
@@ -117,7 +98,7 @@ export default function RecruiterJobsList() {
     );
   }
 
-  if (hasAccess === null) {
+  if (roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
