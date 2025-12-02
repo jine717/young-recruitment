@@ -407,6 +407,7 @@ export type Database = {
           priority: number
           question_text: string
           reasoning: string | null
+          recruiter_note: string | null
         }
         Insert: {
           application_id: string
@@ -416,6 +417,7 @@ export type Database = {
           priority?: number
           question_text: string
           reasoning?: string | null
+          recruiter_note?: string | null
         }
         Update: {
           application_id?: string
@@ -425,6 +427,7 @@ export type Database = {
           priority?: number
           question_text?: string
           reasoning?: string | null
+          recruiter_note?: string | null
         }
         Relationships: [
           {

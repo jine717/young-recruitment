@@ -7,6 +7,7 @@ export interface InterviewQuestion {
   question_text: string;
   category: string;
   reasoning: string | null;
+  recruiter_note: string | null;
   priority: number;
   created_at: string;
 }
@@ -24,6 +25,7 @@ export interface UpdateInterviewQuestion {
   question_text?: string;
   category?: string;
   reasoning?: string;
+  recruiter_note?: string | null;
   priority?: number;
 }
 
