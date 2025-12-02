@@ -35,11 +35,6 @@ const brandColors = {
   khaki: '#605738',
 };
 
-// Logo as Base64 encoded SVG for reliable email display
-// This is a professional styled SVG logo with Young brand colors
-// To use the actual JPG logo, replace this with: data:image/jpeg;base64,[YOUR_BASE64_STRING]
-const logoBase64 = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjYwIiB2aWV3Qm94PSIwIDAgMTgwIDYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDwhLS0gQmFja2dyb3VuZCAtLT4KICA8cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjMTAwRDBBIiByeD0iNiIvPgogIDwhLS0gQWNjZW50IGxpbmUgLS0+CiAgPHJlY3QgeD0iMCIgeT0iNTQiIHdpZHRoPSIxODAiIGhlaWdodD0iNiIgZmlsbD0iI0I4OEY1RSIgcng9IjAiLz4KICA8IS0tIExvZ28gdGV4dCAtLT4KICA8dGV4dCB4PSI5MCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI4IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjRkRGQUYwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iNHB4Ij5ZT1VORzwvdGV4dD4KPC9zdmc+`;
-
 function getEmailTemplate(
   type: NotificationType,
   candidateName: string,
@@ -49,8 +44,11 @@ function getEmailTemplate(
   interviewTime?: string
 ): { subject: string; html: string } {
   
+  // Brand text logo in Bold Black with Young-style typography
   const logoHtml = `
-    <img src="${logoBase64}" alt="Young" width="150" height="50" style="display: block; margin: 0 auto 30px; width: 150px; height: 50px;" />
+    <div style="text-align: center; margin: 0 auto 30px;">
+      <span style="font-family: 'Arial Black', Helvetica, sans-serif; font-size: 36px; font-weight: 900; color: ${brandColors.boldBlack}; letter-spacing: 6px;">YOUNG</span>
+    </div>
   `;
 
   const wrapInEmailTemplate = (content: string, preheaderText: string): string => {
