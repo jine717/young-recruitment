@@ -43,6 +43,9 @@ function getEmailTemplate(
   interviewDate?: string,
   interviewTime?: string
 ): { subject: string; html: string } {
+  // Logo hosted publicly - using the deployed app URL
+  const logoUrl = "https://jhakdiqttnvwczyzoffu.lovableproject.com/images/young-logo.jpg";
+  
   const baseStyle = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: ${brandColors.cream};
@@ -66,21 +69,21 @@ function getEmailTemplate(
     margin-bottom: 20px;
   `;
 
+  const logoHtml = `
+    <img src="${logoUrl}" alt="Young" style="display: block; margin: 0 auto 30px; width: 150px; height: auto;" />
+  `;
+
   const templates: Record<NotificationType, { subject: string; html: string }> = {
     application_received: {
       subject: `Application Received - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Thank You for Applying!</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
             We've received your application for the <strong>${jobTitle}</strong> position at Young. 
             Thank you for your interest in joining our team!
-          </p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            <strong>What's Next?</strong><br/>
-            You'll receive a link to complete our Business Case assessment. This helps us understand 
-            your approach to real-world challenges and gives you a glimpse into the kind of work we do.
           </p>
           ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
           <p style="font-size: 16px; line-height: 1.6;">
@@ -99,6 +102,7 @@ function getEmailTemplate(
       subject: `Complete Your Business Case - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Time to Show Your Skills!</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
@@ -120,6 +124,7 @@ function getEmailTemplate(
       subject: `Reminder: Complete Your Business Case - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Don't Miss Out!</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
@@ -141,6 +146,7 @@ function getEmailTemplate(
       subject: `Application Update - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Application Update</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
@@ -158,6 +164,7 @@ function getEmailTemplate(
       subject: `Interview Scheduled - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Interview Invitation</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
@@ -189,6 +196,7 @@ function getEmailTemplate(
       subject: `Great News! - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">🎉 Congratulations!</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
@@ -209,6 +217,7 @@ function getEmailTemplate(
       subject: `Update on Your Application - ${jobTitle}`,
       html: `
         <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
+          ${logoHtml}
           <h1 style="${headerStyle}">Thank You for Applying</h1>
           <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
           <p style="font-size: 16px; line-height: 1.6;">
