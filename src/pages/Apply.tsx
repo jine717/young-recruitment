@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { z } from 'zod';
+import Navbar from '@/components/Navbar';
 
 const applicationSchema = z.object({
   candidateName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -200,13 +201,7 @@ export default function Apply() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background">
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-            <Link to="/" className="font-display text-3xl tracking-tight">
-              YOUNG.
-            </Link>
-          </div>
-        </nav>
+        <Navbar />
 
         <div className="pt-32 pb-20 px-6">
           <div className="container mx-auto max-w-2xl text-center">
@@ -231,14 +226,7 @@ export default function Apply() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-6 py-4">
-          <Link to="/" className="font-display text-3xl tracking-tight">
-            YOUNG.
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Application Form */}
       <div className="pt-32 pb-20 px-6">

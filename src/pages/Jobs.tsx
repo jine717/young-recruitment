@@ -4,20 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, ArrowRight, ArrowLeft, Building2, Loader2 } from "lucide-react";
 import { useJobs } from "@/hooks/useJobs";
+import Navbar from "@/components/Navbar";
 
 const Jobs = () => {
   const { data: jobs, isLoading, error } = useJobs();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-6 py-4">
-          <Link to="/" className="font-display text-3xl tracking-tight">
-            YOUNG.
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Header */}
       <section className="pt-32 pb-12 px-6">
