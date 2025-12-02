@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock, ArrowLeft, Building2, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
 import { useJob } from "@/hooks/useJobs";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,15 +184,7 @@ const JobDetail = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-10 px-6 border-t border-border">
-        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-display text-2xl">YOUNG.</p>
-          <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Young. Unite to Disrupt.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
