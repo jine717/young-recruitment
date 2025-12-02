@@ -53,6 +53,7 @@ const RecruiterDashboard = () => {
   const sendNotification = useSendNotification();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("date");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
@@ -66,6 +67,15 @@ const RecruiterDashboard = () => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
     return true;
+  })?.sort((a, b) => {
+    if (sortBy === "ai_score_desc") {
+      return (b.ai_score ?? -1) - (a.ai_score ?? -1);
+    }
+    if (sortBy === "ai_score_asc") {
+      return (a.ai_score ?? -1) - (b.ai_score ?? -1);
+    }
+    // Default: sort by date (newest first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
   const uniqueJobs = applications?.reduce((acc, app) => {
     if (app.jobs && !acc.find(j => j.id === app.job_id)) {
@@ -327,6 +337,16 @@ const RecruiterDashboard = () => {
                 {uniqueJobs.map(job => <SelectItem key={job.id} value={job.id}>
                     {job.title}
                   </SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Newest First</SelectItem>
+                <SelectItem value="ai_score_desc">AI Score (High to Low)</SelectItem>
+                <SelectItem value="ai_score_asc">AI Score (Low to High)</SelectItem>
               </SelectContent>
             </Select>
           </div>
