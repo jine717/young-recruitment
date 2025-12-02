@@ -90,16 +90,26 @@ export function useDeleteJob() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('jobs').delete().eq('id', id);
+      const { data, error } = await supabase.functions.invoke('delete-job-cascade', {
+        body: { jobId: id },
+      });
+
       if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      toast({ title: 'Job deleted successfully' });
+      const stats = data.stats;
+      const totalFiles = stats.files.cvs + stats.files.discs + stats.files.videos;
+      toast({ 
+        title: 'Vacante eliminada',
+        description: `Se eliminaron ${stats.records.applications} candidatos y ${totalFiles} archivos.`
+      });
     },
     onError: (error) => {
-      toast({ title: 'Failed to delete job', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
     },
   });
 }
