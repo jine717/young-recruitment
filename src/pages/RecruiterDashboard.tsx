@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Settings } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Settings, Plus } from "lucide-react";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
@@ -270,10 +270,20 @@ const RecruiterDashboard = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
-          <h1 className="font-display text-5xl md:text-6xl mb-4">RECRUITER DASHBOARD</h1>
-          <p className="text-xl text-muted-foreground">
-            Manage applications and track candidates through the hiring process.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-5xl md:text-6xl mb-4">RECRUITER DASHBOARD</h1>
+              <p className="text-xl text-muted-foreground">
+                Manage applications and track candidates through the hiring process.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/dashboard/jobs">
+                <Plus className="h-4 w-4 mr-2" />
+                Manage Jobs
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 

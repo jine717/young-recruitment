@@ -18,6 +18,9 @@ import BusinessCaseEditor from "./pages/admin/BusinessCaseEditor";
 import DepartmentsManager from "./pages/admin/DepartmentsManager";
 import UsersManager from "./pages/admin/UsersManager";
 import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
+import RecruiterJobsList from "./pages/recruiter/RecruiterJobsList";
+import RecruiterJobEditor from "./pages/recruiter/RecruiterJobEditor";
+import RecruiterBusinessCase from "./pages/recruiter/RecruiterBusinessCase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,11 @@ const App = () => (
             <Route path="/apply/:id" element={<Apply />} />
             <Route path="/dashboard" element={<RecruiterDashboard />} />
             <Route path="/dashboard/candidate/:applicationId" element={<CandidateProfile />} />
+            {/* Recruiter Jobs Routes */}
+            <Route path="/dashboard/jobs" element={<RecruiterJobsList />} />
+            <Route path="/dashboard/jobs/new" element={<RecruiterJobEditor />} />
+            <Route path="/dashboard/jobs/:id/edit" element={<RecruiterJobEditor />} />
+            <Route path="/dashboard/jobs/:id/business-case" element={<RecruiterBusinessCase />} />
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/jobs" element={<JobsList />} />
