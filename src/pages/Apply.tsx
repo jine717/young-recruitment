@@ -77,6 +77,17 @@ export default function Apply() {
     return fileName;
   };
 
+  const checkExistingApplication = async (email: string, jobId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('job_id', jobId)
+      .eq('candidate_email', email)
+      .maybeSingle();
+    
+    return !!data && !error;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -90,7 +101,7 @@ export default function Apply() {
     if (!cvFile) newErrors.cvFile = 'Please upload your CV';
     if (!discFile) newErrors.discFile = 'Please upload your DISC assessment';
 
-    // Validate business case responses
+    // Validate business case responses - all questions must be answered
     businessCases?.forEach((bc) => {
       if (!responses[bc.id] || responses[bc.id].trim().length < 10) {
         newErrors[`response_${bc.id}`] = 'Please provide a detailed response (at least 10 characters)';
@@ -102,6 +113,18 @@ export default function Apply() {
       toast({
         title: 'Missing Information',
         description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check for existing application with same email
+    const hasExisting = await checkExistingApplication(candidateEmail, job.id);
+    if (hasExisting) {
+      setErrors({ candidateEmail: 'An application with this email already exists for this position' });
+      toast({
+        title: 'Application Already Exists',
+        description: 'You have already applied for this position with this email address.',
         variant: 'destructive',
       });
       return;
