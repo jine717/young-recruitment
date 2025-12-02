@@ -384,40 +384,61 @@ export default function Apply() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
-                  {businessCases.map((bc, index) => (
-                    <div 
-                      key={bc.id} 
-                      className="relative p-6 rounded-lg border border-border bg-muted/30 space-y-4 transition-all duration-200 hover:border-primary/30 hover:bg-muted/50"
-                    >
-                      {/* Question Header */}
-                      <div className="flex items-start gap-4">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-display text-lg shadow-sm">
-                          {index + 1}
-                        </span>
-                        <div className="flex-1 pt-1">
-                          <h3 className="text-lg font-semibold text-foreground">{bc.question_title}</h3>
-                          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                            {bc.question_description}
-                          </p>
+                  {businessCases.map((bc, index) => {
+                    const charCount = responses[bc.id]?.length || 0;
+                    const minChars = 50;
+                    const recommendedChars = 500;
+                    
+                    return (
+                      <div 
+                        key={bc.id} 
+                        className="relative p-6 rounded-lg border border-border bg-muted/30 space-y-4 transition-all duration-200 hover:border-primary/30 hover:bg-muted/50"
+                      >
+                        {/* Question Header */}
+                        <div className="flex items-start gap-4">
+                          <span className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-display text-lg shadow-sm">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1 pt-1">
+                            <h3 className="text-lg font-semibold text-foreground">{bc.question_title}</h3>
+                            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                              {bc.question_description}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Answer Input */}
+                        <div className="pt-2">
+                          <Textarea
+                            value={responses[bc.id] || ''}
+                            onChange={(e) => setResponses(prev => ({ ...prev, [bc.id]: e.target.value }))}
+                            placeholder="Write your answer here..."
+                            rows={5}
+                            disabled={isSubmitting}
+                            className="resize-none bg-background border-border/50 focus:border-primary transition-colors"
+                          />
+                          <div className="flex items-center justify-between mt-2">
+                            {errors[`response_${bc.id}`] ? (
+                              <p className="text-sm text-destructive">{errors[`response_${bc.id}`]}</p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                {charCount < minChars ? `Minimum ${minChars} characters recommended` : ''}
+                              </p>
+                            )}
+                            <span className={`text-xs tabular-nums ${
+                              charCount < minChars 
+                                ? 'text-muted-foreground' 
+                                : charCount < recommendedChars 
+                                  ? 'text-primary' 
+                                  : 'text-green-600'
+                            }`}>
+                              {charCount} / {recommendedChars}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      
-                      {/* Answer Input */}
-                      <div className="pt-2">
-                        <Textarea
-                          value={responses[bc.id] || ''}
-                          onChange={(e) => setResponses(prev => ({ ...prev, [bc.id]: e.target.value }))}
-                          placeholder="Write your answer here..."
-                          rows={5}
-                          disabled={isSubmitting}
-                          className="resize-none bg-background border-border/50 focus:border-primary transition-colors"
-                        />
-                        {errors[`response_${bc.id}`] && (
-                          <p className="text-sm text-destructive mt-2">{errors[`response_${bc.id}`]}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
