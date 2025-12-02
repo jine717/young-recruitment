@@ -421,9 +421,9 @@ const RecruiterDashboard = () => {
                               <TableCell>
                                 <div>
                                   <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
-                                    {app.profiles?.full_name || "Unknown"}
+                                    {app.candidate_name || app.profiles?.full_name || "Unknown"}
                                   </Link>
-                                  <p className="text-sm text-muted-foreground">{app.profiles?.email}</p>
+                                  <p className="text-sm text-muted-foreground">{app.candidate_email || app.profiles?.email}</p>
                                 </div>
                               </TableCell>
                               <TableCell>
