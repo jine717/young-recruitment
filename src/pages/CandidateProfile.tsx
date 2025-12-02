@@ -29,7 +29,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationDetail {
   id: string;
-  candidate_id: string;
+  candidate_id: string | null;
+  candidate_name: string | null;
+  candidate_email: string | null;
   job_id: string;
   status: string;
   cv_url: string | null;
@@ -184,8 +186,8 @@ export default function CandidateProfile() {
       <div className="max-w-7xl mx-auto p-6 pt-24 space-y-6">
         {/* Header */}
         <CandidateHeader
-          candidateName={application.profile.full_name || 'Unknown Candidate'}
-          email={application.profile.email || 'No email'}
+          candidateName={application.candidate_name || application.profile.full_name || 'Unknown Candidate'}
+          email={application.candidate_email || application.profile.email || 'No email'}
           phone={application.profile.phone}
           jobTitle={application.job.title}
           departmentName={application.job.department?.name || null}
@@ -210,7 +212,7 @@ export default function CandidateProfile() {
           open={showScheduleModal}
           onOpenChange={setShowScheduleModal}
           applicationId={application.id}
-          candidateName={application.profile.full_name || 'Candidate'}
+          candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
           jobTitle={application.job.title}
         />
 
