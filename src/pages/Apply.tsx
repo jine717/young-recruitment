@@ -252,7 +252,7 @@ export default function Apply() {
             {/* Personal Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle className="font-display text-xl">Personal Information</CardTitle>
                 <CardDescription>Tell us about yourself</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -291,7 +291,7 @@ export default function Apply() {
             {/* Documents */}
             <Card>
               <CardHeader>
-                <CardTitle>Documents</CardTitle>
+                <CardTitle className="font-display text-xl">Documents</CardTitle>
                 <CardDescription>Upload your CV and DISC assessment</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
