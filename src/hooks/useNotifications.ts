@@ -69,10 +69,6 @@ export function useSendNotification() {
       return data;
     },
     onSuccess: (_, variables) => {
-      toast({
-        title: "Notification Sent",
-        description: "The email has been sent successfully.",
-      });
       queryClient.invalidateQueries({ queryKey: ['notification-logs', variables.applicationId] });
     },
     onError: (error: Error) => {

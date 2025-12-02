@@ -164,10 +164,6 @@ export default function Apply() {
       });
 
       setSubmitted(true);
-      toast({
-        title: 'Application Submitted!',
-        description: 'Thank you for applying. We will review your application and get back to you soon.',
-      });
     } catch (error) {
       console.error('Application error:', error);
       toast({
