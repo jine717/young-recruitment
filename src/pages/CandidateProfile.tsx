@@ -218,7 +218,7 @@ export default function CandidateProfile() {
 
         {/* Main Content */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Documents & Business Case */}
+          {/* Left Column - Documents, Business Case & Interview Questions */}
           <div className="lg:col-span-2 space-y-6">
             <DocumentsSection
               applicationId={application.id}
@@ -230,6 +230,9 @@ export default function CandidateProfile() {
               applicationId={application.id}
               jobId={application.job_id}
             />
+
+            {/* Interview Questions */}
+            <InterviewQuestionsCard applicationId={application.id} />
           </div>
 
           {/* Right Column - AI & Notes */}
@@ -268,9 +271,6 @@ export default function CandidateProfile() {
 
             {/* Interview Evaluations */}
             <InterviewEvaluationsCard applicationId={application.id} />
-
-            {/* Interview Questions */}
-            <InterviewQuestionsCard applicationId={application.id} />
 
             {/* Decision History */}
             <DecisionHistory applicationId={application.id} />
