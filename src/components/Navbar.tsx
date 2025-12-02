@@ -52,10 +52,6 @@ const Navbar = ({ variant = "simple" }: NavbarProps) => {
         
         {variant === "full" && (
           <div className="flex items-center gap-4">
-            <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
-              Open Positions
-            </Link>
-            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
