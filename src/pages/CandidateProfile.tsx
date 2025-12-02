@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
-import { useUpdateApplicationStatus } from '@/hooks/useApplications';
+import { useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/useApplications';
 import { useAIEvaluation, useTriggerAIAnalysis } from '@/hooks/useAIEvaluations';
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
 import { useInterviews } from '@/hooks/useInterviews';
@@ -23,8 +23,9 @@ import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
 import { InterviewQuestionsCard } from '@/components/recruiter/InterviewQuestionsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
-import { Brain, Loader2, CalendarPlus } from 'lucide-react';
+import { Brain, Loader2, CalendarPlus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationDetail {
@@ -55,10 +56,13 @@ interface ApplicationDetail {
 
 export default function CandidateProfile() {
   const { applicationId } = useParams<{ applicationId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin } = useRoleCheck(['recruiter', 'admin']);
   const { toast } = useToast();
   const updateStatus = useUpdateApplicationStatus();
+  const deleteApplication = useDeleteApplication();
   const triggerAI = useTriggerAIAnalysis();
   const sendNotification = useSendNotification();
 
@@ -101,6 +105,7 @@ export default function CandidateProfile() {
   const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(applicationId);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (authLoading || isLoading) {
     return (
@@ -179,6 +184,23 @@ export default function CandidateProfile() {
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteApplication(application.id);
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({ title: 'Candidate deleted successfully' });
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: 'Error deleting candidate',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
@@ -205,6 +227,30 @@ export default function CandidateProfile() {
           </Button>
           <InterviewEvaluationForm applicationId={application.id} />
           <HiringDecisionModal applicationId={application.id} />
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isDeleting}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Candidate
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. The candidate will be permanently removed from the system. No notification will be sent to the candidate.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Schedule Interview Modal */}

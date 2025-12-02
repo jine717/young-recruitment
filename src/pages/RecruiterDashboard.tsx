@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
-import { useApplications, useUpdateApplicationStatus, type ApplicationWithDetails } from "@/hooks/useApplications";
+import { useApplications, useUpdateApplicationStatus, useDeleteApplication, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +46,7 @@ const RecruiterDashboard = () => {
   } = useApplications();
   const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
   const updateStatus = useUpdateApplicationStatus();
+  const deleteApplication = useDeleteApplication();
   const queryClient = useQueryClient();
   const {
     toast
@@ -56,6 +58,7 @@ const RecruiterDashboard = () => {
   const [sortBy, setSortBy] = useState<string>("date");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
   const applicationIds = applications?.map(a => a.id) || [];
@@ -147,6 +150,23 @@ const RecruiterDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to start AI analysis",
+        variant: "destructive"
+      });
+    }
+  };
+  const handleDelete = async (applicationId: string) => {
+    try {
+      await deleteApplication(applicationId);
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({
+        title: "Candidate deleted",
+        description: "The candidate has been removed from the system."
+      });
+      setDeleteConfirmId(null);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete candidate",
         variant: "destructive"
       });
     }
@@ -494,6 +514,11 @@ const RecruiterDashboard = () => {
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "rejected")} className="text-destructive">
                                       Reject
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setDeleteConfirmId(app.id)} className="text-destructive">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </TableCell>
@@ -534,6 +559,27 @@ const RecruiterDashboard = () => {
           </p>
         </div>
       </footer>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The candidate will be permanently removed from the system. No notification will be sent to the candidate.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 };
 export default RecruiterDashboard;

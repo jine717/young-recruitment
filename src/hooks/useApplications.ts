@@ -91,3 +91,14 @@ export function useUpdateApplicationStatus() {
     if (error) throw error;
   };
 }
+
+export function useDeleteApplication() {
+  return async (applicationId: string) => {
+    const { error } = await supabase
+      .from('applications')
+      .delete()
+      .eq('id', applicationId);
+
+    if (error) throw error;
+  };
+}
