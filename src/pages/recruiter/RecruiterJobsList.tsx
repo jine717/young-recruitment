@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,8 +28,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+interface DeleteJobInfo {
+  id: string;
+  title: string;
+  candidateCount: number;
+}
 
 export default function RecruiterJobsList() {
   const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
@@ -38,16 +45,30 @@ export default function RecruiterJobsList() {
   const updateJob = useUpdateJob();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<DeleteJobInfo | null>(null);
+  const [loadingDeleteInfo, setLoadingDeleteInfo] = useState(false);
 
-  const handleDelete = (id: string) => {
-    setJobToDelete(id);
+  const handleDelete = async (job: { id: string; title: string }) => {
+    setLoadingDeleteInfo(true);
     setDeleteDialogOpen(true);
+    
+    // Fetch candidate count for this job
+    const { count } = await supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('job_id', job.id);
+    
+    setJobToDelete({
+      id: job.id,
+      title: job.title,
+      candidateCount: count || 0,
+    });
+    setLoadingDeleteInfo(false);
   };
 
   const confirmDelete = () => {
     if (jobToDelete) {
-      deleteJob.mutate(jobToDelete);
+      deleteJob.mutate(jobToDelete.id);
       setDeleteDialogOpen(false);
       setJobToDelete(null);
     }
@@ -219,7 +240,7 @@ export default function RecruiterJobsList() {
                                 )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDelete(job.id)}
+                                onClick={() => handleDelete({ id: job.id, title: job.title })}
                                 className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -245,15 +266,58 @@ export default function RecruiterJobsList() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Job</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this job? This action cannot be undone.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Eliminar Vacante
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {loadingDeleteInfo ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cargando información...
+                  </div>
+                ) : jobToDelete ? (
+                  <>
+                    <p>
+                      ¿Estás seguro de que deseas eliminar la vacante <strong>"{jobToDelete.title}"</strong>?
+                    </p>
+                    {jobToDelete.candidateCount > 0 && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                        <p className="text-destructive font-medium">
+                          ⚠️ Esta acción eliminará permanentemente:
+                        </p>
+                        <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside">
+                          <li><strong>{jobToDelete.candidateCount}</strong> candidato{jobToDelete.candidateCount !== 1 ? 's' : ''} y sus aplicaciones</li>
+                          <li>Todos los CVs y evaluaciones DISC</li>
+                          <li>Respuestas del Business Case</li>
+                          <li>Evaluaciones, entrevistas y notas</li>
+                        </ul>
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Esta acción no se puede deshacer.
+                    </p>
+                  </>
+                ) : null}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
-              Delete
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={loadingDeleteInfo || deleteJob.isPending}
+            >
+              {deleteJob.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
