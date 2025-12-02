@@ -35,6 +35,9 @@ const brandColors = {
   khaki: '#605738',
 };
 
+// Logo as Base64 encoded SVG for reliable email display
+const logoBase64 = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMxMDBEMEEiIHJ4PSI0Ii8+CiAgPHRleHQgeD0iNzUiIHk9IjM1IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyOCIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iI0ZERkFGMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjJweCI+WU9VTkc8L3RleHQ+Cjwvc3ZnPg==`;
+
 function getEmailTemplate(
   type: NotificationType,
   candidateName: string,
@@ -43,206 +46,317 @@ function getEmailTemplate(
   interviewDate?: string,
   interviewTime?: string
 ): { subject: string; html: string } {
-  // Logo hosted publicly - using the deployed app URL
-  const logoUrl = "https://jhakdiqttnvwczyzoffu.lovableproject.com/images/young-logo.jpg";
   
-  const baseStyle = `
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: ${brandColors.cream};
-    color: ${brandColors.boldBlack};
-  `;
-
-  const buttonStyle = `
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: ${brandColors.gold};
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 600;
-  `;
-
-  const headerStyle = `
-    color: ${brandColors.youngBlue};
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-  `;
-
   const logoHtml = `
-    <img src="${logoUrl}" alt="Young" style="display: block; margin: 0 auto 30px; width: 150px; height: auto;" />
+    <img src="${logoBase64}" alt="Young" width="150" height="50" style="display: block; margin: 0 auto 30px; width: 150px; height: 50px;" />
   `;
 
-  const templates: Record<NotificationType, { subject: string; html: string }> = {
+  const wrapInEmailTemplate = (content: string, preheaderText: string): string => {
+    return `<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Young Recruitment</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; margin: auto !important; }
+      .fluid { max-width: 100% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
+      .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; direction: ltr !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <!-- Preheader Text -->
+  <div style="display: none; font-size: 1px; color: #f4f4f4; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+    ${preheaderText}
+  </div>
+  
+  <!-- Email Wrapper Table -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+    <tr>
+      <td style="padding: 40px 10px;">
+        <!-- Email Container -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: ${brandColors.cream}; border-radius: 8px; overflow: hidden;" class="email-container">
+          
+          <!-- Header with Logo -->
+          <tr>
+            <td style="padding: 40px 40px 20px 40px; text-align: center;">
+              ${logoHtml}
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 0 40px 40px 40px; color: ${brandColors.boldBlack};">
+              ${content}
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: ${brandColors.boldBlack}; text-align: center;">
+              <p style="margin: 0 0 10px 0; font-size: 14px; color: ${brandColors.cream}; font-weight: 600;">
+                Unite to Disrupt
+              </p>
+              <p style="margin: 0 0 15px 0; font-size: 12px; color: ${brandColors.khaki};">
+                © ${new Date().getFullYear()} Young Recruitment. All rights reserved.
+              </p>
+              <p style="margin: 0; font-size: 11px; color: ${brandColors.khaki};">
+                This email was sent regarding your application at Young.<br>
+                If you have questions, please contact us at <a href="mailto:recruitment@young-id.com" style="color: ${brandColors.youngBlue}; text-decoration: none;">recruitment@young-id.com</a>
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  };
+
+  const templates: Record<NotificationType, { subject: string; content: string; preheader: string }> = {
     application_received: {
       subject: `Application Received - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Thank You for Applying!</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We've received your application for the <strong>${jobTitle}</strong> position at Young. 
-            Thank you for your interest in joining our team!
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
-          <p style="font-size: 16px; line-height: 1.6;">
-            We'll be in touch soon with the next steps.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
-          <p style="font-size: 12px; color: #666;">Unite to Disrupt</p>
-        </div>
+      preheader: `Thank you for applying to ${jobTitle} at Young. We've received your application!`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Thank You for Applying!</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We've received your application for the <strong>${jobTitle}</strong> position at Young. 
+          Thank you for your interest in joining our team!
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Our team will carefully review your application and we'll be in touch soon with the next steps in the process.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     business_case_invite: {
       subject: `Complete Your Business Case - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Time to Show Your Skills!</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            Great news! Your application for <strong>${jobTitle}</strong> has moved to the next stage.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            Please complete our Business Case assessment to continue the process. This involves answering 
-            a few video questions that help us understand your problem-solving approach.
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Great news! Your application for ${jobTitle} has moved to the next stage.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Time to Show Your Skills!</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Great news! Your application for <strong>${jobTitle}</strong> has moved to the next stage.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Please complete our Business Case assessment to continue the process. This involves answering 
+          a few questions that help us understand your problem-solving approach.
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     business_case_reminder: {
       subject: `Reminder: Complete Your Business Case - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Don't Miss Out!</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We noticed you haven't completed the Business Case for the <strong>${jobTitle}</strong> position yet.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We'd love to see your responses! Please complete it at your earliest convenience to continue 
-            the application process.
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Don't miss out! Complete your Business Case for ${jobTitle}.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Don't Miss Out!</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We noticed you haven't completed the Business Case for the <strong>${jobTitle}</strong> position yet.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We'd love to see your responses! Please complete it at your earliest convenience to continue 
+          the application process.
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     status_update: {
       subject: `Application Update - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Application Update</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We wanted to update you on your application for <strong>${jobTitle}</strong>.
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : '<p style="font-size: 16px; line-height: 1.6;">Your application is currently under review. We\'ll be in touch soon with more details.</p>'}
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Update on your application for ${jobTitle} at Young.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Application Update</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We wanted to update you on your application for <strong>${jobTitle}</strong>.
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : '<p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Your application is currently under review. We\'ll be in touch soon with more details.</p>'}
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     interview_scheduled: {
       subject: `Interview Scheduled - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Interview Invitation</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            Congratulations! We'd like to invite you to an interview for the <strong>${jobTitle}</strong> position.
-          </p>
-          ${interviewDate && interviewTime ? `
-            <div style="background: ${brandColors.youngBlue}20; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p style="font-size: 18px; margin: 0;"><strong>📅 Date:</strong> ${interviewDate}</p>
-              <p style="font-size: 18px; margin: 10px 0 0;"><strong>⏰ Time:</strong> ${interviewTime}</p>
-            </div>
-          ` : ''}
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
-          <p style="font-size: 16px; line-height: 1.6;">
-            <strong>How to Prepare:</strong>
-          </p>
-          <ul style="font-size: 16px; line-height: 1.8;">
-            <li>Review the job description and requirements</li>
-            <li>Prepare examples of your relevant experience</li>
-            <li>Think about questions you'd like to ask us</li>
-          </ul>
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            We look forward to meeting you!<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Congratulations! You've been invited to interview for ${jobTitle}.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Interview Invitation</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Congratulations! We'd like to invite you to an interview for the <strong>${jobTitle}</strong> position.
+        </p>
+        ${interviewDate && interviewTime ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.youngBlue};">
+              <p style="font-size: 18px; margin: 0 0 10px 0;"><strong>📅 Date:</strong> ${interviewDate}</p>
+              <p style="font-size: 18px; margin: 0;"><strong>⏰ Time:</strong> ${interviewTime}</p>
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
+          <strong>How to Prepare:</strong>
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Review the job description and requirements</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Prepare examples of your relevant experience</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Think about questions you'd like to ask us</td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          We look forward to meeting you!<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     decision_offer: {
       subject: `Great News! - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">🎉 Congratulations!</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            We're thrilled to inform you that you've been selected for the <strong>${jobTitle}</strong> position at Young!
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : '<p style="font-size: 16px; line-height: 1.6;">We\'ll be sending you the formal offer details shortly.</p>'}
-          <p style="font-size: 16px; line-height: 1.6;">
-            Welcome to the team!
-          </p>
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Congratulations! You've been selected for ${jobTitle} at Young!`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">🎉 Congratulations!</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We're thrilled to inform you that you've been selected for the <strong>${jobTitle}</strong> position at Young!
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : '<p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">We\'ll be sending you the formal offer details shortly.</p>'}
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Welcome to the team! We're excited to have you join us.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
     decision_rejection: {
       subject: `Update on Your Application - ${jobTitle}`,
-      html: `
-        <div style="${baseStyle} padding: 40px; max-width: 600px; margin: 0 auto;">
-          ${logoHtml}
-          <h1 style="${headerStyle}">Thank You for Applying</h1>
-          <p style="font-size: 16px; line-height: 1.6;">Hi ${candidateName},</p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            Thank you for your interest in the <strong>${jobTitle}</strong> position at Young and for 
-            taking the time to go through our application process.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6;">
-            After careful consideration, we've decided to move forward with other candidates whose 
-            experience more closely matches our current needs.
-          </p>
-          ${customMessage ? `<p style="font-size: 16px; line-height: 1.6; background: #f5f5f5; padding: 15px; border-radius: 8px;">${customMessage}</p>` : ''}
-          <p style="font-size: 16px; line-height: 1.6;">
-            We encourage you to apply for future opportunities that match your skills and experience. 
-            We wish you all the best in your career journey.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
-            Best regards,<br/>
-            <strong>The Young Team</strong>
-          </p>
-        </div>
+      preheader: `Thank you for your interest in ${jobTitle} at Young.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Thank You for Applying</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Thank you for your interest in the <strong>${jobTitle}</strong> position at Young and for 
+          taking the time to go through our application process.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          After careful consideration, we've decided to move forward with other candidates whose 
+          experience more closely matches our current needs.
+        </p>
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We encourage you to apply for future opportunities that match your skills and experience. 
+          We wish you all the best in your career journey.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
       `,
     },
   };
 
-  return templates[type];
+  const template = templates[type];
+  return {
+    subject: template.subject,
+    html: wrapInEmailTemplate(template.content, template.preheader),
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
