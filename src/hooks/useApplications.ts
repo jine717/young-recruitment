@@ -3,7 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface ApplicationWithDetails {
   id: string;
-  candidate_id: string;
+  candidate_id: string | null;
+  candidate_name: string | null;
+  candidate_email: string | null;
   job_id: string;
   status: 'pending' | 'under_review' | 'interview' | 'rejected' | 'hired';
   cv_url: string | null;
@@ -31,7 +33,7 @@ export function useApplications() {
   return useQuery({
     queryKey: ['applications'],
     queryFn: async () => {
-      // First fetch applications with jobs
+      // Fetch applications with jobs
       const { data: applicationsData, error: appError } = await supabase
         .from('applications')
         .select(`
@@ -45,20 +47,33 @@ export function useApplications() {
 
       if (appError) throw appError;
 
-      // Fetch profiles for all candidate_ids
-      const candidateIds = applicationsData.map(app => app.candidate_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone')
-        .in('id', candidateIds);
+      // Fetch profiles for applications that have candidate_id
+      const candidateIds = applicationsData
+        .filter(app => app.candidate_id)
+        .map(app => app.candidate_id);
+      
+      let profilesMap = new Map();
+      
+      if (candidateIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, phone')
+          .in('id', candidateIds);
 
-      if (profilesError) throw profilesError;
+        if (profilesError) throw profilesError;
+        profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      }
 
-      // Merge profiles into applications
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      // Merge profiles into applications, use candidate_name/email for anonymous apps
       const merged = applicationsData.map(app => ({
         ...app,
-        profiles: profilesMap.get(app.candidate_id) || null,
+        profiles: app.candidate_id 
+          ? profilesMap.get(app.candidate_id) || null
+          : {
+              full_name: app.candidate_name,
+              email: app.candidate_email,
+              phone: null,
+            },
       }));
 
       return merged as ApplicationWithDetails[];

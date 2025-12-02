@@ -81,7 +81,9 @@ export type Database = {
           ai_score: number | null
           business_case_completed: boolean
           business_case_completed_at: string | null
-          candidate_id: string
+          candidate_email: string | null
+          candidate_id: string | null
+          candidate_name: string | null
           created_at: string
           cv_url: string | null
           disc_url: string | null
@@ -97,7 +99,9 @@ export type Database = {
           ai_score?: number | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
-          candidate_id: string
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_name?: string | null
           created_at?: string
           cv_url?: string | null
           disc_url?: string | null
@@ -113,7 +117,9 @@ export type Database = {
           ai_score?: number | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
-          candidate_id?: string
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_name?: string | null
           created_at?: string
           cv_url?: string | null
           disc_url?: string | null

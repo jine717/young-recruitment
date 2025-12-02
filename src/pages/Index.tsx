@@ -30,7 +30,8 @@ const Index = () => {
     } else if (roles.includes('recruiter')) {
       navigate('/dashboard');
     } else {
-      navigate('/candidate');
+      // Default to dashboard for recruiters/admins only
+      navigate('/dashboard');
     }
   };
 
@@ -65,7 +66,7 @@ const Index = () => {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={goToDashboard} className="cursor-pointer">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    My Dashboard
+                    Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
@@ -75,14 +76,9 @@ const Index = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" asChild>
-                  <Link to="/auth">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/auth?signup=true">Join Us</Link>
-                </Button>
-              </div>
+              <Button variant="ghost" asChild>
+                <Link to="/auth">Recruiter Login</Link>
+              </Button>
             )}
           </div>
         </div>
