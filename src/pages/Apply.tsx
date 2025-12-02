@@ -116,10 +116,14 @@ export default function Apply() {
       const cvPath = await uploadFile(cvFile!, 'cvs', identifier);
       const discPath = await uploadFile(discFile!, 'disc-assessments', identifier);
 
+      // Generate application ID client-side to avoid SELECT permission requirement
+      const applicationId = crypto.randomUUID();
+
       // Create application
-      const { data: application, error: appError } = await supabase
+      const { error: appError } = await supabase
         .from('applications')
         .insert({
+          id: applicationId,
           job_id: job.id,
           candidate_name: candidateName,
           candidate_email: candidateEmail,
@@ -128,16 +132,14 @@ export default function Apply() {
           status: 'under_review',
           business_case_completed: true,
           business_case_completed_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        });
 
       if (appError) throw appError;
 
       // Create business case responses
       if (businessCases && businessCases.length > 0) {
         const responseInserts = businessCases.map((bc) => ({
-          application_id: application.id,
+          application_id: applicationId,
           business_case_id: bc.id,
           text_response: responses[bc.id],
           completed_at: new Date().toISOString(),
@@ -152,13 +154,13 @@ export default function Apply() {
 
       // Send notification (fire and forget)
       sendNotification.mutate({ 
-        applicationId: application.id, 
+        applicationId: applicationId, 
         type: 'application_received' 
       });
 
       // Trigger AI analysis (fire and forget)
       supabase.functions.invoke('analyze-candidate', {
-        body: { applicationId: application.id }
+        body: { applicationId: applicationId }
       });
 
       setSubmitted(true);
