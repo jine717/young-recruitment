@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -101,6 +101,15 @@ const RecruiterDashboard = () => {
   };
   const handleSortChange = (value: string) => {
     setSortBy(value);
+    setCurrentPage(1);
+  };
+  
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date";
+  
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setJobFilter("all");
+    setSortBy("date");
     setCurrentPage(1);
   };
   const uniqueJobs = applications?.reduce((acc, app) => {
@@ -491,7 +500,20 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="w-[50px]">
+                          {hasActiveFilters && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearAllFilters}
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              title="Clear all filters"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Clear
+                            </Button>
+                          )}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
