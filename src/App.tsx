@@ -21,6 +21,7 @@ import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 import RecruiterJobsList from "./pages/recruiter/RecruiterJobsList";
 import RecruiterJobEditor from "./pages/recruiter/RecruiterJobEditor";
 import RecruiterBusinessCase from "./pages/recruiter/RecruiterBusinessCase";
+import RecruiterAnalytics from "./pages/recruiter/RecruiterAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/dashboard/jobs/new" element={<RecruiterJobEditor />} />
             <Route path="/dashboard/jobs/:id/edit" element={<RecruiterJobEditor />} />
             <Route path="/dashboard/jobs/:id/business-case" element={<RecruiterBusinessCase />} />
+            <Route path="/dashboard/analytics" element={<RecruiterAnalytics />} />
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/jobs" element={<JobsList />} />
