@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, FileText, Video, MoreHorizontal, CheckCircle2, Clock, XCircle, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -408,8 +408,6 @@ const RecruiterDashboard = () => {
                       <TableHead>Candidate</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Business Case</TableHead>
-                      <TableHead>Documents</TableHead>
                       <TableHead>Applied</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
@@ -459,28 +457,6 @@ const RecruiterDashboard = () => {
                                   {statusLabels[app.status]}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                {app.business_case_completed ? <div className="flex items-center gap-1 text-green-600">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span className="text-sm">Complete</span>
-                                  </div> : <div className="flex items-center gap-1 text-muted-foreground">
-                                    <XCircle className="h-4 w-4" />
-                                    <span className="text-sm">Incomplete</span>
-                                  </div>}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  {app.cv_url && <a href={app.cv_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80" title="View CV" onClick={e => e.stopPropagation()}>
-                                      <FileText className="h-5 w-5" />
-                                    </a>}
-                                  {app.disc_url && <a href={app.disc_url} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary/80" title="View DISC" onClick={e => e.stopPropagation()}>
-                                      <FileText className="h-5 w-5" />
-                                    </a>}
-                                  {app.business_case_completed && <Link to={`/business-case/${app.id}`} className="text-accent hover:text-accent/80" title="View Responses" onClick={e => e.stopPropagation()}>
-                                      <Video className="h-5 w-5" />
-                                    </Link>}
-                                </div>
-                              </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {format(new Date(app.created_at), "MMM d, yyyy")}
                               </TableCell>
@@ -525,7 +501,7 @@ const RecruiterDashboard = () => {
                             </TableRow>
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
-                                  <TableCell colSpan={9} className="bg-muted/30 p-0">
+                                  <TableCell colSpan={7} className="bg-muted/30 p-0">
                                     <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       <div className="lg:col-span-2 space-y-4">
                                         <AIEvaluationCard evaluation={evaluation} />
