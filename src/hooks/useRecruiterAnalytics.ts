@@ -27,6 +27,7 @@ export interface AIScoreDistribution {
   range: string;
   count: number;
   color: string;
+  label: string;
 }
 
 export interface TimeMetrics {
@@ -178,19 +179,18 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
     };
   }).sort((a, b) => b.applications - a.applications);
 
-  // AI Score Distribution
+  // AI Score Distribution - 3 categories: Low (Red), Medium (Orange), High (Green)
   const scoreRanges = [
-    { range: '0-20', min: 0, max: 20, color: 'hsl(var(--destructive))' },
-    { range: '21-40', min: 21, max: 40, color: 'hsl(var(--chart-5))' },
-    { range: '41-60', min: 41, max: 60, color: 'hsl(var(--chart-4))' },
-    { range: '61-80', min: 61, max: 80, color: 'hsl(var(--chart-2))' },
-    { range: '81-100', min: 81, max: 100, color: 'hsl(var(--chart-1))' },
+    { range: '0-40', min: 0, max: 40, color: '#EF4444', label: 'Low' },
+    { range: '41-70', min: 41, max: 70, color: '#F97316', label: 'Medium' },
+    { range: '71-100', min: 71, max: 100, color: '#22C55E', label: 'High' },
   ];
 
-  const aiScoreDistribution: AIScoreDistribution[] = scoreRanges.map(({ range, min, max, color }) => ({
+  const aiScoreDistribution: AIScoreDistribution[] = scoreRanges.map(({ range, min, max, color, label }) => ({
     range,
     count: applications.filter(a => a.ai_score !== null && a.ai_score >= min && a.ai_score <= max).length,
     color,
+    label,
   }));
 
   // Time Metrics
