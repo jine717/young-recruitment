@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3 } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -325,12 +325,20 @@ const RecruiterDashboard = () => {
                 Manage applications and track candidates through the hiring process.
               </p>
             </div>
-            <Button asChild>
-              <Link to="/dashboard/jobs">
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Jobs
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline">
+                <Link to="/dashboard/analytics">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link to="/dashboard/jobs">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Manage Jobs
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
