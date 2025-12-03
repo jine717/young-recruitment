@@ -16,7 +16,7 @@ import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
-import { Plus, X, Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Plus, X, Save, ArrowLeft, Loader2, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
@@ -49,6 +49,7 @@ export default function RecruiterJobEditor() {
     benefits: [''],
     tags: [''],
     status: 'draft' as JobStatus,
+    ai_system_prompt: '',
   });
 
   const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
@@ -98,6 +99,7 @@ export default function RecruiterJobEditor() {
             benefits: data.benefits?.length ? data.benefits : [''],
             tags: data.tags?.length ? data.tags : [''],
             status: data.status as JobStatus,
+            ai_system_prompt: data.ai_system_prompt || '',
           });
         }
         setLoading(false);
@@ -171,6 +173,7 @@ export default function RecruiterJobEditor() {
         requirements: formData.requirements.filter((r) => r.trim()),
         benefits: formData.benefits.filter((b) => b.trim()),
         tags: formData.tags.filter((t) => t.trim()),
+        ai_system_prompt: formData.ai_system_prompt || null,
       };
 
       let jobId: string;
@@ -482,6 +485,28 @@ export default function RecruiterJobEditor() {
                 onChange={setBusinessCaseQuestions}
                 disabled={isSubmitting}
               />
+
+              {/* AI Evaluation Instructions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    AI Evaluation Instructions
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Define custom criteria for how AI should evaluate candidates for this position. 
+                    These instructions are only visible to recruiters.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={formData.ai_system_prompt}
+                    onChange={(e) => setFormData({ ...formData, ai_system_prompt: e.target.value })}
+                    placeholder="Example: Focus on leadership experience and startup background. Pay special attention to communication skills. Prioritize candidates who demonstrate problem-solving abilities in their responses..."
+                    rows={6}
+                  />
+                </CardContent>
+              </Card>
 
               <div className="flex gap-4 justify-end">
                 <Button type="button" variant="outline" onClick={() => navigate('/dashboard/jobs')}>

@@ -13,6 +13,7 @@ export interface JobInput {
   benefits: string[];
   tags: string[];
   status: 'draft' | 'published' | 'closed';
+  ai_system_prompt?: string | null;
 }
 
 export function useAllJobs() {
