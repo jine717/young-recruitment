@@ -327,6 +327,12 @@ const RecruiterDashboard = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button asChild>
+                <Link to="/dashboard/evaluate">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Candidates Evaluation
+                </Link>
+              </Button>
+              <Button asChild>
                 <Link to="/dashboard/analytics">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
