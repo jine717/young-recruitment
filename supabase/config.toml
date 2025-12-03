@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.transcribe-video]
 verify_jwt = false
+
+[functions.delete-job-cascade]
+verify_jwt = false
+
+[functions.compare-candidates]
+verify_jwt = false

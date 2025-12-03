@@ -257,6 +257,47 @@ export type Database = {
           },
         ]
       }
+      candidate_comparisons: {
+        Row: {
+          application_ids: string[]
+          comparison_result: Json | null
+          created_at: string
+          created_by: string
+          evaluation_prompt: string | null
+          id: string
+          job_id: string
+          status: string
+        }
+        Insert: {
+          application_ids: string[]
+          comparison_result?: Json | null
+          created_at?: string
+          created_by: string
+          evaluation_prompt?: string | null
+          id?: string
+          job_id: string
+          status?: string
+        }
+        Update: {
+          application_ids?: string[]
+          comparison_result?: Json | null
+          created_at?: string
+          created_by?: string
+          evaluation_prompt?: string | null
+          id?: string
+          job_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_comparisons_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
