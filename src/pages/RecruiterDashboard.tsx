@@ -60,7 +60,7 @@ const RecruiterDashboard = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
   const applicationIds = applications?.map(a => a.id) || [];
@@ -557,11 +557,27 @@ const RecruiterDashboard = () => {
                   </Table>
                   
                   {/* Pagination Controls */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t">
+                    <div className="flex items-center gap-4">
                       <p className="text-sm text-muted-foreground">
-                        Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} applications
+                        Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems}
                       </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Per page:</span>
+                        <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {totalPages > 1 && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -605,8 +621,8 @@ const RecruiterDashboard = () => {
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </> : <div className="text-center py-20">
                   <p className="text-muted-foreground text-lg">No applications found</p>
                 </div>}
