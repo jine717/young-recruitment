@@ -56,6 +56,7 @@ const RecruiterDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -71,6 +72,23 @@ const RecruiterDashboard = () => {
   const filteredApplications = applications?.filter(app => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
+    
+    // Date filter
+    if (dateFilter !== "all") {
+      const appDate = new Date(app.created_at);
+      const now = new Date();
+      if (dateFilter === "24h") {
+        const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        if (appDate < cutoff) return false;
+      } else if (dateFilter === "week") {
+        const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (appDate < cutoff) return false;
+      } else if (dateFilter === "month") {
+        const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (appDate < cutoff) return false;
+      }
+    }
+    
     return true;
   })?.sort((a, b) => {
     if (sortBy === "ai_score_desc") {
@@ -104,12 +122,18 @@ const RecruiterDashboard = () => {
     setCurrentPage(1);
   };
   
-  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date";
+  const handleDateFilterChange = (value: string) => {
+    setDateFilter(value);
+    setCurrentPage(1);
+  };
+  
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all";
   
   const clearAllFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
     setSortBy("date");
+    setDateFilter("all");
     setCurrentPage(1);
   };
   const uniqueJobs = applications?.reduce((acc, app) => {
@@ -505,7 +529,38 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
-                        <TableHead>Applied</TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Applied
+                              <ChevronDown className="h-3 w-3" />
+                              {dateFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleDateFilterChange("all")} className="flex items-center justify-between">
+                                All Time
+                                {dateFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDateFilterChange("24h")} className="flex items-center justify-between">
+                                Last 24 Hours
+                                {dateFilter === "24h" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDateFilterChange("week")} className="flex items-center justify-between">
+                                Last Week
+                                {dateFilter === "week" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDateFilterChange("month")} className="flex items-center justify-between">
+                                Last Month
+                                {dateFilter === "month" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
                         <TableHead className="w-[50px]">
                           {hasActiveFilters && (
                             <Button
