@@ -326,7 +326,7 @@ const RecruiterDashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline">
+              <Button asChild>
                 <Link to="/dashboard/analytics">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
