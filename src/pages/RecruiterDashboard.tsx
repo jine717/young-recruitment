@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -59,6 +59,8 @@ const RecruiterDashboard = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
 
   const applicationIds = applications?.map(a => a.id) || [];
@@ -80,6 +82,27 @@ const RecruiterDashboard = () => {
     // Default: sort by date (newest first)
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+
+  // Pagination calculations
+  const totalItems = filteredApplications?.length || 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedApplications = filteredApplications?.slice(startIndex, endIndex);
+
+  // Reset page when filters change
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+  const handleJobFilterChange = (value: string) => {
+    setJobFilter(value);
+    setCurrentPage(1);
+  };
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
   const uniqueJobs = applications?.reduce((acc, app) => {
     if (app.jobs && !acc.find(j => j.id === app.job_id)) {
       acc.push({
@@ -335,7 +358,7 @@ const RecruiterDashboard = () => {
       <section className="pb-4 px-6">
         <div className="container mx-auto max-w-7xl">
           <div className="flex flex-wrap gap-4 mb-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -348,7 +371,7 @@ const RecruiterDashboard = () => {
                 <SelectItem value="hired">Hired</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={jobFilter} onValueChange={setJobFilter}>
+            <Select value={jobFilter} onValueChange={handleJobFilterChange}>
               <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Filter by job" />
               </SelectTrigger>
@@ -359,7 +382,7 @@ const RecruiterDashboard = () => {
                   </SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={handleSortChange}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -395,25 +418,38 @@ const RecruiterDashboard = () => {
                   <Button variant="outline" onClick={() => window.location.reload()}>
                     Retry
                   </Button>
-                </div> : filteredApplications && filteredApplications.length > 0 ? <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[40px]">
-                        <Checkbox
-                          checked={filteredApplications.length > 0 && selectedIds.size === filteredApplications.length}
-                          onCheckedChange={toggleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="w-[60px]">AI</TableHead>
-                      <TableHead>Candidate</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Applied</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredApplications.map(app => {
+                </div> : paginatedApplications && paginatedApplications.length > 0 ? <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[40px]">
+                          <Checkbox
+                            checked={paginatedApplications.length > 0 && paginatedApplications.every(a => selectedIds.has(a.id))}
+                            onCheckedChange={() => {
+                              const pageIds = paginatedApplications.map(a => a.id);
+                              const allSelected = pageIds.every(id => selectedIds.has(id));
+                              if (allSelected) {
+                                setSelectedIds(prev => {
+                                  const newSet = new Set(prev);
+                                  pageIds.forEach(id => newSet.delete(id));
+                                  return newSet;
+                                });
+                              } else {
+                                setSelectedIds(prev => new Set([...prev, ...pageIds]));
+                              }
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="w-[60px]">AI</TableHead>
+                        <TableHead>Candidate</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Applied</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedApplications.map(app => {
                   const evaluation = evaluationsMap.get(app.id);
                   const isExpanded = expandedRows.has(app.id);
                   const isSelected = selectedIds.has(app.id);
@@ -517,8 +553,61 @@ const RecruiterDashboard = () => {
                           </>
                         </Collapsible>;
                 })}
-                  </TableBody>
-                </Table> : <div className="text-center py-20">
+                    </TableBody>
+                  </Table>
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} applications
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter(page => 
+                              page === 1 || 
+                              page === totalPages || 
+                              Math.abs(page - currentPage) <= 1
+                            )
+                            .map((page, idx, arr) => (
+                              <span key={page}>
+                                {idx > 0 && arr[idx - 1] !== page - 1 && (
+                                  <span className="px-2 text-muted-foreground">...</span>
+                                )}
+                                <Button
+                                  variant={currentPage === page ? "default" : "outline"}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setCurrentPage(page)}
+                                >
+                                  {page}
+                                </Button>
+                              </span>
+                            ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </> : <div className="text-center py-20">
                   <p className="text-muted-foreground text-lg">No applications found</p>
                 </div>}
             </CardContent>
