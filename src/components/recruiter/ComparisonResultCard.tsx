@@ -1,15 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download } from 'lucide-react';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
+import { exportComparisonToPdf } from '@/utils/exportComparisonPdf';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
+  jobTitle?: string;
 }
 
-export function ComparisonResultCard({ result }: ComparisonResultCardProps) {
+export function ComparisonResultCard({ result, jobTitle = 'Position' }: ComparisonResultCardProps) {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
@@ -42,8 +45,20 @@ export function ComparisonResultCard({ result }: ComparisonResultCardProps) {
     return 'text-red-600 dark:text-red-400';
   };
 
+  const handleExportPdf = () => {
+    exportComparisonToPdf({ result, jobTitle });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <Button onClick={handleExportPdf} variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Export to PDF
+        </Button>
+      </div>
+
       {/* Executive Summary */}
       <Card>
         <CardHeader>
