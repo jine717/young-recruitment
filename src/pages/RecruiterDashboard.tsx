@@ -318,13 +318,8 @@ const RecruiterDashboard = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-display text-5xl md:text-6xl mb-4">RECRUITER DASHBOARD</h1>
-              <p className="text-xl text-muted-foreground">
-                Manage applications and track candidates through the hiring process.
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="font-display text-5xl md:text-6xl">RECRUITER DASHBOARD</h1>
             <div className="flex items-center gap-2">
               <Button asChild>
                 <Link to="/dashboard/evaluate">
