@@ -57,7 +57,8 @@ serve(async (req) => {
           title,
           description,
           requirements,
-          responsibilities
+          responsibilities,
+          ai_system_prompt
         )
       `)
       .eq("id", applicationId)
@@ -100,6 +101,17 @@ serve(async (req) => {
 
     console.log("Calling Lovable AI for analysis...");
 
+    // Build system prompt with custom instructions if provided
+    const baseSystemPrompt = `You are an expert recruitment analyst for a modern, disruptive company called Young. 
+Your task is to analyze candidate responses and provide a structured evaluation.
+Be fair but thorough. Look for potential, communication skills, and cultural fit.
+The company values: Fearless, Unusual, Down to earth, Agility, Determination, and Authenticity.`;
+
+    const customInstructions = job?.ai_system_prompt;
+    const systemPrompt = customInstructions 
+      ? `${baseSystemPrompt}\n\n## Custom Evaluation Instructions from Recruiter\n${customInstructions}`
+      : baseSystemPrompt;
+
     // Call Lovable AI with tool calling for structured output
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -112,10 +124,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an expert recruitment analyst for a modern, disruptive company called Young. 
-Your task is to analyze candidate responses and provide a structured evaluation.
-Be fair but thorough. Look for potential, communication skills, and cultural fit.
-The company values: Fearless, Unusual, Down to earth, Agility, Determination, and Authenticity.`,
+            content: systemPrompt,
           },
           { role: "user", content: prompt },
         ],
@@ -278,7 +287,7 @@ The company values: Fearless, Unusual, Down to earth, Agility, Determination, an
 });
 
 function buildAnalysisPrompt(
-  job: { title: string; description: string; requirements: string[] | null; responsibilities: string[] | null } | null,
+  job: { title: string; description: string; requirements: string[] | null; responsibilities: string[] | null; ai_system_prompt?: string | null } | null,
   responses: Array<{
     text_response: string | null;
     video_url: string | null;
