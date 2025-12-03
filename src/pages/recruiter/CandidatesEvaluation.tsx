@@ -4,9 +4,10 @@ import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Scale, Users, Loader2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Scale, Users, Loader2, ChevronRight, History } from 'lucide-react';
 import { CandidateSelector } from '@/components/recruiter/CandidateSelector';
 import { ComparisonResultCard } from '@/components/recruiter/ComparisonResultCard';
+import { ComparisonHistoryDialog } from '@/components/recruiter/ComparisonHistoryDialog';
 import { useJobsWithApplications, useJobCandidates, useCompareCandidates } from '@/hooks/useCandidateComparison';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,9 @@ export default function CandidatesEvaluation() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyJobId, setHistoryJobId] = useState<string | null>(null);
+  const [historyJobTitle, setHistoryJobTitle] = useState('');
 
   const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
   const { data: jobs, isLoading: jobsLoading } = useJobsWithApplications();
@@ -44,6 +48,13 @@ export default function CandidatesEvaluation() {
     setSelectedJobId(jobId);
     setSelectedCandidateIds([]);
     setStep(2);
+  };
+
+  const handleOpenHistory = (jobId: string, jobTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHistoryJobId(jobId);
+    setHistoryJobTitle(jobTitle);
+    setHistoryDialogOpen(true);
   };
 
   const handleContinueToPrompt = () => {
@@ -146,10 +157,20 @@ export default function CandidatesEvaluation() {
                           <p className="font-semibold">{job.title}</p>
                           <p className="text-sm text-muted-foreground">{job.location}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{job.applicationCount} candidates</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleOpenHistory(job.id, job.title, e)}
+                          >
+                            <History className="w-4 h-4 mr-1" />
+                            History
+                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">{job.applicationCount} candidates</span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -295,6 +316,15 @@ Example:
           </div>
         )}
       </main>
+
+      {historyJobId && (
+        <ComparisonHistoryDialog
+          open={historyDialogOpen}
+          onOpenChange={setHistoryDialogOpen}
+          jobId={historyJobId}
+          jobTitle={historyJobTitle}
+        />
+      )}
     </div>
   );
 }

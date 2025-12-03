@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { applicationIds, customPrompt, jobId } = await req.json();
+    const { applicationIds, customPrompt, jobId, createdBy } = await req.json();
 
     if (!applicationIds || applicationIds.length < 2) {
       throw new Error('At least 2 candidates are required for comparison');
@@ -276,11 +276,36 @@ Provide a comprehensive comparison with a clear winner recommendation.`;
 
     const comparisonResult = JSON.parse(toolCall.function.arguments);
 
+    // Save comparison to database
+    let comparisonId = null;
+    if (createdBy) {
+      const { data: savedComparison, error: saveError } = await supabase
+        .from('candidate_comparisons')
+        .insert({
+          job_id: jobId,
+          application_ids: applicationIds,
+          evaluation_prompt: customPrompt || null,
+          comparison_result: comparisonResult,
+          status: 'completed',
+          created_by: createdBy,
+        })
+        .select('id')
+        .single();
+
+      if (saveError) {
+        console.error('Error saving comparison:', saveError);
+      } else {
+        comparisonId = savedComparison.id;
+        console.log('Comparison saved with ID:', comparisonId);
+      }
+    }
+
     console.log('Comparison completed successfully for', candidatesData.length, 'candidates');
 
     return new Response(JSON.stringify({
       success: true,
       comparison: comparisonResult,
+      comparisonId,
       candidates: candidatesData.map(c => ({
         application_id: c.application_id,
         candidate_name: c.candidate_name,

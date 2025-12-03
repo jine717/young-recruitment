@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface CandidateRanking {
   rank: number;
@@ -120,8 +121,74 @@ export function useJobCandidates(jobId: string | null) {
   });
 }
 
+export interface SavedComparison {
+  id: string;
+  job_id: string;
+  application_ids: string[];
+  evaluation_prompt: string | null;
+  comparison_result: ComparisonResult;
+  status: string;
+  created_by: string;
+  created_at: string;
+}
+
+export function useComparisonHistory(jobId: string | null) {
+  return useQuery({
+    queryKey: ['comparison-history', jobId],
+    queryFn: async () => {
+      if (!jobId) return [];
+
+      const { data, error } = await supabase
+        .from('candidate_comparisons')
+        .select('*')
+        .eq('job_id', jobId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(item => ({
+        ...item,
+        comparison_result: item.comparison_result as unknown as ComparisonResult,
+      })) as SavedComparison[];
+    },
+    enabled: !!jobId,
+  });
+}
+
+export function useDeleteComparison() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (comparisonId: string) => {
+      const { error } = await supabase
+        .from('candidate_comparisons')
+        .delete()
+        .eq('id', comparisonId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comparison-history'] });
+      toast({
+        title: 'Comparison Deleted',
+        description: 'The comparison has been removed from history.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 export function useCompareCandidates() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isComparing, setIsComparing] = useState(false);
 
@@ -138,7 +205,7 @@ export function useCompareCandidates() {
       setIsComparing(true);
 
       const { data, error } = await supabase.functions.invoke('compare-candidates', {
-        body: { applicationIds, customPrompt, jobId },
+        body: { applicationIds, customPrompt, jobId, createdBy: user?.id },
       });
 
       if (error) throw error;
@@ -147,10 +214,12 @@ export function useCompareCandidates() {
       return data as {
         success: boolean;
         comparison: ComparisonResult;
+        comparisonId: string | null;
         candidates: { application_id: string; candidate_name: string }[];
       };
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comparison-history', variables.jobId] });
       toast({
         title: 'Comparison Complete',
         description: 'AI has analyzed and compared the selected candidates.',
