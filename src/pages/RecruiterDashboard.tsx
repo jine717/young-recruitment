@@ -410,7 +410,34 @@ const RecruiterDashboard = () => {
                             }}
                           />
                         </TableHead>
-                        <TableHead className="w-[60px]">AI</TableHead>
+                        <TableHead className="w-[80px]">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              AI
+                              <ChevronDown className="h-3 w-3" />
+                              {sortBy !== "date" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleSortChange("date")} className="flex items-center justify-between">
+                                Default (by Date)
+                                {sortBy === "date" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_desc")} className="flex items-center justify-between">
+                                Best to Worst
+                                {sortBy === "ai_score_desc" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_asc")} className="flex items-center justify-between">
+                                Worst to Best
+                                {sortBy === "ai_score_asc" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
                         <TableHead>Candidate</TableHead>
                         <TableHead>
                           <DropdownMenu>
@@ -478,28 +505,7 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
-                        <TableHead>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
-                              Applied
-                              <ChevronDown className="h-3 w-3" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="bg-popover">
-                              <DropdownMenuItem onClick={() => handleSortChange("date")} className="flex items-center justify-between">
-                                Newest First
-                                {sortBy === "date" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_desc")} className="flex items-center justify-between">
-                                AI Score (High to Low)
-                                {sortBy === "ai_score_desc" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_asc")} className="flex items-center justify-between">
-                                AI Score (Low to High)
-                                {sortBy === "ai_score_asc" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableHead>
+                        <TableHead>Applied</TableHead>
                         <TableHead className="w-[50px]">
                           {hasActiveFilters && (
                             <Button
