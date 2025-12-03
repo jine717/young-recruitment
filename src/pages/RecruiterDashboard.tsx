@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -354,63 +354,24 @@ const RecruiterDashboard = () => {
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="pb-4 px-6">
-        <div className="container mx-auto max-w-7xl">
-          <div className="flex flex-wrap gap-4 mb-4">
-            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="interview">Interview</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="hired">Hired</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={jobFilter} onValueChange={handleJobFilterChange}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Filter by job" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Jobs</SelectItem>
-                {uniqueJobs.map(job => <SelectItem key={job.id} value={job.id}>
-                    {job.title}
-                  </SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Newest First</SelectItem>
-                <SelectItem value="ai_score_desc">AI Score (High to Low)</SelectItem>
-                <SelectItem value="ai_score_asc">AI Score (Low to High)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {selectedIds.size > 0 && (
-            <BulkActionsToolbar
-              selectedCount={selectedIds.size}
-              onClearSelection={() => setSelectedIds(new Set())}
-              onStatusChange={handleBulkStatusChange}
-              onSendNotification={handleBulkNotification}
-              onExport={handleExport}
-              isUpdating={isUpdating}
-            />
-          )}
-        </div>
-      </section>
 
       {/* Applications Table */}
       <section className="pb-20 px-6">
         <div className="container mx-auto max-w-7xl">
           <Card>
             <CardContent className="p-0">
+              {selectedIds.size > 0 && (
+                <div className="p-4 border-b">
+                  <BulkActionsToolbar
+                    selectedCount={selectedIds.size}
+                    onClearSelection={() => setSelectedIds(new Set())}
+                    onStatusChange={handleBulkStatusChange}
+                    onSendNotification={handleBulkNotification}
+                    onExport={handleExport}
+                    isUpdating={isUpdating}
+                  />
+                </div>
+              )}
               {isLoading ? <div className="flex items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div> : error ? <div className="text-center py-20">
@@ -442,9 +403,94 @@ const RecruiterDashboard = () => {
                         </TableHead>
                         <TableHead className="w-[60px]">AI</TableHead>
                         <TableHead>Candidate</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Applied</TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Position
+                              <ChevronDown className="h-3 w-3" />
+                              {jobFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleJobFilterChange("all")} className="flex items-center justify-between">
+                                All Jobs
+                                {jobFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {uniqueJobs.map(job => (
+                                <DropdownMenuItem key={job.id} onClick={() => handleJobFilterChange(job.id)} className="flex items-center justify-between">
+                                  {job.title}
+                                  {jobFilter === job.id && <Check className="h-4 w-4 ml-2" />}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Status
+                              <ChevronDown className="h-3 w-3" />
+                              {statusFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("all")} className="flex items-center justify-between">
+                                All Statuses
+                                {statusFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("pending")} className="flex items-center justify-between">
+                                Pending
+                                {statusFilter === "pending" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("under_review")} className="flex items-center justify-between">
+                                Under Review
+                                {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">
+                                Interview
+                                {statusFilter === "interview" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("rejected")} className="flex items-center justify-between">
+                                Rejected
+                                {statusFilter === "rejected" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("hired")} className="flex items-center justify-between">
+                                Hired
+                                {statusFilter === "hired" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Applied
+                              <ChevronDown className="h-3 w-3" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleSortChange("date")} className="flex items-center justify-between">
+                                Newest First
+                                {sortBy === "date" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_desc")} className="flex items-center justify-between">
+                                AI Score (High to Low)
+                                {sortBy === "ai_score_desc" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSortChange("ai_score_asc")} className="flex items-center justify-between">
+                                AI Score (Low to High)
+                                {sortBy === "ai_score_asc" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
