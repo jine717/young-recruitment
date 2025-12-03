@@ -494,7 +494,7 @@ const RecruiterDashboard = () => {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
-                                {format(new Date(app.created_at), "MMM d, yyyy")}
+                                {format(new Date(app.created_at), "MMM d, yyyy 'at' HH:mm")}
                               </TableCell>
                               <TableCell>
                                 <DropdownMenu>
