@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_evaluation_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          prompt_content: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          prompt_content: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          prompt_content?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_evaluations: {
         Row: {
           application_id: string

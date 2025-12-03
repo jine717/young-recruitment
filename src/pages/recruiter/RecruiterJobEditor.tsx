@@ -16,10 +16,13 @@ import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
-import { Plus, X, Save, ArrowLeft, Loader2, Brain } from 'lucide-react';
+import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { AITemplateSelector } from '@/components/recruiter/AITemplateSelector';
+import { SaveTemplateDialog } from '@/components/recruiter/SaveTemplateDialog';
+import { ManageTemplatesDialog } from '@/components/recruiter/ManageTemplatesDialog';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -55,6 +58,8 @@ export default function RecruiterJobEditor() {
   const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
   const [loading, setLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [manageTemplatesOpen, setManageTemplatesOpen] = useState(false);
 
   // Load existing business cases when editing
   useEffect(() => {
@@ -498,15 +503,59 @@ export default function RecruiterJobEditor() {
                     These instructions are only visible to recruiters.
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <AITemplateSelector
+                      onSelect={(template) => {
+                        if (template) {
+                          setFormData({ ...formData, ai_system_prompt: template.prompt_content });
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setManageTemplatesOpen(true)}
+                      className="shrink-0"
+                    >
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Manage Templates
+                    </Button>
+                  </div>
+
                   <Textarea
                     value={formData.ai_system_prompt}
                     onChange={(e) => setFormData({ ...formData, ai_system_prompt: e.target.value })}
                     placeholder="Example: Focus on leadership experience and startup background. Pay special attention to communication skills. Prioritize candidates who demonstrate problem-solving abilities in their responses..."
                     rows={6}
                   />
+
+                  {formData.ai_system_prompt.trim() && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSaveTemplateOpen(true)}
+                    >
+                      <SaveAll className="h-4 w-4 mr-2" />
+                      Save as Template
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
+
+              <SaveTemplateDialog
+                open={saveTemplateOpen}
+                onOpenChange={setSaveTemplateOpen}
+                promptContent={formData.ai_system_prompt}
+              />
+
+              <ManageTemplatesDialog
+                open={manageTemplatesOpen}
+                onOpenChange={setManageTemplatesOpen}
+              />
 
               <div className="flex gap-4 justify-end">
                 <Button type="button" variant="outline" onClick={() => navigate('/dashboard/jobs')}>
