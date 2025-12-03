@@ -34,7 +34,10 @@ export function AIScoreDistributionChart({ data }: AIScoreDistributionChartProps
                   borderRadius: '8px',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value} candidates`, 'Count']}
+                formatter={(value: number, name: string, props: any) => [
+                  `${value} candidates`, 
+                  props.payload.label
+                ]}
               />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (
@@ -44,18 +47,18 @@ export function AIScoreDistributionChart({ data }: AIScoreDistributionChartProps
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex justify-center gap-4 mt-4 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
-            <span>Low</span>
+        <div className="flex justify-center gap-6 mt-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#EF4444' }} />
+            <span className="text-muted-foreground">Low (0-40)</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--chart-4))' }} />
-            <span>Medium</span>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#F97316' }} />
+            <span className="text-muted-foreground">Medium (41-70)</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
-            <span>High</span>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#22C55E' }} />
+            <span className="text-muted-foreground">High (71-100)</span>
           </div>
         </div>
       </CardContent>
