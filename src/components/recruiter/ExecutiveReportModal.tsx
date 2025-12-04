@@ -42,8 +42,19 @@ export function ExecutiveReportModal({
 }: ExecutiveReportModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
+  const formatFileName = (title: string) => {
+    const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = date.toTimeString().slice(0, 8).replace(/:/g, '');
+    return `${sanitizedTitle}_evaluation_${dateStr}-${timeStr}`;
+  };
+
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = formatFileName(jobTitle);
     window.print();
+    document.title = originalTitle;
   };
 
   if (!presentationContent) return null;
