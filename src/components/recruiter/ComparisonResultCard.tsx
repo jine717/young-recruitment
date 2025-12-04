@@ -239,13 +239,13 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           <CardTitle>Detailed Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-muted/60">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-2 font-medium">Criterion</th>
+                <tr className="bg-[#100D0A] text-[#FDFAF0]">
+                  <th className="text-left py-4 px-5 font-semibold text-sm tracking-wide">Criterion</th>
                   {result.rankings.map((r) => (
-                    <th key={r.application_id} className="text-center py-3 px-2 font-medium">
+                    <th key={r.application_id} className="text-center py-4 px-4 font-semibold text-sm tracking-wide min-w-[140px]">
                       {r.candidate_name}
                     </th>
                   ))}
@@ -253,14 +253,25 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
               </thead>
               <tbody>
                 {result.comparison_matrix.map((row, idx) => (
-                  <tr key={idx} className="border-b last:border-0">
-                    <td className="py-3 px-2 font-medium">{row.criterion}</td>
+                  <tr 
+                    key={idx} 
+                    className={cn(
+                      "border-b border-muted/40 last:border-0 transition-colors",
+                      idx % 2 === 0 ? "bg-background" : "bg-muted/20"
+                    )}
+                  >
+                    <td className="py-4 px-5 font-medium text-sm">{row.criterion}</td>
                     {row.candidates.map((c) => (
-                      <td key={c.application_id} className="text-center py-3 px-2">
-                        <div className={cn('font-bold', getScoreColor(c.score))}>
-                          {c.score}/100
+                      <td key={c.application_id} className="text-center py-4 px-4">
+                        <div className={cn(
+                          'inline-flex items-center justify-center w-14 h-8 rounded-md font-bold text-sm',
+                          c.score >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          c.score >= 60 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        )}>
+                          {c.score}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>
+                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-[160px] mx-auto">{c.notes}</p>
                       </td>
                     ))}
                   </tr>
