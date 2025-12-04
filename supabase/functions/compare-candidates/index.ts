@@ -304,7 +304,7 @@ IMPORTANT: For the business_case_analysis section, you MUST analyze each busines
                       comparative_analysis: { type: 'string', description: 'AI analysis comparing all responses to this specific question, highlighting strengths and weaknesses' },
                       best_response: { type: 'string', description: 'Name of candidate with the best response to this question' }
                     },
-                    required: ['question_title', 'candidate_responses', 'comparative_analysis', 'best_response']
+                    required: ['question_title', 'question_description', 'candidate_responses', 'comparative_analysis', 'best_response']
                   }
                 }
               },
