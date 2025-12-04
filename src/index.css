@@ -212,12 +212,28 @@
 
   .executive-report-container .page-1,
   .executive-report-container .page-2,
-  .executive-report-container .page-3 {
+  .executive-report-container .page-business-case,
+  .executive-report-container .page-matrix,
+  .executive-report-container .page-insights {
     width: 210mm;
     min-height: 297mm;
     height: 297mm;
     box-sizing: border-box;
     background: #FDFAF0 !important;
     overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Last page should not have page break after */
+  .executive-report-container .page-insights {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Avoid breaks inside critical sections */
+  .executive-report-container .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
