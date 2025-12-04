@@ -35,81 +35,84 @@ export interface PresentationExportOptions {
   exportDate?: Date;
 }
 
-// Brand colors
+// ============================================
+// YOUNG BRAND COLORS ONLY - From Brandbook
+// ============================================
 const COLORS = {
-  youngBlue: [147, 177, 255] as [number, number, number],
-  youngBlueDark: [51, 85, 163] as [number, number, number],
-  gold: [184, 143, 94] as [number, number, number],
-  boldBlack: [16, 13, 10] as [number, number, number],
-  cream: [253, 250, 240] as [number, number, number],
-  white: [255, 255, 255] as [number, number, number],
-  green: [34, 197, 94] as [number, number, number],
-  yellow: [249, 115, 22] as [number, number, number],
-  red: [239, 68, 68] as [number, number, number],
-  gray: [107, 114, 128] as [number, number, number],
-  lightGray: [229, 231, 235] as [number, number, number],
-};
-
-const FONTS = {
-  title: 32,
-  subtitle: 20,
-  heading: 16,
-  body: 12,
-  small: 10,
-  tiny: 8,
-};
-
-function getScoreColor(score: number): [number, number, number] {
-  if (score >= 70) return COLORS.green;
-  if (score >= 40) return COLORS.yellow;
-  return COLORS.red;
-}
-
-function getConfidenceBadge(confidence: string): { text: string; color: [number, number, number] } {
-  switch (confidence) {
-    case 'high': return { text: 'HIGH CONFIDENCE', color: COLORS.green };
-    case 'medium': return { text: 'MEDIUM CONFIDENCE', color: COLORS.yellow };
-    case 'low': return { text: 'LOW CONFIDENCE', color: COLORS.red };
-    default: return { text: confidence.toUpperCase(), color: COLORS.gray };
-  }
-}
-
-function addHeader(doc: jsPDF, pageWidth: number, isFirstPage: boolean = false) {
-  if (isFirstPage) return; // First page has its own design
+  cream: [253, 250, 240] as [number, number, number],       // #FDFAF0 - Primary background
+  boldBlack: [16, 13, 10] as [number, number, number],      // #100D0A - Primary text
+  youngBlue: [147, 177, 255] as [number, number, number],   // #93B1FF - Accent/Highlights
+  gold: [184, 143, 94] as [number, number, number],         // #B88F5E - Premium/Winner
+  khaki: [96, 87, 56] as [number, number, number],          // #605738 - Subtle/Secondary
   
-  // Young blue header bar
+  // Derived colors for design elements
+  creamDark: [245, 240, 225] as [number, number, number],   // Slightly darker cream for boxes
+  white: [255, 255, 255] as [number, number, number],       // Pure white for contrast text
+};
+
+// ============================================
+// TYPOGRAPHY - Presentation Style (Larger)
+// ============================================
+const FONTS = {
+  logoTitle: 48,      // YOUNG. logo
+  mainTitle: 28,      // Section titles
+  subtitle: 20,       // Subtitles
+  heading: 16,        // Card headings
+  body: 13,           // Body text
+  caption: 11,        // Small labels
+  tiny: 9,            // Footer/fine print
+};
+
+// ============================================
+// LAYOUT CONSTANTS - More White Space
+// ============================================
+const LAYOUT = {
+  margin: 25,         // Generous margins
+  padding: 15,        // Box padding
+  lineHeight: 7,      // Comfortable line spacing
+};
+
+function addCreamBackground(doc: jsPDF, pageWidth: number, pageHeight: number) {
+  doc.setFillColor(...COLORS.cream);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+}
+
+function addHeader(doc: jsPDF, pageWidth: number) {
+  // Young Blue header bar
   doc.setFillColor(...COLORS.youngBlue);
-  doc.rect(0, 0, pageWidth, 15, 'F');
+  doc.rect(0, 0, pageWidth, 18, 'F');
   
   // Logo text
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'bold');
-  doc.text('YOUNG.', 15, 10);
+  doc.text('YOUNG.', LAYOUT.margin, 12);
   
   // Title
   doc.setFont('helvetica', 'normal');
-  doc.text('Candidate Comparison Report', 45, 10);
+  doc.setFontSize(FONTS.caption);
+  doc.text('Candidate Comparison Report', 55, 12);
 }
 
 function addFooter(doc: jsPDF, pageNum: number, totalPages: number, pageWidth: number, pageHeight: number) {
-  const y = pageHeight - 10;
+  // Bold Black footer bar
+  doc.setFillColor(...COLORS.boldBlack);
+  doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
   
-  // Footer line
-  doc.setDrawColor(...COLORS.lightGray);
-  doc.setLineWidth(0.5);
-  doc.line(15, y - 5, pageWidth - 15, y - 5);
-  
-  // Page number
-  doc.setTextColor(...COLORS.gray);
+  // Footer text
+  doc.setTextColor(...COLORS.cream);
   doc.setFontSize(FONTS.tiny);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Page ${pageNum} of ${totalPages}`, 15, y);
-  
-  // Confidential badge
-  doc.text('CONFIDENTIAL', pageWidth - 15, y, { align: 'right' });
+  doc.text(`Page ${pageNum} of ${totalPages}`, LAYOUT.margin, pageHeight - 4);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CONFIDENTIAL', pageWidth / 2, pageHeight - 4, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text('YOUNG RECRUITMENT', pageWidth - LAYOUT.margin, pageHeight - 4, { align: 'right' });
 }
 
+// ============================================
+// PAGE 1: Cover + Executive Summary
+// ============================================
 function createPage1(
   doc: jsPDF, 
   options: PresentationExportOptions, 
@@ -117,115 +120,134 @@ function createPage1(
   pageHeight: number
 ) {
   const { presentationContent, confidence, jobTitle, exportDate = new Date() } = options;
-  const confidenceBadge = getConfidenceBadge(confidence);
   
-  // Full page Young Blue header (top third)
+  // Cream background
+  addCreamBackground(doc, pageWidth, pageHeight);
+  
+  // Young Blue header section (top portion)
   doc.setFillColor(...COLORS.youngBlue);
-  doc.rect(0, 0, pageWidth, 90, 'F');
+  doc.rect(0, 0, pageWidth, 95, 'F');
   
-  // Logo
+  // Logo - YOUNG.
   doc.setTextColor(...COLORS.white);
-  doc.setFontSize(FONTS.title + 8);
+  doc.setFontSize(FONTS.logoTitle);
   doc.setFont('helvetica', 'bold');
-  doc.text('YOUNG.', pageWidth / 2, 35, { align: 'center' });
+  doc.text('YOUNG.', pageWidth / 2, 40, { align: 'center' });
   
   // Divider line
   doc.setDrawColor(...COLORS.white);
-  doc.setLineWidth(1);
-  doc.line(pageWidth / 2 - 40, 45, pageWidth / 2 + 40, 45);
+  doc.setLineWidth(1.5);
+  doc.line(pageWidth / 2 - 50, 52, pageWidth / 2 + 50, 52);
   
-  // Title
-  doc.setFontSize(FONTS.subtitle);
+  // Tagline
+  doc.setFontSize(FONTS.caption);
   doc.setFont('helvetica', 'normal');
-  doc.text('EXECUTIVE SUMMARY', pageWidth / 2, 60, { align: 'center' });
+  doc.text('UNITE TO DISRUPT', pageWidth / 2, 65, { align: 'center' });
   
-  // Position and date info box
-  doc.setFillColor(...COLORS.white);
-  doc.roundedRect(30, 100, pageWidth - 60, 35, 3, 3, 'F');
+  // Executive Summary badge
+  doc.setFillColor(...COLORS.boldBlack);
+  doc.roundedRect(pageWidth / 2 - 50, 75, 100, 12, 2, 2, 'F');
+  doc.setTextColor(...COLORS.cream);
+  doc.setFontSize(FONTS.caption);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EXECUTIVE SUMMARY', pageWidth / 2, 83, { align: 'center' });
   
+  // Position info section
+  let yPos = 115;
+  
+  // Position title - prominent
   doc.setTextColor(...COLORS.boldBlack);
-  doc.setFontSize(FONTS.body);
+  doc.setFontSize(FONTS.mainTitle);
   doc.setFont('helvetica', 'bold');
-  doc.text('Position:', 40, 115);
-  doc.setFont('helvetica', 'normal');
-  doc.text(jobTitle, 70, 115);
+  doc.text(jobTitle.toUpperCase(), pageWidth / 2, yPos, { align: 'center' });
   
-  doc.setFont('helvetica', 'bold');
-  doc.text('Date:', 40, 125);
+  yPos += 15;
+  
+  // Date and candidate count
+  doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'normal');
-  doc.text(exportDate.toLocaleDateString('en-US', { 
+  doc.setTextColor(...COLORS.khaki);
+  const dateStr = exportDate.toLocaleDateString('en-US', { 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
-  }), 55, 125);
+  });
+  doc.text(`${dateStr}  ·  ${presentationContent.candidate_summary.total_count} candidates evaluated`, pageWidth / 2, yPos, { align: 'center' });
   
-  doc.setFont('helvetica', 'bold');
-  doc.text('Candidates Evaluated:', pageWidth / 2 + 10, 115);
-  doc.setFont('helvetica', 'normal');
-  doc.text(String(presentationContent.candidate_summary.total_count), pageWidth / 2 + 60, 115);
+  yPos += 25;
   
-  // Executive narrative
-  let yPos = 155;
+  // Separator line
+  doc.setDrawColor(...COLORS.khaki);
+  doc.setLineWidth(0.5);
+  doc.line(LAYOUT.margin + 30, yPos, pageWidth - LAYOUT.margin - 30, yPos);
+  
+  yPos += 20;
+  
+  // Executive narrative - italic quote style
   doc.setTextColor(...COLORS.boldBlack);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'italic');
   
   const narrativeLines = doc.splitTextToSize(
     `"${presentationContent.executive_narrative}"`, 
-    pageWidth - 60
+    pageWidth - LAYOUT.margin * 2 - 20
   );
-  doc.text(narrativeLines, 30, yPos);
-  yPos += narrativeLines.length * 6 + 20;
+  doc.text(narrativeLines, pageWidth / 2, yPos, { align: 'center', maxWidth: pageWidth - LAYOUT.margin * 2 - 20 });
   
-  // Key metrics cards
-  const cardWidth = (pageWidth - 80) / 3;
-  const cardY = yPos;
-  const cardHeight = 50;
+  yPos += narrativeLines.length * LAYOUT.lineHeight + 30;
   
-  // Card 1: Top Pick
-  doc.setFillColor(...COLORS.youngBlue);
-  doc.roundedRect(30, cardY, cardWidth, cardHeight, 3, 3, 'F');
+  // Key metrics cards - using ONLY brand colors
+  const cardWidth = (pageWidth - LAYOUT.margin * 2 - 30) / 3;
+  const cardHeight = 55;
+  const cardStartX = LAYOUT.margin;
+  
+  // Card 1: Top Pick - GOLD (Premium)
+  doc.setFillColor(...COLORS.gold);
+  doc.roundedRect(cardStartX, yPos, cardWidth, cardHeight, 4, 4, 'F');
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(FONTS.tiny);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOP PICK', 30 + cardWidth / 2, cardY + 12, { align: 'center' });
+  doc.text('TOP PICK', cardStartX + cardWidth / 2, yPos + 15, { align: 'center' });
   doc.setFontSize(FONTS.heading);
-  doc.setFont('helvetica', 'bold');
-  const topPickName = presentationContent.winner_spotlight.name.length > 15 
-    ? presentationContent.winner_spotlight.name.substring(0, 15) + '...'
+  const topPickName = presentationContent.winner_spotlight.name.length > 12 
+    ? presentationContent.winner_spotlight.name.substring(0, 12) + '...'
     : presentationContent.winner_spotlight.name;
-  doc.text(topPickName, 30 + cardWidth / 2, cardY + 32, { align: 'center' });
+  doc.text(topPickName.toUpperCase(), cardStartX + cardWidth / 2, yPos + 38, { align: 'center' });
   
-  // Card 2: Score
-  const scoreColor = getScoreColor(presentationContent.winner_spotlight.score);
-  doc.setFillColor(...scoreColor);
-  doc.roundedRect(40 + cardWidth, cardY, cardWidth, cardHeight, 3, 3, 'F');
+  // Card 2: Score - YOUNG BLUE
+  const card2X = cardStartX + cardWidth + 15;
+  doc.setFillColor(...COLORS.youngBlue);
+  doc.roundedRect(card2X, yPos, cardWidth, cardHeight, 4, 4, 'F');
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(FONTS.tiny);
   doc.setFont('helvetica', 'bold');
-  doc.text('SCORE', 40 + cardWidth + cardWidth / 2, cardY + 12, { align: 'center' });
-  doc.setFontSize(FONTS.title);
-  doc.text(`${presentationContent.winner_spotlight.score}`, 40 + cardWidth + cardWidth / 2, cardY + 35, { align: 'center' });
+  doc.text('SCORE', card2X + cardWidth / 2, yPos + 15, { align: 'center' });
+  doc.setFontSize(FONTS.mainTitle);
+  doc.text(`${presentationContent.winner_spotlight.score}`, card2X + cardWidth / 2, yPos + 40, { align: 'center' });
   
-  // Card 3: Confidence
-  doc.setFillColor(...confidenceBadge.color);
-  doc.roundedRect(50 + cardWidth * 2, cardY, cardWidth, cardHeight, 3, 3, 'F');
-  doc.setTextColor(...COLORS.white);
+  // Card 3: Confidence - KHAKI
+  const card3X = card2X + cardWidth + 15;
+  doc.setFillColor(...COLORS.khaki);
+  doc.roundedRect(card3X, yPos, cardWidth, cardHeight, 4, 4, 'F');
+  doc.setTextColor(...COLORS.cream);
   doc.setFontSize(FONTS.tiny);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONFIDENCE', 50 + cardWidth * 2 + cardWidth / 2, cardY + 12, { align: 'center' });
+  doc.text('CONFIDENCE', card3X + cardWidth / 2, yPos + 15, { align: 'center' });
   doc.setFontSize(FONTS.heading);
-  doc.text(confidence.toUpperCase(), 50 + cardWidth * 2 + cardWidth / 2, cardY + 32, { align: 'center' });
+  doc.text(confidence.toUpperCase(), card3X + cardWidth / 2, yPos + 38, { align: 'center' });
   
-  // Confidential footer
+  // Bold Black footer
   doc.setFillColor(...COLORS.boldBlack);
   doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
-  doc.setTextColor(...COLORS.white);
+  doc.setTextColor(...COLORS.cream);
   doc.setFontSize(FONTS.tiny);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONFIDENTIAL', pageWidth / 2, pageHeight - 6, { align: 'center' });
+  doc.text('CONFIDENTIAL  ·  YOUNG RECRUITMENT', pageWidth / 2, pageHeight - 5, { align: 'center' });
 }
 
+// ============================================
+// PAGE 2: Top Recommendation + Comparison
+// ============================================
 function createPage2(
   doc: jsPDF, 
   options: PresentationExportOptions, 
@@ -234,106 +256,134 @@ function createPage2(
 ) {
   const { presentationContent, viableCandidates } = options;
   
+  // Cream background
+  addCreamBackground(doc, pageWidth, pageHeight);
+  
+  // Header
   addHeader(doc, pageWidth);
   
-  let yPos = 30;
+  let yPos = 35;
   
-  // TOP RECOMMENDATION section
-  doc.setTextColor(...COLORS.gold);
-  doc.setFontSize(FONTS.heading);
+  // Section title with Gold accent
+  doc.setFillColor(...COLORS.gold);
+  doc.rect(LAYOUT.margin, yPos, 4, 20, 'F');
+  
+  doc.setTextColor(...COLORS.boldBlack);
+  doc.setFontSize(FONTS.mainTitle);
   doc.setFont('helvetica', 'bold');
-  doc.text('★ TOP RECOMMENDATION', 15, yPos);
-  yPos += 10;
+  doc.text('OUR RECOMMENDATION', LAYOUT.margin + 12, yPos + 14);
   
-  // Winner spotlight box
+  yPos += 35;
+  
+  // Winner spotlight box - Gold border
+  doc.setFillColor(...COLORS.creamDark);
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(2);
+  doc.roundedRect(LAYOUT.margin, yPos, pageWidth - LAYOUT.margin * 2, 85, 5, 5, 'FD');
+  
+  // Candidate name
+  doc.setTextColor(...COLORS.boldBlack);
+  doc.setFontSize(FONTS.mainTitle);
+  doc.setFont('helvetica', 'bold');
+  doc.text(presentationContent.winner_spotlight.name.toUpperCase(), LAYOUT.margin + LAYOUT.padding, yPos + 22);
+  
+  // Score badge - Young Blue circle
   doc.setFillColor(...COLORS.youngBlue);
-  doc.roundedRect(15, yPos, pageWidth - 30, 80, 5, 5, 'F');
-  
-  // Candidate name and score
+  doc.circle(pageWidth - LAYOUT.margin - 25, yPos + 25, 20, 'F');
   doc.setTextColor(...COLORS.white);
-  doc.setFontSize(FONTS.subtitle + 4);
+  doc.setFontSize(FONTS.subtitle);
   doc.setFont('helvetica', 'bold');
-  doc.text(presentationContent.winner_spotlight.name, 25, yPos + 20);
+  doc.text(String(presentationContent.winner_spotlight.score), pageWidth - LAYOUT.margin - 25, yPos + 28, { align: 'center' });
   
-  // Score circle
-  const scoreColor = getScoreColor(presentationContent.winner_spotlight.score);
-  doc.setFillColor(...scoreColor);
-  doc.circle(pageWidth - 45, yPos + 25, 18, 'F');
-  doc.setTextColor(...COLORS.white);
-  doc.setFontSize(FONTS.heading);
-  doc.setFont('helvetica', 'bold');
-  doc.text(String(presentationContent.winner_spotlight.score), pageWidth - 45, yPos + 28, { align: 'center' });
-  doc.setFontSize(FONTS.tiny);
-  doc.text('/100', pageWidth - 45, yPos + 36, { align: 'center' });
-  
-  // Headline
+  // Headline quote
+  doc.setTextColor(...COLORS.khaki);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'italic');
   const headlineLines = doc.splitTextToSize(
     `"${presentationContent.winner_spotlight.headline}"`,
-    pageWidth - 100
+    pageWidth - LAYOUT.margin * 2 - 80
   );
-  doc.text(headlineLines, 25, yPos + 35);
+  doc.text(headlineLines, LAYOUT.margin + LAYOUT.padding, yPos + 38);
   
   // Key strengths
-  doc.setFontSize(FONTS.small);
+  doc.setTextColor(...COLORS.boldBlack);
+  doc.setFontSize(FONTS.caption);
   doc.setFont('helvetica', 'bold');
-  doc.text('KEY STRENGTHS:', 25, yPos + 52);
+  doc.text('KEY STRENGTHS', LAYOUT.margin + LAYOUT.padding, yPos + 58);
+  
   doc.setFont('helvetica', 'normal');
-  presentationContent.winner_spotlight.key_strengths.forEach((strength, i) => {
-    doc.text(`• ${strength}`, 30, yPos + 60 + i * 6);
+  doc.setFontSize(FONTS.body);
+  presentationContent.winner_spotlight.key_strengths.slice(0, 3).forEach((strength, i) => {
+    doc.setFillColor(...COLORS.gold);
+    doc.circle(LAYOUT.margin + LAYOUT.padding + 3, yPos + 66 + i * 8, 1.5, 'F');
+    doc.text(strength, LAYOUT.margin + LAYOUT.padding + 10, yPos + 68 + i * 8);
   });
   
-  yPos += 95;
+  yPos += 100;
   
-  // Why chosen section
+  // Why chosen paragraph
   doc.setTextColor(...COLORS.boldBlack);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'normal');
   const whyChosenLines = doc.splitTextToSize(
     presentationContent.winner_spotlight.why_chosen,
-    pageWidth - 40
+    pageWidth - LAYOUT.margin * 2
   );
-  doc.text(whyChosenLines, 20, yPos);
-  yPos += whyChosenLines.length * 5 + 15;
+  doc.text(whyChosenLines, LAYOUT.margin, yPos);
   
-  // CANDIDATE OVERVIEW
+  yPos += whyChosenLines.length * LAYOUT.lineHeight + 20;
+  
+  // Separator
+  doc.setDrawColor(...COLORS.khaki);
+  doc.setLineWidth(0.5);
+  doc.line(LAYOUT.margin, yPos, pageWidth - LAYOUT.margin, yPos);
+  
+  yPos += 15;
+  
+  // CANDIDATE OVERVIEW section
   doc.setTextColor(...COLORS.boldBlack);
   doc.setFontSize(FONTS.heading);
   doc.setFont('helvetica', 'bold');
-  doc.text('CANDIDATE OVERVIEW', 15, yPos);
-  yPos += 10;
+  doc.text('CANDIDATE OVERVIEW', LAYOUT.margin, yPos);
   
-  // Bar chart for viable candidates
-  const maxBarWidth = pageWidth - 80;
-  const barHeight = 18;
-  const barSpacing = 25;
+  yPos += 12;
   
-  viableCandidates.slice(0, 5).forEach((candidate, index) => {
-    const barWidth = (candidate.score / 100) * maxBarWidth;
-    const barColor = getScoreColor(candidate.score);
+  // Bar chart - using ONLY brand colors
+  const maxBarWidth = pageWidth - LAYOUT.margin * 2 - 50;
+  const barHeight = 14;
+  const barSpacing = 22;
+  
+  // Filter to show only viable candidates (score > 20)
+  const displayCandidates = viableCandidates.filter(c => c.score > 20).slice(0, 4);
+  const maxScore = Math.max(...displayCandidates.map(c => c.score), 100);
+  
+  displayCandidates.forEach((candidate, index) => {
+    const barWidth = (candidate.score / maxScore) * maxBarWidth;
+    const isWinner = index === 0;
     
     // Candidate name
     doc.setTextColor(...COLORS.boldBlack);
-    doc.setFontSize(FONTS.small);
-    doc.setFont('helvetica', 'bold');
-    doc.text(candidate.name, 20, yPos + 5);
+    doc.setFontSize(FONTS.caption);
+    doc.setFont('helvetica', isWinner ? 'bold' : 'normal');
+    doc.text(candidate.name, LAYOUT.margin, yPos + 4);
     
-    // Bar
-    doc.setFillColor(...COLORS.lightGray);
-    doc.roundedRect(20, yPos + 8, maxBarWidth, barHeight, 2, 2, 'F');
-    doc.setFillColor(...barColor);
-    doc.roundedRect(20, yPos + 8, barWidth, barHeight, 2, 2, 'F');
+    // Bar background
+    doc.setFillColor(...COLORS.creamDark);
+    doc.roundedRect(LAYOUT.margin, yPos + 7, maxBarWidth, barHeight, 2, 2, 'F');
+    
+    // Bar fill - Young Blue for winner, Khaki for others
+    doc.setFillColor(...(isWinner ? COLORS.youngBlue : COLORS.khaki));
+    doc.roundedRect(LAYOUT.margin, yPos + 7, barWidth, barHeight, 2, 2, 'F');
     
     // Score label
     doc.setTextColor(...COLORS.white);
-    doc.setFontSize(FONTS.small);
+    doc.setFontSize(FONTS.caption);
     doc.setFont('helvetica', 'bold');
-    if (barWidth > 30) {
-      doc.text(String(candidate.score), 25, yPos + 19);
+    if (barWidth > 25) {
+      doc.text(String(candidate.score), LAYOUT.margin + 8, yPos + 16);
     } else {
       doc.setTextColor(...COLORS.boldBlack);
-      doc.text(String(candidate.score), barWidth + 25, yPos + 19);
+      doc.text(String(candidate.score), LAYOUT.margin + barWidth + 5, yPos + 16);
     }
     
     yPos += barSpacing;
@@ -342,15 +392,19 @@ function createPage2(
   // Non-viable message
   if (presentationContent.candidate_summary.non_viable_message) {
     yPos += 5;
-    doc.setTextColor(...COLORS.gray);
+    doc.setTextColor(...COLORS.khaki);
     doc.setFontSize(FONTS.tiny);
     doc.setFont('helvetica', 'italic');
-    doc.text(presentationContent.candidate_summary.non_viable_message, 20, yPos);
+    doc.text(presentationContent.candidate_summary.non_viable_message, LAYOUT.margin, yPos);
   }
   
+  // Footer
   addFooter(doc, 2, 3, pageWidth, pageHeight);
 }
 
+// ============================================
+// PAGE 3: Insights + Next Steps
+// ============================================
 function createPage3(
   doc: jsPDF, 
   options: PresentationExportOptions, 
@@ -359,103 +413,125 @@ function createPage3(
 ) {
   const { presentationContent } = options;
   
+  // Cream background
+  addCreamBackground(doc, pageWidth, pageHeight);
+  
+  // Header
   addHeader(doc, pageWidth);
   
-  let yPos = 30;
+  let yPos = 35;
   
   // KEY INSIGHTS section
-  doc.setTextColor(...COLORS.youngBlueDark);
-  doc.setFontSize(FONTS.heading);
+  doc.setFillColor(...COLORS.youngBlue);
+  doc.rect(LAYOUT.margin, yPos, 4, 20, 'F');
+  
+  doc.setTextColor(...COLORS.boldBlack);
+  doc.setFontSize(FONTS.mainTitle);
   doc.setFont('helvetica', 'bold');
-  doc.text('KEY INSIGHTS', 15, yPos);
-  yPos += 8;
+  doc.text('KEY INSIGHTS', LAYOUT.margin + 12, yPos + 14);
+  
+  yPos += 30;
   
   // Insights box
-  doc.setFillColor(245, 247, 250);
-  doc.roundedRect(15, yPos, pageWidth - 30, 45, 3, 3, 'F');
+  doc.setFillColor(...COLORS.creamDark);
+  const insightsBoxHeight = Math.max(50, presentationContent.key_insights.length * 14 + 20);
+  doc.roundedRect(LAYOUT.margin, yPos, pageWidth - LAYOUT.margin * 2, insightsBoxHeight, 4, 4, 'F');
   
   doc.setTextColor(...COLORS.boldBlack);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'normal');
   
-  presentationContent.key_insights.forEach((insight, i) => {
-    doc.text(`• ${insight}`, 25, yPos + 12 + i * 12);
+  presentationContent.key_insights.slice(0, 4).forEach((insight, i) => {
+    doc.setFillColor(...COLORS.youngBlue);
+    doc.circle(LAYOUT.margin + LAYOUT.padding + 3, yPos + 12 + i * 14, 2, 'F');
+    doc.text(insight, LAYOUT.margin + LAYOUT.padding + 12, yPos + 14 + i * 14);
   });
   
-  yPos += 60;
+  yPos += insightsBoxHeight + 20;
   
   // CONSIDERATIONS section
-  doc.setTextColor(...COLORS.gold);
-  doc.setFontSize(FONTS.heading);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CONSIDERATIONS FOR FINAL INTERVIEW', 15, yPos);
-  yPos += 8;
+  doc.setFillColor(...COLORS.gold);
+  doc.rect(LAYOUT.margin, yPos, 4, 20, 'F');
   
-  // Considerations box
-  doc.setFillColor(255, 251, 235);
+  doc.setTextColor(...COLORS.boldBlack);
+  doc.setFontSize(FONTS.mainTitle);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CONSIDERATIONS', LAYOUT.margin + 12, yPos + 14);
+  
+  yPos += 30;
+  
+  // Considerations box with Gold border
+  doc.setFillColor(...COLORS.cream);
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(1);
-  doc.roundedRect(15, yPos, pageWidth - 30, 40, 3, 3, 'FD');
+  doc.setLineWidth(1.5);
+  const considBoxHeight = Math.max(45, presentationContent.considerations.length * 14 + 16);
+  doc.roundedRect(LAYOUT.margin, yPos, pageWidth - LAYOUT.margin * 2, considBoxHeight, 4, 4, 'FD');
   
   doc.setTextColor(...COLORS.boldBlack);
   doc.setFontSize(FONTS.body);
   doc.setFont('helvetica', 'normal');
   
-  presentationContent.considerations.forEach((consideration, i) => {
-    doc.text(`→ ${consideration}`, 25, yPos + 12 + i * 12);
+  presentationContent.considerations.slice(0, 3).forEach((consideration, i) => {
+    doc.setTextColor(...COLORS.gold);
+    doc.text('→', LAYOUT.margin + LAYOUT.padding, yPos + 14 + i * 14);
+    doc.setTextColor(...COLORS.boldBlack);
+    doc.text(consideration, LAYOUT.margin + LAYOUT.padding + 10, yPos + 14 + i * 14);
   });
   
-  yPos += 55;
+  yPos += considBoxHeight + 20;
   
   // RECOMMENDED NEXT STEPS section
-  doc.setTextColor(...COLORS.green);
-  doc.setFontSize(FONTS.heading);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RECOMMENDED NEXT STEPS', 15, yPos);
-  yPos += 8;
-  
-  // Steps box
-  doc.setFillColor(240, 253, 244);
-  doc.setDrawColor(...COLORS.green);
-  doc.setLineWidth(1);
-  doc.roundedRect(15, yPos, pageWidth - 30, 55, 3, 3, 'FD');
-  
   doc.setTextColor(...COLORS.boldBlack);
-  doc.setFontSize(FONTS.body);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(FONTS.mainTitle);
+  doc.setFont('helvetica', 'bold');
+  doc.text('NEXT STEPS', LAYOUT.margin, yPos + 14);
   
-  presentationContent.next_steps.actions.forEach((action, i) => {
-    // Number circle
-    doc.setFillColor(...COLORS.green);
-    doc.circle(27, yPos + 10 + i * 14, 5, 'F');
-    doc.setTextColor(...COLORS.white);
-    doc.setFontSize(FONTS.small);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(i + 1), 27, yPos + 12 + i * 14, { align: 'center' });
-    
-    // Action text
-    doc.setTextColor(...COLORS.boldBlack);
-    doc.setFontSize(FONTS.body);
-    doc.setFont('helvetica', 'normal');
-    doc.text(action, 38, yPos + 12 + i * 14);
-  });
+  yPos += 30;
   
-  yPos += 65;
-  
-  // Timeline badge
+  // Steps box - Young Blue background
   doc.setFillColor(...COLORS.youngBlue);
-  doc.roundedRect(15, yPos, pageWidth - 30, 25, 3, 3, 'F');
+  const stepsBoxHeight = Math.max(70, presentationContent.next_steps.actions.length * 16 + 40);
+  doc.roundedRect(LAYOUT.margin, yPos, pageWidth - LAYOUT.margin * 2, stepsBoxHeight, 4, 4, 'F');
   
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(FONTS.body);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RECOMMENDED TIMELINE:', 25, yPos + 15);
-  doc.setFontSize(FONTS.heading);
-  doc.text(presentationContent.next_steps.timeline, pageWidth - 25, yPos + 15, { align: 'right' });
   
+  presentationContent.next_steps.actions.slice(0, 3).forEach((action, i) => {
+    // Number circle
+    doc.setFillColor(...COLORS.white);
+    doc.circle(LAYOUT.margin + LAYOUT.padding + 6, yPos + 14 + i * 16, 6, 'F');
+    doc.setTextColor(...COLORS.youngBlue);
+    doc.setFontSize(FONTS.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(i + 1), LAYOUT.margin + LAYOUT.padding + 6, yPos + 17 + i * 16, { align: 'center' });
+    
+    // Action text
+    doc.setTextColor(...COLORS.white);
+    doc.setFontSize(FONTS.body);
+    doc.setFont('helvetica', 'normal');
+    doc.text(action, LAYOUT.margin + LAYOUT.padding + 18, yPos + 17 + i * 16);
+  });
+  
+  // Timeline badge
+  const timelineY = yPos + stepsBoxHeight - 22;
+  doc.setDrawColor(...COLORS.white);
+  doc.setLineWidth(0.5);
+  doc.line(LAYOUT.margin + LAYOUT.padding, timelineY - 5, pageWidth - LAYOUT.margin - LAYOUT.padding, timelineY - 5);
+  
+  doc.setTextColor(...COLORS.white);
+  doc.setFontSize(FONTS.caption);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TIMELINE:', LAYOUT.margin + LAYOUT.padding, timelineY + 5);
+  doc.setFontSize(FONTS.heading);
+  doc.text(presentationContent.next_steps.timeline.toUpperCase(), pageWidth - LAYOUT.margin - LAYOUT.padding, timelineY + 5, { align: 'right' });
+  
+  // Footer
   addFooter(doc, 3, 3, pageWidth, pageHeight);
 }
 
+// ============================================
+// MAIN EXPORT FUNCTION
+// ============================================
 export function exportPresentationToPdf(options: PresentationExportOptions): void {
   const { jobTitle, exportDate = new Date() } = options;
   
@@ -482,7 +558,7 @@ export function exportPresentationToPdf(options: PresentationExportOptions): voi
   // Generate filename
   const sanitizedTitle = jobTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const dateStr = exportDate.toISOString().split('T')[0];
-  const filename = `executive-report-${sanitizedTitle}-${dateStr}.pdf`;
+  const filename = `young-executive-report-${sanitizedTitle}-${dateStr}.pdf`;
   
   doc.save(filename);
 }
