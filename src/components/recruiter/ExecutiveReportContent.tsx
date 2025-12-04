@@ -40,8 +40,16 @@ export function ExecutiveReportContent({
     day: 'numeric',
   });
 
-  const topCandidate = presentationContent.topRecommendation;
-  const maxScore = Math.max(...viableCandidates.map(c => c.score), 1);
+  // Safe defaults for topRecommendation
+  const topCandidate = presentationContent?.topRecommendation ?? {
+    name: 'No Recommendation',
+    score: 0,
+    whyChosen: 'No candidates available for evaluation.',
+    keyStrengths: [],
+  };
+  
+  const safeCandidates = viableCandidates ?? [];
+  const maxScore = Math.max(...safeCandidates.map(c => c.score), 1);
 
   const getConfidenceLabel = (conf: string) => {
     switch (conf) {
@@ -80,7 +88,7 @@ export function ExecutiveReportContent({
           </div>
           <div>
             <span className="text-[#605738] uppercase tracking-wider">Candidates</span>
-            <p className="font-bold text-lg mt-1">{viableCandidates.length} evaluated</p>
+            <p className="font-bold text-lg mt-1">{safeCandidates.length} evaluated</p>
           </div>
         </div>
 
@@ -90,7 +98,7 @@ export function ExecutiveReportContent({
         {/* Executive Summary Quote */}
         <div className="flex-1 flex items-center justify-center px-8">
           <blockquote className="text-xl italic leading-relaxed text-center max-w-3xl">
-            "{presentationContent.executiveSummary}"
+            "{presentationContent?.executiveSummary || 'Candidate evaluation in progress.'}"
           </blockquote>
         </div>
 
@@ -148,7 +156,7 @@ export function ExecutiveReportContent({
           </p>
 
           <ul className="space-y-2">
-            {topCandidate.keyStrengths.slice(0, 4).map((strength, idx) => (
+            {(topCandidate.keyStrengths ?? []).slice(0, 4).map((strength, idx) => (
               <li key={idx} className="flex items-center gap-3">
                 <span className="w-2 h-2 bg-[#100D0A] rounded-full" />
                 <span>{strength}</span>
@@ -161,7 +169,7 @@ export function ExecutiveReportContent({
         <div className="mb-8">
           <h4 className="text-lg font-bold uppercase tracking-wide mb-3">Why {topCandidate.name}?</h4>
           <p className="text-[#605738] leading-relaxed">
-            {presentationContent.topRecommendation.whyChosen}
+            {topCandidate.whyChosen}
           </p>
         </div>
 
@@ -173,7 +181,7 @@ export function ExecutiveReportContent({
           <h4 className="text-lg font-bold uppercase tracking-wide mb-6">Candidate Overview</h4>
           
           <div className="space-y-4">
-            {viableCandidates.slice(0, 5).map((candidate, idx) => {
+            {safeCandidates.slice(0, 5).map((candidate, idx) => {
               const isWinner = candidate.name === topCandidate.name;
               const barWidth = (candidate.score / maxScore) * 100;
               
@@ -205,7 +213,7 @@ export function ExecutiveReportContent({
             })}
           </div>
 
-          {viableCandidates.length === 0 && (
+          {safeCandidates.length === 0 && (
             <p className="italic text-[#605738] mt-4">
               Limited candidates met evaluation criteria
             </p>
@@ -233,7 +241,7 @@ export function ExecutiveReportContent({
           
           <div className="bg-[#FDFAF0] border border-[#100D0A]/10 p-6 shadow-sm">
             <ul className="space-y-4">
-              {presentationContent.keyInsights.slice(0, 4).map((insight, idx) => (
+              {(presentationContent?.keyInsights ?? []).slice(0, 4).map((insight, idx) => (
                 <li key={idx} className="flex items-start gap-3">
                   <span className="text-[#93B1FF] font-bold">→</span>
                   <span>{insight}</span>
@@ -251,7 +259,7 @@ export function ExecutiveReportContent({
           
           <div className="border-2 border-[#B88F5E] p-6">
             <ul className="space-y-3">
-              {presentationContent.considerations.slice(0, 4).map((consideration, idx) => (
+              {(presentationContent?.considerations ?? []).slice(0, 4).map((consideration, idx) => (
                 <li key={idx} className="flex items-start gap-3">
                   <span className="w-5 h-5 border border-[#100D0A] rounded-full flex items-center justify-center text-xs shrink-0">
                     {idx + 1}
@@ -269,7 +277,7 @@ export function ExecutiveReportContent({
           
           <div className="bg-[#93B1FF] p-8">
             <ul className="space-y-4 mb-6">
-              {presentationContent.nextSteps.slice(0, 4).map((step, idx) => (
+              {(presentationContent?.nextSteps ?? []).slice(0, 4).map((step, idx) => (
                 <li key={idx} className="flex items-center gap-4">
                   <span className="w-8 h-8 bg-[#100D0A] text-[#FDFAF0] rounded-full flex items-center justify-center font-bold shrink-0">
                     {idx + 1}
@@ -281,7 +289,7 @@ export function ExecutiveReportContent({
 
             <div className="border-t border-[#100D0A]/30 pt-4 mt-6">
               <p className="text-sm uppercase tracking-wider mb-1">Timeline</p>
-              <p className="text-2xl font-black">{presentationContent.timeline || '5-7 Business Days'}</p>
+              <p className="text-2xl font-black">{presentationContent?.timeline || '5-7 Business Days'}</p>
             </div>
           </div>
         </div>
