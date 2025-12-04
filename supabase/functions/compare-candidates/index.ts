@@ -23,9 +23,18 @@ interface CandidateData {
     recommendation: string | null;
   } | null;
   business_case_responses: {
+    question_id: string;
     question_title: string;
+    question_description: string;
     text_response: string | null;
   }[];
+}
+
+interface BusinessCaseQuestion {
+  id: string;
+  question_title: string;
+  question_description: string;
+  question_number: number;
 }
 
 serve(async (req) => {
@@ -57,6 +66,19 @@ serve(async (req) => {
 
     if (jobError) throw new Error('Failed to fetch job details');
 
+    // Fetch business case questions for this job
+    const { data: businessCases, error: bcError } = await supabase
+      .from('business_cases')
+      .select('id, question_title, question_description, question_number')
+      .eq('job_id', jobId)
+      .order('question_number', { ascending: true });
+
+    if (bcError) {
+      console.error('Error fetching business cases:', bcError);
+    }
+
+    const businessCaseQuestions: BusinessCaseQuestion[] = businessCases || [];
+
     // Fetch candidates data
     const candidatesData: CandidateData[] = [];
 
@@ -77,14 +99,16 @@ serve(async (req) => {
         .eq('application_id', appId)
         .maybeSingle();
 
-      // Get business case responses
+      // Get business case responses with question details
       const { data: responses } = await supabase
         .from('business_case_responses')
         .select(`
           text_response,
-          business_cases!inner(question_title)
+          business_case_id,
+          business_cases!inner(id, question_title, question_description, question_number)
         `)
-        .eq('application_id', appId);
+        .eq('application_id', appId)
+        .order('business_cases(question_number)', { ascending: true });
 
       candidatesData.push({
         application_id: app.id,
@@ -102,7 +126,9 @@ serve(async (req) => {
           recommendation: aiEval.recommendation,
         } : null,
         business_case_responses: responses?.map(r => ({
+          question_id: (r.business_cases as any).id,
           question_title: (r.business_cases as any).question_title,
+          question_description: (r.business_cases as any).question_description || '',
           text_response: r.text_response,
         })) || [],
       });
@@ -112,7 +138,7 @@ serve(async (req) => {
       throw new Error('Could not fetch enough candidate data for comparison');
     }
 
-    // Build comparison prompt
+    // Build comparison prompt with detailed business case info
     const candidatesInfo = candidatesData.map((c, i) => `
 ### Candidate ${i + 1}: ${c.candidate_name}
 - AI Overall Score: ${c.ai_evaluation?.overall_score ?? 'N/A'}/100
@@ -125,8 +151,19 @@ serve(async (req) => {
 - Concerns: ${c.ai_evaluation?.concerns?.join(', ') ?? 'None identified'}
 
 Business Case Responses:
-${c.business_case_responses.map(r => `Q: ${r.question_title}\nA: ${r.text_response || 'No response'}`).join('\n\n')}
+${c.business_case_responses.map(r => `
+**Question:** ${r.question_title}
+**Description:** ${r.question_description}
+**${c.candidate_name}'s Response:** ${r.text_response || 'No response provided'}
+`).join('\n')}
 `).join('\n---\n');
+
+    // List of business case questions for the AI to analyze
+    const businessCaseInfo = businessCaseQuestions.length > 0 
+      ? `\n### Business Case Questions for Analysis:\n${businessCaseQuestions.map((q, i) => 
+          `${i + 1}. "${q.question_title}" - ${q.question_description || 'No description'}`
+        ).join('\n')}\n`
+      : '';
 
     const systemPrompt = `You are an expert recruitment analyst for Young, a company that values: Fearless, Unusual, Down to earth, Agility, Determination, and Authenticity.
 
@@ -135,7 +172,7 @@ Your task is to compare final candidates for a position and provide a clear, act
 Job Position: ${job.title}
 Job Description: ${job.description}
 Requirements: ${job.requirements?.join(', ') || 'Not specified'}
-
+${businessCaseInfo}
 ${customPrompt ? `\n### Custom Evaluation Instructions from Recruiter:\n${customPrompt}\n` : ''}
 
 Analyze the candidates objectively considering:
@@ -144,14 +181,16 @@ Analyze the candidates objectively considering:
 3. Cultural fit with Young's values
 4. Growth potential and learning agility
 5. Risk factors and concerns
+6. Quality and depth of business case responses - analyze each question separately
 
-Be direct and decisive in your recommendation.`;
+Be direct and decisive in your recommendation. For business case analysis, evaluate how well each candidate answered each specific question.`;
 
     const userPrompt = `Compare these ${candidatesData.length} candidates and provide your analysis:
 
 ${candidatesInfo}
 
-Provide a comprehensive comparison with a clear winner recommendation.`;
+Provide a comprehensive comparison with a clear winner recommendation. 
+IMPORTANT: For the business_case_analysis section, you MUST analyze each business case question separately, comparing how all candidates responded to that specific question.`;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
@@ -172,7 +211,7 @@ Provide a comprehensive comparison with a clear winner recommendation.`;
           type: 'function',
           function: {
             name: 'provide_comparison_result',
-            description: 'Provide structured comparison of candidates',
+            description: 'Provide structured comparison of candidates including business case analysis',
             parameters: {
               type: 'object',
               properties: {
@@ -239,9 +278,37 @@ Provide a comprehensive comparison with a clear winner recommendation.`;
                     },
                     required: ['candidate_name', 'application_id', 'risks']
                   }
+                },
+                business_case_analysis: {
+                  type: 'array',
+                  description: 'Analysis of each business case question with all candidate responses compared',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      question_title: { type: 'string', description: 'The business case question title' },
+                      question_description: { type: 'string', description: 'The business case question description' },
+                      candidate_responses: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            application_id: { type: 'string' },
+                            candidate_name: { type: 'string' },
+                            response_summary: { type: 'string', description: 'Brief summary of what the candidate said' },
+                            score: { type: 'number', description: 'Score 0-100 for this response quality' },
+                            assessment: { type: 'string', description: 'Brief assessment of response quality and depth' }
+                          },
+                          required: ['application_id', 'candidate_name', 'response_summary', 'score', 'assessment']
+                        }
+                      },
+                      comparative_analysis: { type: 'string', description: 'AI analysis comparing all responses to this specific question, highlighting strengths and weaknesses' },
+                      best_response: { type: 'string', description: 'Name of candidate with the best response to this question' }
+                    },
+                    required: ['question_title', 'candidate_responses', 'comparative_analysis', 'best_response']
+                  }
                 }
               },
-              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks']
+              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks', 'business_case_analysis']
             }
           }
         }],

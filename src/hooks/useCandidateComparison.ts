@@ -36,12 +36,29 @@ export interface CandidateRisk {
   risks: string[];
 }
 
+export interface BusinessCaseResponseAnalysis {
+  application_id: string;
+  candidate_name: string;
+  response_summary: string;
+  score: number;
+  assessment: string;
+}
+
+export interface BusinessCaseAnalysisItem {
+  question_title: string;
+  question_description?: string;
+  candidate_responses: BusinessCaseResponseAnalysis[];
+  comparative_analysis: string;
+  best_response: string;
+}
+
 export interface ComparisonResult {
   executive_summary: string;
   rankings: CandidateRanking[];
   comparison_matrix: ComparisonMatrixItem[];
   recommendation: ComparisonRecommendation;
   risks: CandidateRisk[];
+  business_case_analysis?: BusinessCaseAnalysisItem[];
 }
 
 export interface JobWithApplicationCount {
