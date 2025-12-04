@@ -164,3 +164,63 @@
     letter-spacing: 0.02em;
   }
 }
+
+/* Print Styles for Executive Report */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html, body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #FDFAF0 !important;
+  }
+
+  /* Hide everything except print content */
+  body > *:not(.print-root) {
+    display: none !important;
+  }
+
+  /* Hide dialog chrome */
+  [role="dialog"],
+  [data-radix-dialog-overlay],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print content */
+  .hidden.print\\:block {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99999;
+  }
+
+  /* Page breaks */
+  .print\\:break-after-page {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  /* Executive report container */
+  .executive-report-container {
+    width: 210mm;
+    margin: 0 auto;
+    background: #FDFAF0 !important;
+  }
+
+  .executive-report-container .page-1,
+  .executive-report-container .page-2,
+  .executive-report-container .page-3 {
+    width: 210mm;
+    min-height: 297mm;
+    height: 297mm;
+    box-sizing: border-box;
+    background: #FDFAF0 !important;
+    overflow: hidden;
+  }
+}
