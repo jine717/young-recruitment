@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,20 +9,20 @@ import { useAIEvaluation, useTriggerAIAnalysis } from '@/hooks/useAIEvaluations'
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
 import { useInterviews } from '@/hooks/useInterviews';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
-import { DocumentsSection } from '@/components/candidate-profile/DocumentsSection';
-import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
-// Hidden for now: RecruiterNotes, NotificationHistory, InterviewEvaluationsCard, DecisionHistory
+import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
+import { DocumentsTab } from '@/components/candidate-profile/DocumentsTab';
+import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
+import { QuickScoreWidget } from '@/components/candidate-profile/QuickScoreWidget';
 import { InterviewEvaluationForm } from '@/components/candidate-profile/InterviewEvaluationForm';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
-import { InterviewScheduleCard } from '@/components/candidate-profile/InterviewScheduleCard';
-import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
-import { InterviewQuestionsCard } from '@/components/recruiter/InterviewQuestionsCard';
+import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
-import { Brain, Loader2, CalendarPlus, Trash2 } from 'lucide-react';
+import { Loader2, CalendarPlus, Trash2, FileText, Briefcase, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationDetail {
@@ -83,7 +83,6 @@ export default function CandidateProfile() {
 
       if (error) throw error;
 
-      // Get profile separately
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email, phone')
@@ -103,15 +102,16 @@ export default function CandidateProfile() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-32 w-full" />
           <div className="grid lg:grid-cols-3 gap-6">
+            <Skeleton className="h-96 lg:col-span-2" />
             <Skeleton className="h-64" />
-            <Skeleton className="h-64 lg:col-span-2" />
           </div>
         </div>
       </div>
@@ -216,40 +216,6 @@ export default function CandidateProfile() {
           isUpdating={isUpdatingStatus}
         />
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => setShowScheduleModal(true)}>
-            <CalendarPlus className="w-4 h-4 mr-2" />
-            Schedule Interview
-          </Button>
-          <InterviewEvaluationForm applicationId={application.id} />
-          <HiringDecisionModal applicationId={application.id} />
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={isDeleting}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Candidate
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. The candidate will be permanently removed from the system. No notification will be sent to the candidate.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-
         {/* Schedule Interview Modal */}
         <ScheduleInterviewModal
           open={showScheduleModal}
@@ -259,60 +225,114 @@ export default function CandidateProfile() {
           jobTitle={application.job.title}
         />
 
-        {/* Main Content */}
+        {/* Main Content: Tabs + Sidebar */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Documents, Business Case & Interview Questions */}
-          <div className="lg:col-span-2 space-y-6">
-            <DocumentsSection
-              applicationId={application.id}
-              cvUrl={application.cv_url}
-              discUrl={application.disc_url}
-            />
+          {/* Left Column: Tabs */}
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full justify-start mb-4">
+                <TabsTrigger value="overview" className="gap-2">
+                  <Briefcase className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="gap-2">
+                  <FileText className="w-4 h-4" />
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger value="interview" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  Interview
+                </TabsTrigger>
+              </TabsList>
 
-            <BusinessCaseViewer
-              applicationId={application.id}
-              jobId={application.job_id}
-            />
+              <TabsContent value="overview" className="mt-0">
+                <OverviewTab
+                  applicationId={application.id}
+                  jobId={application.job_id}
+                  aiEvaluation={aiEvaluation}
+                  aiLoading={aiLoading}
+                  onTriggerAI={handleTriggerAI}
+                  isTriggering={triggerAI.isPending}
+                />
+              </TabsContent>
 
-            {/* Interview Questions */}
-            <InterviewQuestionsCard applicationId={application.id} />
+              <TabsContent value="documents" className="mt-0">
+                <DocumentsTab
+                  applicationId={application.id}
+                  cvUrl={application.cv_url}
+                  discUrl={application.disc_url}
+                />
+              </TabsContent>
+
+              <TabsContent value="interview" className="mt-0">
+                <InterviewTab
+                  applicationId={application.id}
+                  interviews={interviews}
+                  interviewsLoading={interviewsLoading}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Right Column - AI & Notes */}
-          <div className="space-y-6">
-            {/* AI Evaluation */}
-            {aiLoading ? (
-              <Skeleton className="h-64" />
-            ) : aiEvaluation ? (
-              <AIEvaluationCard evaluation={aiEvaluation} />
-            ) : (
-              <div className="p-4 bg-muted/50 rounded-lg text-center space-y-3">
-                <Brain className="w-8 h-8 mx-auto text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  No AI evaluation yet
-                </p>
-                <Button
-                  onClick={handleTriggerAI}
-                  disabled={triggerAI.isPending}
-                  size="sm"
-                >
-                  {triggerAI.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Brain className="w-4 h-4 mr-2" />
-                  )}
-                  Run AI Analysis
-                </Button>
-              </div>
-            )}
-
-            {/* Scheduled Interviews */}
-            <InterviewScheduleCard 
-              interviews={interviews} 
-              isLoading={interviewsLoading} 
+          {/* Right Column: Sidebar */}
+          <div className="space-y-4">
+            {/* Quick AI Score Widget */}
+            <QuickScoreWidget
+              score={aiEvaluation?.overall_score ?? null}
+              recommendation={aiEvaluation?.recommendation ?? null}
+              isLoading={aiLoading}
+              onClick={() => setActiveTab('overview')}
             />
 
-            {/* Hidden for now: InterviewEvaluationsCard, DecisionHistory, RecruiterNotes, NotificationHistory */}
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button 
+                  onClick={() => setShowScheduleModal(true)} 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  size="sm"
+                >
+                  <CalendarPlus className="w-4 h-4 mr-2" />
+                  Schedule Interview
+                </Button>
+                
+                <InterviewEvaluationForm applicationId={application.id} />
+                <HiringDecisionModal applicationId={application.id} />
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                      size="sm"
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Candidate
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. The candidate will be permanently removed from the system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
