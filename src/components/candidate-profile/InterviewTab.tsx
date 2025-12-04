@@ -1,7 +1,5 @@
 import { InterviewQuestionsCard } from '@/components/recruiter/InterviewQuestionsCard';
 import { InterviewScheduleCard } from '@/components/candidate-profile/InterviewScheduleCard';
-import { InterviewEvaluationsCard } from '@/components/candidate-profile/InterviewEvaluationCard';
-import { DecisionHistory } from '@/components/candidate-profile/DecisionHistory';
 
 interface InterviewTabProps {
   applicationId: string;
@@ -18,11 +16,8 @@ export function InterviewTab({ applicationId, interviews, interviewsLoading }: I
         <InterviewScheduleCard interviews={interviews} isLoading={interviewsLoading} />
       </div>
 
-      {/* Right: Evaluations & Decisions */}
-      <div className="space-y-4">
-        <InterviewEvaluationsCard applicationId={applicationId} />
-        <DecisionHistory applicationId={applicationId} />
-      </div>
+      {/* Right: Reserved for future components */}
+      {/* Hidden for now: InterviewEvaluationsCard, DecisionHistory */}
     </div>
   );
 }
