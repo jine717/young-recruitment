@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useRef } from 'react';
+import ReactDOM from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,7 @@ export function ExecutiveReportModal({
       </Dialog>
 
       {/* Print-only content rendered via Portal outside Dialog */}
-      {open && printRoot && createPortal(
+      {open && printRoot && ReactDOM.createPortal(
         <div className="hidden print:block">
           <ExecutiveReportContent
             presentationContent={presentationContent}
