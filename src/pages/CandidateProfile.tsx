@@ -234,14 +234,30 @@ export default function CandidateProfile() {
                 <TabsTrigger value="overview" className="gap-2">
                   <Briefcase className="w-4 h-4" />
                   Overview
+                  {application.ai_evaluation_status === 'pending' && (
+                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))] animate-pulse" />
+                  )}
+                  {aiEvaluation && (
+                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
+                  )}
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="gap-2">
                   <FileText className="w-4 h-4" />
                   Documents
+                  {(application.cv_url || application.disc_url) && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      {[application.cv_url, application.disc_url].filter(Boolean).length}
+                    </span>
+                  )}
                 </TabsTrigger>
                 <TabsTrigger value="interview" className="gap-2">
                   <Users className="w-4 h-4" />
                   Interview
+                  {interviews.length > 0 && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]">
+                      {interviews.length}
+                    </span>
+                  )}
                 </TabsTrigger>
               </TabsList>
 
