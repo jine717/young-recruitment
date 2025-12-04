@@ -7,9 +7,10 @@ import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download, Fil
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
 import { exportComparisonToPdf } from '@/utils/exportComparisonPdf';
-import { exportPresentationToPdf, type PresentationContent, type ViableCandidate } from '@/utils/exportPresentationPdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ExecutiveReportModal } from './ExecutiveReportModal';
+import type { PresentationContent, ViableCandidate } from './ExecutiveReportContent';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
@@ -18,6 +19,12 @@ interface ComparisonResultCardProps {
 
 export function ComparisonResultCard({ result, jobTitle = 'Position' }: ComparisonResultCardProps) {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportData, setReportData] = useState<{
+    presentationContent: PresentationContent;
+    viableCandidates: ViableCandidate[];
+    confidence: 'high' | 'medium' | 'low';
+  } | null>(null);
   const { toast } = useToast();
 
   const getRankIcon = (rank: number) => {
@@ -73,16 +80,13 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         confidence: 'high' | 'medium' | 'low';
       };
 
-      exportPresentationToPdf({
-        presentationContent,
-        viableCandidates,
-        confidence,
-        jobTitle,
-      });
+      // Store data and open modal for preview
+      setReportData({ presentationContent, viableCandidates, confidence });
+      setReportModalOpen(true);
 
       toast({
-        title: 'Report Generated',
-        description: 'Executive presentation report has been downloaded.',
+        title: 'Report Ready',
+        description: 'Preview the report and print/save as PDF.',
       });
     } catch (error) {
       console.error('Error generating executive report:', error);
@@ -267,6 +271,16 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           </div>
         </CardContent>
       </Card>
+
+      {/* Executive Report Modal */}
+      <ExecutiveReportModal
+        open={reportModalOpen}
+        onOpenChange={setReportModalOpen}
+        presentationContent={reportData?.presentationContent || null}
+        viableCandidates={reportData?.viableCandidates || []}
+        confidence={reportData?.confidence || 'medium'}
+        jobTitle={jobTitle}
+      />
     </div>
   );
 }
