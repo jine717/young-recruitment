@@ -30,17 +30,33 @@ function ScoreDisplay({ label, score }: { label: string; score: number | null })
 
 function RecommendationBadge({ recommendation }: { recommendation: InterviewEvaluation['recommendation'] }) {
   const config = {
-    strong_hire: { label: 'Strong Hire', variant: 'default' as const, icon: CheckCircle },
-    hire: { label: 'Hire', variant: 'secondary' as const, icon: CheckCircle },
-    no_hire: { label: 'No Hire', variant: 'outline' as const, icon: XCircle },
-    strong_no_hire: { label: 'Strong No Hire', variant: 'destructive' as const, icon: AlertCircle },
+    strong_hire: { 
+      label: 'Strong Hire', 
+      className: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+      icon: CheckCircle 
+    },
+    hire: { 
+      label: 'Hire', 
+      className: 'bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30',
+      icon: CheckCircle 
+    },
+    no_hire: { 
+      label: 'No Hire', 
+      className: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50',
+      icon: XCircle 
+    },
+    strong_no_hire: { 
+      label: 'Strong No Hire', 
+      className: 'bg-destructive/10 text-destructive border-destructive/50',
+      icon: AlertCircle 
+    },
   };
 
   if (!recommendation) return null;
-  const { label, variant, icon: Icon } = config[recommendation];
+  const { label, className, icon: Icon } = config[recommendation];
 
   return (
-    <Badge variant={variant} className="gap-1">
+    <Badge className={`gap-1 ${className}`}>
       <Icon className="w-3 h-3" />
       {label}
     </Badge>
@@ -82,8 +98,13 @@ function EvaluationItem({ evaluation, applicationId }: { evaluation: InterviewEv
             </span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleDelete}>
-          <Trash2 className="w-4 h-4 text-muted-foreground" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          onClick={handleDelete}
+        >
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
 
@@ -136,7 +157,7 @@ export function InterviewEvaluationsCard({ applicationId }: InterviewEvaluations
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
           <ClipboardList className="w-4 h-4" />
           Interview Evaluations
         </CardTitle>
@@ -153,9 +174,12 @@ export function InterviewEvaluationsCard({ applicationId }: InterviewEvaluations
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No interview evaluations recorded yet
-          </p>
+          <div className="text-center py-6">
+            <ClipboardList className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No interview evaluations recorded yet
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -14,9 +14,9 @@ export function NotificationHistory({ applicationId }: NotificationHistoryProps)
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Bell className="w-5 h-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <Bell className="w-4 h-4" />
           Notification History
         </CardTitle>
       </CardHeader>
@@ -27,21 +27,24 @@ export function NotificationHistory({ applicationId }: NotificationHistoryProps)
             <Skeleton className="h-16 w-full" />
           </div>
         ) : logs?.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No notifications sent yet.
-          </p>
+          <div className="text-center py-6">
+            <Bell className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No notifications sent yet.
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
             {logs?.map((log) => (
               <div
                 key={log.id}
-                className="flex items-start justify-between p-3 bg-muted/50 rounded-lg"
+                className="flex items-start justify-between p-3 bg-muted/30 rounded-lg"
               >
                 <div className="flex items-start gap-3">
                   {log.status === 'sent' ? (
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mt-0.5" />
                   ) : (
-                    <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-destructive mt-0.5" />
                   )}
                   <div>
                     <p className="text-sm font-medium">
@@ -56,7 +59,12 @@ export function NotificationHistory({ applicationId }: NotificationHistoryProps)
                     </p>
                   </div>
                 </div>
-                <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                <Badge 
+                  className={log.status === 'sent' 
+                    ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50' 
+                    : 'bg-destructive/10 text-destructive border-destructive/50'
+                  }
+                >
                   {log.status}
                 </Badge>
               </div>

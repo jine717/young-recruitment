@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
 import { FileText, CheckCircle, Clock, MessageSquare, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -67,9 +66,9 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
             Business Case Responses
           </CardTitle>
         </CardHeader>
@@ -92,9 +91,9 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 -mx-2 px-2 py-1 rounded-md transition-colors">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
+            <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
                 Business Case Responses
               </CardTitle>
               <div className="flex items-center gap-2">
@@ -107,11 +106,14 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
           </CollapsibleTrigger>
         </CardHeader>
         <CollapsibleContent>
-          <CardContent className="space-y-6 pt-0">
+          <CardContent className="space-y-4 pt-0">
             {businessCases?.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">
-                No business case questions for this position.
-              </p>
+              <div className="text-center py-6">
+                <MessageSquare className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No business case questions for this position.
+                </p>
+              </div>
             ) : (
               businessCases?.map((bc) => {
                 const response = getResponseForCase(bc.id);
@@ -129,9 +131,9 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
                             Question {bc.question_number}
                           </span>
                           {isCompleted ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                           ) : (
-                            <Clock className="w-4 h-4 text-yellow-500" />
+                            <Clock className="w-4 h-4 text-[hsl(var(--young-gold))]" />
                           )}
                         </div>
                         <h4 className="font-semibold mt-1">{bc.question_title}</h4>
@@ -149,7 +151,7 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
                         </p>
 
                         {response.text_response && (
-                          <div className="bg-muted/50 rounded-lg p-4">
+                          <div className="bg-muted/30 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <FileText className="w-4 h-4 text-muted-foreground" />
                               <span className="text-xs font-medium text-muted-foreground">

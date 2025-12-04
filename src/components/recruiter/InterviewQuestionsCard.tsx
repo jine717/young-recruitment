@@ -31,11 +31,11 @@ const categoryLabels: Record<string, string> = {
 };
 
 const categoryColors: Record<string, string> = {
-  skills_verification: 'bg-blue-100 text-blue-800',
-  concern_probing: 'bg-amber-100 text-amber-800',
-  cultural_fit: 'bg-purple-100 text-purple-800',
-  experience: 'bg-green-100 text-green-800',
-  motivation: 'bg-pink-100 text-pink-800',
+  skills_verification: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]',
+  concern_probing: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))]',
+  cultural_fit: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))]',
+  experience: 'bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))]',
+  motivation: 'bg-[hsl(var(--young-gold))]/10 text-[hsl(var(--young-gold))]',
 };
 
 const priorityLabels: Record<number, string> = {
@@ -225,7 +225,7 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
         <Card className="border-dashed">
           <CardContent className="py-6">
             <div className="text-center">
-              <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
               <p className="text-sm text-muted-foreground mb-3">
                 No interview questions yet
               </p>
@@ -273,47 +273,47 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
       <Card>
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="w-4 h-4" />
                   Interview Questions ({questions.length})
                 </CardTitle>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-              </CollapsibleTrigger>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={openAddDialog}>
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleCopyAll}>
-                  <Copy className="h-3 w-3 mr-1" />
-                  Copy All
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleGenerate}
-                  disabled={generateQuestions.isPending}
-                >
-                  {generateQuestions.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Regenerate
-                    </>
-                  )}
-                </Button>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </div>
+            </CollapsibleTrigger>
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={openAddDialog}>
+                <Plus className="h-3 w-3 mr-1" />
+                Add
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCopyAll}>
+                <Copy className="h-3 w-3 mr-1" />
+                Copy All
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleGenerate}
+                disabled={generateQuestions.isPending}
+              >
+                {generateQuestions.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Regenerate
+                  </>
+                )}
+              </Button>
             </div>
           </CardHeader>
           <CollapsibleContent>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-0">
               {questions.map((question, index) => (
                 <div 
                   key={question.id} 
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
+                  className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -394,7 +394,7 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(question)}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -406,7 +406,7 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
                         onClick={() => handleCopy(question)}
                       >
                         {copiedId === question.id ? (
-                          <Check className="h-3 w-3 text-green-600" />
+                          <Check className="h-3 w-3 text-[hsl(var(--young-blue))]" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}
@@ -481,33 +481,35 @@ function QuestionDialog({ isOpen, onClose, formData, setFormData, onSave, isEdit
             <div className="space-y-2">
               <label className="text-sm font-medium">Priority</label>
               <Select 
-                value={String(formData.priority)} 
-                onValueChange={(value) => setFormData({ ...formData, priority: Number(value) })}
+                value={formData.priority.toString()} 
+                onValueChange={(value) => setFormData({ ...formData, priority: parseInt(value) })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Must Ask</SelectItem>
-                  <SelectItem value="2">Recommended</SelectItem>
-                  <SelectItem value="3">If Time</SelectItem>
+                  <SelectItem value="1">{priorityLabels[1]}</SelectItem>
+                  <SelectItem value="2">{priorityLabels[2]}</SelectItem>
+                  <SelectItem value="3">{priorityLabels[3]}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Reasoning (optional)</label>
-            <Input
-              placeholder="Why ask this question?"
+            <label className="text-sm font-medium">Reasoning (Optional)</label>
+            <Textarea
+              placeholder="Why is this question important?"
               value={formData.reasoning}
               onChange={(e) => setFormData({ ...formData, reasoning: e.target.value })}
+              rows={2}
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={onSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? 'Save Changes' : 'Add Question'}
+            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isEditing ? 'Update' : 'Add'} Question
           </Button>
         </DialogFooter>
       </DialogContent>

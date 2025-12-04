@@ -11,15 +11,27 @@ interface DecisionHistoryProps {
 
 function DecisionBadge({ decision }: { decision: HiringDecision['decision'] }) {
   const config = {
-    hired: { label: 'Hired', variant: 'default' as const, icon: CheckCircle, className: 'bg-green-600' },
-    rejected: { label: 'Rejected', variant: 'destructive' as const, icon: XCircle, className: '' },
-    on_hold: { label: 'On Hold', variant: 'secondary' as const, icon: Clock, className: '' },
+    hired: { 
+      label: 'Hired', 
+      className: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+      icon: CheckCircle 
+    },
+    rejected: { 
+      label: 'Rejected', 
+      className: 'bg-destructive/10 text-destructive border-destructive/50',
+      icon: XCircle 
+    },
+    on_hold: { 
+      label: 'On Hold', 
+      className: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50',
+      icon: Clock 
+    },
   };
 
-  const { label, variant, icon: Icon, className } = config[decision];
+  const { label, className, icon: Icon } = config[decision];
 
   return (
-    <Badge variant={variant} className={`gap-1 ${className}`}>
+    <Badge className={`gap-1 ${className}`}>
       <Icon className="w-3 h-3" />
       {label}
     </Badge>
@@ -67,7 +79,7 @@ export function DecisionHistory({ applicationId }: DecisionHistoryProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
           <History className="w-4 h-4" />
           Decision History
         </CardTitle>
@@ -80,9 +92,12 @@ export function DecisionHistory({ applicationId }: DecisionHistoryProps) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No hiring decisions recorded yet
-          </p>
+          <div className="text-center py-6">
+            <History className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No hiring decisions recorded yet
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
