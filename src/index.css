@@ -178,30 +178,27 @@
     background: #FDFAF0 !important;
   }
 
-  /* Hide everything except print content */
-  body > *:not(.print-root) {
+  /* Hide everything except print-root */
+  body > *:not(#print-root) {
     display: none !important;
   }
 
-  /* Hide dialog chrome */
-  [role="dialog"],
-  [data-radix-dialog-overlay],
-  .no-print {
-    display: none !important;
-  }
-
-  /* Show print content */
-  .hidden.print\\:block {
+  /* Show and position print-root */
+  #print-root {
     display: block !important;
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 99999;
+  }
+
+  /* Ensure content inside print-root is visible */
+  #print-root > * {
+    display: block !important;
   }
 
   /* Page breaks */
-  .print\\:break-after-page {
+  .print-break-after-page {
     break-after: page;
     page-break-after: always;
   }
