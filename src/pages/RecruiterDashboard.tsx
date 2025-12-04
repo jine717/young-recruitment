@@ -22,8 +22,6 @@ import { useSendNotification, NotificationType } from "@/hooks/useNotifications"
 import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
-import { InterviewQuestionsCard } from "@/components/recruiter/InterviewQuestionsCard";
-import { NotificationCard } from "@/components/recruiter/NotificationCard";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-primary/20 text-primary-foreground",
@@ -676,14 +674,8 @@ const RecruiterDashboard = () => {
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
                                   <TableCell colSpan={7} className="bg-muted/30 p-0">
-                                    <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                      <div className="lg:col-span-2 space-y-4">
-                                        <AIEvaluationCard evaluation={evaluation} />
-                                        <InterviewQuestionsCard applicationId={app.id} />
-                                      </div>
-                                      <div>
-                                        <NotificationCard applicationId={app.id} candidateName={app.profiles?.full_name || "Candidate"} hasBusinessCase={app.business_case_completed} />
-                                      </div>
+                                    <div className="p-4">
+                                      <AIEvaluationCard evaluation={evaluation} />
                                     </div>
                                   </TableCell>
                                 </TableRow>
