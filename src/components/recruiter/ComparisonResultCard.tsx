@@ -143,7 +143,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           ) : (
             <FileText className="w-4 h-4 mr-2" />
           )}
-          {isGeneratingReport ? 'Generating...' : 'Executive Report (AI)'}
+          {isGeneratingReport ? 'Generating...' : 'AI Report'}
         </Button>
       </div>
 
