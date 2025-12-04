@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   Dialog,
@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Mail, Loader2 } from 'lucide-react';
 import { 
   ExecutiveReportContent, 
   type PresentationContent, 
@@ -16,6 +16,9 @@ import {
   type ComparisonMatrixItem,
   type BusinessCaseAnalysisItem 
 } from './ExecutiveReportContent';
+import { EmailShareDialog } from './EmailShareDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ExecutiveReportModalProps {
   open: boolean;
@@ -40,6 +43,9 @@ export function ExecutiveReportModal({
   confidence,
   jobTitle,
 }: ExecutiveReportModalProps) {
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
 
   const formatFileName = useCallback((title: string) => {
@@ -85,6 +91,56 @@ export function ExecutiveReportModal({
     document.title = originalTitle;
   };
 
+  const handleSendEmail = async (email: string, message: string) => {
+    if (!presentationContent) return;
+
+    setIsSendingEmail(true);
+    try {
+      const topCandidate = viableCandidates[0];
+      const topRecommendation = {
+        name: topCandidate?.name || 'N/A',
+        score: topCandidate?.score || 0,
+        keyStrengths: presentationContent.topRecommendation?.keyStrengths || [],
+        whyChosen: presentationContent.topRecommendation?.whyChosen || '',
+      };
+
+      const { data, error } = await supabase.functions.invoke('send-executive-report', {
+        body: {
+          recipientEmail: email,
+          personalMessage: message || undefined,
+          jobTitle,
+          executiveSummary: presentationContent.executiveSummary || '',
+          topRecommendation,
+          rankings: allRankings.map(r => ({
+            name: r.candidate_name,
+            score: r.score,
+            recommendation: r.key_differentiator || '',
+          })),
+          keyInsights: presentationContent.keyInsights || [],
+          confidence,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to send email');
+
+      toast({
+        title: "Report Sent",
+        description: `Executive report sent to ${email}`,
+      });
+      setEmailDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "Failed to Send",
+        description: error.message || 'An error occurred while sending the report',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   if (!presentationContent) return null;
 
   const printRoot = document.getElementById('print-root');
@@ -94,7 +150,7 @@ export function ExecutiveReportModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[95vw] w-[900px] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 py-5 border-b border-[#605738]/20 bg-[#FDFAF0]">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pr-8">
               <div className="space-y-1">
                 <DialogTitle className="text-2xl font-bold text-[#100D0A] tracking-tight">
                   Executive Report
@@ -103,13 +159,23 @@ export function ExecutiveReportModal({
                   Preview and export candidate evaluation report
                 </p>
               </div>
-              <Button 
-                onClick={handlePrint} 
-                className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Print / Save as PDF
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => setEmailDialogOpen(true)}
+                  variant="outline"
+                  className="border-[#605738]/30 hover:bg-[#FDFAF0] text-[#100D0A] font-semibold"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Share via Email
+                </Button>
+                <Button 
+                  onClick={handlePrint} 
+                  className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print / Save as PDF
+                </Button>
+              </div>
             </div>
           </DialogHeader>
           
@@ -145,6 +211,13 @@ export function ExecutiveReportModal({
         </div>,
         printRoot
       )}
+
+      <EmailShareDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        onSend={handleSendEmail}
+        isLoading={isSendingEmail}
+      />
     </>
   );
 }
