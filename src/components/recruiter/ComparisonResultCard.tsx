@@ -292,23 +292,59 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            {result.risks.filter(r => r.risks.length > 0 || result.rankings.find(rank => rank.candidate_name === r.candidate_name)?.score > 0).map((risk) => (
-              <div key={risk.application_id} className="p-4 rounded-lg bg-muted/50">
-                <p className="font-semibold mb-2">{risk.candidate_name}</p>
-                {risk.risks.length > 0 ? (
-                  <ul className="space-y-1">
-                    {risk.risks.map((r, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                        {r}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No significant risks identified</p>
-                )}
-              </div>
-            ))}
+            {result.risks.filter(r => r.risks.length > 0 || result.rankings.find(rank => rank.candidate_name === r.candidate_name)?.score > 0).map((risk) => {
+              const candidateRank = result.rankings.find(rank => rank.candidate_name === risk.candidate_name);
+              const isTopCandidate = candidateRank?.rank === 1;
+              
+              return (
+                <div 
+                  key={risk.application_id} 
+                  className={cn(
+                    "rounded-xl p-5 border transition-all",
+                    isTopCandidate 
+                      ? "bg-[#B88F5E]/5 border-[#B88F5E]/30" 
+                      : "bg-muted/30 border-muted/50 hover:bg-muted/40"
+                  )}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold",
+                      isTopCandidate 
+                        ? "bg-[#B88F5E]/20 text-[#B88F5E]" 
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      #{candidateRank?.rank || '-'}
+                    </div>
+                    <div>
+                      <p className="font-semibold tracking-tight">{risk.candidate_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {risk.risks.length === 0 ? 'Low risk profile' : `${risk.risks.length} risk${risk.risks.length > 1 ? 's' : ''} identified`}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {risk.risks.length > 0 ? (
+                    <ul className="space-y-2">
+                      {risk.risks.map((r, idx) => (
+                        <li key={idx} className="flex items-start gap-3 text-sm">
+                          <div className="w-5 h-5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                          <span className="text-muted-foreground leading-relaxed">{r}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-muted-foreground">No significant risks identified</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
