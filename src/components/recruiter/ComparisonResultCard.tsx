@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain, ChevronDown } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -233,52 +234,82 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         </CardContent>
       </Card>
 
-      {/* Comparison Matrix */}
+      {/* Comparison Matrix - Accordion Layout */}
       <Card>
         <CardHeader>
           <CardTitle>Detailed Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-muted/60">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#100D0A] text-[#FDFAF0]">
-                  <th className="text-left py-3 px-3 font-semibold text-xs tracking-wide">Criterion</th>
-                  {result.rankings.map((r) => (
-                    <th key={r.application_id} className="text-center py-3 px-3 font-semibold text-xs tracking-wide min-w-[120px]">
-                      {r.candidate_name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {result.comparison_matrix.map((row, idx) => (
-                  <tr 
-                    key={idx} 
-                    className={cn(
-                      "border-b border-muted/40 last:border-0 transition-colors",
-                      idx % 2 === 0 ? "bg-background" : "bg-muted/20"
-                    )}
-                  >
-                    <td className="py-3 px-3 font-medium text-xs">{row.criterion}</td>
-                    {row.candidates.map((c) => (
-                      <td key={c.application_id} className="text-center py-3 px-3">
-                        <div className={cn(
-                          'inline-flex items-center justify-center w-12 h-7 rounded-md font-bold text-xs',
-                          c.score >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          c.score >= 60 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                        )}>
-                          {c.score}
+          <Accordion type="multiple" className="space-y-2">
+            {result.comparison_matrix.map((row, idx) => (
+              <AccordionItem 
+                key={idx} 
+                value={`criterion-${idx}`}
+                className="border rounded-lg px-4 data-[state=open]:bg-muted/20"
+              >
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <span className="font-semibold text-sm">{row.criterion}</span>
+                    <div className="flex items-center gap-2">
+                      {row.candidates.map((c) => {
+                        const candidateName = result.rankings.find(r => r.application_id === c.application_id)?.candidate_name || '';
+                        return (
+                          <div key={c.application_id} className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground hidden sm:inline">{candidateName.split(' ')[0]}:</span>
+                            <Badge className={cn(
+                              "text-xs font-bold min-w-[40px] justify-center",
+                              c.score >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                              c.score >= 60 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                              "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            )}>
+                              {c.score}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="grid gap-3 md:grid-cols-2 pt-2">
+                    {row.candidates.map((c) => {
+                      const candidate = result.rankings.find(r => r.application_id === c.application_id);
+                      const isTopCandidate = candidate?.rank === 1;
+                      return (
+                        <div 
+                          key={c.application_id}
+                          className={cn(
+                            "rounded-lg p-3 border",
+                            isTopCandidate 
+                              ? "bg-[#B88F5E]/5 border-[#B88F5E]/30" 
+                              : "bg-muted/30 border-muted/50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-sm flex items-center gap-1.5">
+                              {candidate?.candidate_name}
+                              {isTopCandidate && <Trophy className="w-3.5 h-3.5 text-[#B88F5E]" />}
+                            </span>
+                            <Badge className={cn(
+                              "text-xs font-bold",
+                              c.score >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                              c.score >= 60 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                              "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            )}>
+                              {c.score}/100
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {c.notes}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 leading-tight max-w-[140px] mx-auto line-clamp-2">{c.notes}</p>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </CardContent>
       </Card>
 
