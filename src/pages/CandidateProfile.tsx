@@ -11,12 +11,9 @@ import { useInterviews } from '@/hooks/useInterviews';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { DocumentsSection } from '@/components/candidate-profile/DocumentsSection';
 import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
-import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
-import { NotificationHistory } from '@/components/candidate-profile/NotificationHistory';
+// Hidden for now: RecruiterNotes, NotificationHistory, InterviewEvaluationsCard, DecisionHistory
 import { InterviewEvaluationForm } from '@/components/candidate-profile/InterviewEvaluationForm';
-import { InterviewEvaluationsCard } from '@/components/candidate-profile/InterviewEvaluationCard';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
-import { DecisionHistory } from '@/components/candidate-profile/DecisionHistory';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
 import { InterviewScheduleCard } from '@/components/candidate-profile/InterviewScheduleCard';
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
@@ -315,17 +312,7 @@ export default function CandidateProfile() {
               isLoading={interviewsLoading} 
             />
 
-            {/* Interview Evaluations */}
-            <InterviewEvaluationsCard applicationId={application.id} />
-
-            {/* Decision History */}
-            <DecisionHistory applicationId={application.id} />
-
-            {/* Recruiter Notes */}
-            <RecruiterNotes applicationId={application.id} />
-
-            {/* Notification History */}
-            <NotificationHistory applicationId={application.id} />
+            {/* Hidden for now: InterviewEvaluationsCard, DecisionHistory, RecruiterNotes, NotificationHistory */}
           </div>
         </div>
       </div>
