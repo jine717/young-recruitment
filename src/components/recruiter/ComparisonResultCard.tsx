@@ -165,26 +165,28 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           <CardTitle>Candidate Rankings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {result.rankings.map((ranking) => (
               <div
                 key={ranking.application_id}
                 className={cn(
-                  'flex items-center gap-4 p-4 rounded-lg',
-                  ranking.rank === 1 ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
+                  'flex items-center gap-5 p-5 rounded-xl transition-all',
+                  ranking.rank === 1 
+                    ? 'bg-[#B88F5E]/10 border-2 border-[#B88F5E]/30 shadow-sm' 
+                    : 'bg-muted/40 border border-muted/60 hover:bg-muted/60'
                 )}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-[80px]">
                   {getRankIcon(ranking.rank)}
-                  <span className="text-2xl font-bold">#{ranking.rank}</span>
+                  <span className="text-xl font-bold text-foreground/80">#{ranking.rank}</span>
                 </div>
 
-                <div className="flex-1">
-                  <p className="font-semibold">{ranking.candidate_name}</p>
-                  <p className="text-sm text-muted-foreground">{ranking.key_differentiator}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-base tracking-tight truncate">{ranking.candidate_name}</p>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{ranking.key_differentiator}</p>
                 </div>
 
-                <div className={cn('text-2xl font-bold', getScoreColor(ranking.score))}>
+                <div className={cn('text-2xl font-bold tabular-nums min-w-[60px] text-right', getScoreColor(ranking.score))}>
                   {ranking.score}
                 </div>
               </div>
@@ -330,18 +332,21 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                     <div 
                       key={resp.application_id} 
                       className={cn(
-                        "border rounded-lg p-4",
-                        resp.candidate_name === question.best_response && "border-primary bg-primary/5"
+                        "border rounded-xl p-5 transition-all",
+                        resp.candidate_name === question.best_response 
+                          ? "border-[#B88F5E] bg-[#B88F5E]/5 shadow-sm" 
+                          : "border-muted/60 hover:border-muted"
                       )}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold flex items-center gap-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold text-sm tracking-tight flex items-center gap-2">
                           {resp.candidate_name}
                           {resp.candidate_name === question.best_response && (
-                            <Trophy className="w-4 h-4 text-yellow-500" />
+                            <Trophy className="w-4 h-4 text-[#B88F5E]" />
                           )}
                         </span>
                         <Badge className={cn(
+                          "text-xs font-medium",
                           resp.score >= 80 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
                           resp.score >= 60 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" :
                           "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
@@ -349,10 +354,10 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                           {resp.score}/100
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-4">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-4 leading-relaxed">
                         {resp.response_summary || 'No response provided'}
                       </p>
-                      <p className="text-xs italic text-primary/80">
+                      <p className="text-xs italic text-[#93B1FF] leading-relaxed">
                         {resp.assessment}
                       </p>
                     </div>
