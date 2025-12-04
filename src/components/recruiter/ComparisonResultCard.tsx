@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain, ChevronDown } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain, ChevronDown, ChevronUp, Expand } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -392,69 +393,90 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           <CardContent className="space-y-8">
             {result.business_case_analysis.map((question, qIdx) => (
               <div key={qIdx} className="space-y-4">
-                {/* Question Header */}
+                {/* Question Header - Full description visible */}
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-semibold text-lg">
                     Question {qIdx + 1}: {question.question_title}
                   </h4>
                   {question.question_description && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                       {question.question_description}
                     </p>
                   )}
                 </div>
 
-                {/* Candidate Responses Grid */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  {question.candidate_responses.map((resp) => (
-                    <div 
-                      key={resp.application_id} 
-                      className={cn(
-                        "border rounded-xl p-4 transition-all",
-                        resp.candidate_name === question.best_response 
-                          ? "border-[#B88F5E] bg-[#B88F5E]/5 shadow-sm" 
-                          : "border-muted/60 hover:border-muted"
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-xs tracking-tight flex items-center gap-1.5">
-                          {resp.candidate_name}
-                          {resp.candidate_name === question.best_response && (
-                            <Trophy className="w-3.5 h-3.5 text-[#B88F5E]" />
+                {/* Candidate Responses - Expandable */}
+                <div className="space-y-3">
+                  {question.candidate_responses.map((resp) => {
+                    const isBest = resp.candidate_name === question.best_response;
+                    return (
+                      <Collapsible key={resp.application_id} defaultOpen={isBest}>
+                        <div 
+                          className={cn(
+                            "border rounded-xl transition-all",
+                            isBest 
+                              ? "border-[#B88F5E] bg-[#B88F5E]/5 shadow-sm" 
+                              : "border-muted/60 hover:border-muted"
                           )}
-                        </span>
-                        <Badge className={cn(
-                          "text-xs font-medium",
-                          resp.score >= 80 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
-                          resp.score >= 60 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                          "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        )}>
-                          {resp.score}/100
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-4 leading-relaxed">
-                        {resp.response_summary || 'No response provided'}
-                      </p>
-                      <p className="text-xs italic text-[#93B1FF] leading-relaxed line-clamp-2">
-                        {resp.assessment}
-                      </p>
-                    </div>
-                  ))}
+                        >
+                          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/20 transition-colors rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold text-sm tracking-tight flex items-center gap-1.5">
+                                {resp.candidate_name}
+                                {isBest && (
+                                  <Trophy className="w-4 h-4 text-[#B88F5E]" />
+                                )}
+                              </span>
+                              <Badge className={cn(
+                                "text-xs font-medium",
+                                resp.score >= 80 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                                resp.score >= 60 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                                "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              )}>
+                                {resp.score}/100
+                              </Badge>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                          </CollapsibleTrigger>
+                          
+                          <CollapsibleContent className="px-4 pb-4">
+                            <div className="pt-2 border-t border-muted/30 space-y-3">
+                              {/* Full Response */}
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Response</p>
+                                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                                  {resp.response_summary || 'No response provided'}
+                                </p>
+                              </div>
+                              
+                              {/* Full Assessment */}
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">AI Assessment</p>
+                                <p className="text-sm italic text-[#93B1FF] leading-relaxed whitespace-pre-wrap">
+                                  {resp.assessment}
+                                </p>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })}
                 </div>
 
-                {/* AI Comparative Analysis */}
+                {/* AI Comparative Analysis - Full text */}
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <Brain className="w-4 h-4 text-primary" />
                     <span className="font-medium">AI Comparative Analysis</span>
                     <Badge variant="outline" className="ml-auto">
                       Best: {question.best_response}
                     </Badge>
                   </div>
-                  <p className="text-sm">{question.comparative_analysis}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{question.comparative_analysis}</p>
                 </div>
 
-                {qIdx < (result.business_case_analysis?.length || 0) - 1 && <Separator />}
+                {qIdx < (result.business_case_analysis?.length || 0) - 1 && <Separator className="mt-6" />}
               </div>
             ))}
           </CardContent>

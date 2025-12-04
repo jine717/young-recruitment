@@ -304,22 +304,22 @@ export function ExecutiveReportContent({
                   </h3>
                 )}
 
-                {/* Single Question */}
+                {/* Single Question - Full content */}
                 <div className="flex-1 flex flex-col">
-                  {/* Question Header */}
+                  {/* Question Header - Full description */}
                   <div className="bg-[#100D0A] text-[#FDFAF0] p-4 mb-4 avoid-break">
                     <h4 className="font-bold text-lg">
                       Q{questionIdx + 1}: {question.question_title}
                     </h4>
                     {question.question_description && (
-                      <p className="text-sm opacity-80 mt-1 line-clamp-2">
+                      <p className="text-sm opacity-80 mt-2 leading-relaxed">
                         {question.question_description}
                       </p>
                     )}
                   </div>
 
-                  {/* Candidate Responses Grid - Limited to MAX_CANDIDATES_BUSINESS_CASE */}
-                  <div className="grid grid-cols-2 gap-3 mb-4 avoid-break">
+                  {/* Candidate Responses - Full content, vertical layout for more space */}
+                  <div className="space-y-3 mb-4">
                     {question.candidate_responses.slice(0, MAX_CANDIDATES_BUSINESS_CASE).map((resp) => {
                       const isBest = resp.candidate_name === question.best_response;
                       return (
@@ -334,7 +334,7 @@ export function ExecutiveReportContent({
                         >
                           <div className="flex justify-between items-center mb-2">
                             <span className={cn(
-                              "font-semibold text-sm truncate",
+                              "font-semibold text-sm",
                               isBest && "text-[#B88F5E]"
                             )}>
                               {resp.candidate_name}
@@ -345,14 +345,14 @@ export function ExecutiveReportContent({
                               resp.score >= 80 ? "text-green-700" :
                               resp.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
                             )}>
-                              {resp.score}
+                              {resp.score}/100
                             </span>
                           </div>
-                          <p className="text-xs text-[#605738] line-clamp-2 mb-1">
-                            {resp.response_summary || 'No response'}
+                          <p className="text-xs text-[#605738] mb-2 leading-relaxed">
+                            <span className="font-semibold">Response:</span> {resp.response_summary || 'No response'}
                           </p>
-                          <p className="text-xs italic text-[#100D0A]/70 line-clamp-1">
-                            {resp.assessment}
+                          <p className="text-xs italic text-[#100D0A]/70 leading-relaxed">
+                            <span className="font-semibold not-italic">Assessment:</span> {resp.assessment}
                           </p>
                         </div>
                       );
@@ -365,7 +365,7 @@ export function ExecutiveReportContent({
                     </p>
                   )}
 
-                  {/* AI Comparative Analysis */}
+                  {/* AI Comparative Analysis - Full text */}
                   <div className="bg-[#93B1FF]/20 border border-[#93B1FF] p-4 mt-auto avoid-break">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-xs uppercase tracking-wider">AI Analysis</span>
@@ -373,7 +373,7 @@ export function ExecutiveReportContent({
                         Best: {question.best_response}
                       </span>
                     </div>
-                    <p className="text-sm leading-relaxed line-clamp-4">{question.comparative_analysis}</p>
+                    <p className="text-sm leading-relaxed">{question.comparative_analysis}</p>
                   </div>
                 </div>
 
