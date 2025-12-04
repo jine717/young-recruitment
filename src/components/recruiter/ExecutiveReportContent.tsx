@@ -27,6 +27,22 @@ export interface ComparisonMatrixItem {
   }[];
 }
 
+export interface BusinessCaseResponseAnalysis {
+  application_id: string;
+  candidate_name: string;
+  response_summary: string;
+  score: number;
+  assessment: string;
+}
+
+export interface BusinessCaseAnalysisItem {
+  question_title: string;
+  question_description?: string;
+  candidate_responses: BusinessCaseResponseAnalysis[];
+  comparative_analysis: string;
+  best_response: string;
+}
+
 export interface PresentationContent {
   executiveSummary: string;
   topRecommendation: {
@@ -46,6 +62,7 @@ interface ExecutiveReportContentProps {
   viableCandidates: ViableCandidate[];
   allRankings: CandidateRanking[];
   comparisonMatrix: ComparisonMatrixItem[];
+  businessCaseAnalysis: BusinessCaseAnalysisItem[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -55,6 +72,7 @@ export function ExecutiveReportContent({
   viableCandidates,
   allRankings,
   comparisonMatrix,
+  businessCaseAnalysis,
   confidence,
   jobTitle,
 }: ExecutiveReportContentProps) {
@@ -75,7 +93,12 @@ export function ExecutiveReportContent({
   const safeCandidates = viableCandidates ?? [];
   const safeRankings = allRankings ?? [];
   const safeMatrix = comparisonMatrix ?? [];
+  const safeBusinessCase = businessCaseAnalysis ?? [];
   const maxScore = Math.max(...safeCandidates.map(c => c.score), 1);
+
+  // Calculate total pages: 4 base + 1 for every 2 business case questions
+  const businessCasePages = safeBusinessCase.length > 0 ? Math.ceil(safeBusinessCase.length / 2) : 0;
+  const totalPages = 4 + businessCasePages;
 
   const getConfidenceLabel = (conf: string) => {
     switch (conf) {
@@ -248,7 +271,7 @@ export function ExecutiveReportContent({
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-6 border-t border-[#100D0A]/20">
-          <span>Page 2 of 4</span>
+          <span>Page 2 of {totalPages}</span>
           <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
@@ -322,13 +345,16 @@ export function ExecutiveReportContent({
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-6 border-t border-[#100D0A]/20">
-          <span>Page 3 of 4</span>
+          <span>Page 3 of {totalPages}</span>
           <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
 
       {/* ========== PAGE 4: Detailed Comparison Matrix ========== */}
-      <div className="page-4 min-h-[297mm] p-10 flex flex-col">
+      <div className={cn(
+        "page-4 min-h-[297mm] p-10 flex flex-col",
+        safeBusinessCase.length > 0 && "print:break-after-page"
+      )}>
         {/* Header Bar */}
         <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-8 flex items-center justify-between">
           <span className="font-black text-xl">YOUNG.</span>
@@ -414,11 +440,136 @@ export function ExecutiveReportContent({
         )}
 
         {/* Footer */}
-        <div className="bg-[#100D0A] text-[#FDFAF0] -mx-10 -mb-10 px-10 py-4 mt-8 flex justify-between text-xs uppercase tracking-wider">
-          <span>Page 4 of 4</span>
-          <span>Confidential · Young Recruitment</span>
+        <div className={cn(
+          "text-[#FDFAF0] -mx-10 -mb-10 px-10 py-4 mt-8 flex justify-between text-xs uppercase tracking-wider",
+          safeBusinessCase.length > 0 ? "bg-transparent text-[#605738] border-t border-[#100D0A]/20 mx-0 mb-0 px-0" : "bg-[#100D0A]"
+        )}>
+          <span>Page 4 of {totalPages}</span>
+          <span>{safeBusinessCase.length > 0 ? 'Confidential' : 'Confidential · Young Recruitment'}</span>
         </div>
       </div>
+
+      {/* ========== PAGE 5+: Business Case Analysis ========== */}
+      {safeBusinessCase.length > 0 && (
+        <>
+          {/* Group questions into pages (2 per page) */}
+          {Array.from({ length: Math.ceil(safeBusinessCase.length / 2) }).map((_, pageIdx) => {
+            const startIdx = pageIdx * 2;
+            const pageQuestions = safeBusinessCase.slice(startIdx, startIdx + 2);
+            const isLastPage = pageIdx === Math.ceil(safeBusinessCase.length / 2) - 1;
+            
+            return (
+              <div 
+                key={pageIdx} 
+                className={cn(
+                  "page-business-case min-h-[297mm] p-10 flex flex-col print:break-before-page",
+                  !isLastPage && "print:break-after-page"
+                )}
+              >
+                {/* Header Bar */}
+                <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-8 flex items-center justify-between">
+                  <span className="font-black text-xl">YOUNG.</span>
+                  <span className="text-sm">Business Case Analysis</span>
+                </div>
+
+                {/* Section Title - only on first business case page */}
+                {pageIdx === 0 && (
+                  <h3 className="text-2xl font-bold uppercase tracking-wide mb-6">
+                    Business Case Responses
+                  </h3>
+                )}
+
+                {/* Questions */}
+                <div className="flex-1 space-y-8">
+                  {pageQuestions.map((question, qIdx) => {
+                    const actualIdx = startIdx + qIdx;
+                    return (
+                      <div key={actualIdx} className="break-inside-avoid">
+                        {/* Question Header */}
+                        <div className="bg-[#100D0A] text-[#FDFAF0] p-4 mb-4">
+                          <h4 className="font-bold text-lg">
+                            Q{actualIdx + 1}: {question.question_title}
+                          </h4>
+                          {question.question_description && (
+                            <p className="text-sm opacity-80 mt-1 leading-relaxed">
+                              {question.question_description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Candidate Responses Grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          {question.candidate_responses.map((resp) => {
+                            const isBest = resp.candidate_name === question.best_response;
+                            return (
+                              <div 
+                                key={resp.application_id}
+                                className={cn(
+                                  "p-3 border",
+                                  isBest 
+                                    ? "border-[#B88F5E] bg-[#B88F5E]/10" 
+                                    : "border-[#100D0A]/20"
+                                )}
+                              >
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className={cn(
+                                    "font-semibold text-sm",
+                                    isBest && "text-[#B88F5E]"
+                                  )}>
+                                    {resp.candidate_name}
+                                    {isBest && <span className="ml-1">★</span>}
+                                  </span>
+                                  <span className={cn(
+                                    "font-bold text-sm",
+                                    resp.score >= 80 ? "text-green-700" :
+                                    resp.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
+                                  )}>
+                                    {resp.score}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-[#605738] line-clamp-2 mb-1">
+                                  {resp.response_summary || 'No response'}
+                                </p>
+                                <p className="text-xs italic text-[#100D0A]/70">
+                                  {resp.assessment}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* AI Comparative Analysis */}
+                        <div className="bg-[#93B1FF]/20 border border-[#93B1FF] p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold text-xs uppercase tracking-wider">AI Analysis</span>
+                            <span className="ml-auto text-xs font-semibold text-[#B88F5E]">
+                              Best: {question.best_response}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed">{question.comparative_analysis}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer */}
+                {isLastPage ? (
+                  <div className="bg-[#100D0A] text-[#FDFAF0] -mx-10 -mb-10 px-10 py-4 mt-8 flex justify-between text-xs uppercase tracking-wider">
+                    <span>Page {5 + pageIdx} of {totalPages}</span>
+                    <span>Confidential · Young Recruitment</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-xs text-[#605738] mt-auto pt-6 border-t border-[#100D0A]/20">
+                    <span>Page {5 + pageIdx} of {totalPages}</span>
+                    <span className="uppercase tracking-wider">Confidential</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
