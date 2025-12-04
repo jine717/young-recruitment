@@ -74,7 +74,15 @@ export function ExecutiveReportModal({
   }, [open, jobTitle, formatFileName]);
 
   const handlePrint = () => {
+    // Guardar título original y cambiar ANTES de print (sincronamente)
+    const originalTitle = document.title;
+    document.title = formatFileName(jobTitle);
+    
+    // Llamar a print - el título ya está cambiado
     window.print();
+    
+    // Restaurar después (el afterprint también lo hará como fallback)
+    document.title = originalTitle;
   };
 
   if (!presentationContent) return null;
