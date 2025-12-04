@@ -129,7 +129,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Export Button */}
       <div className="flex justify-end items-center pr-4 py-2 border-b border-muted/30 mb-4">
         <Button 
@@ -170,20 +170,20 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
               <div
                 key={ranking.application_id}
                 className={cn(
-                  'flex items-center gap-5 p-5 rounded-xl transition-all',
+                  'flex items-center gap-4 p-4 rounded-xl transition-all',
                   ranking.rank === 1 
                     ? 'bg-[#B88F5E]/10 border-2 border-[#B88F5E]/30 shadow-sm' 
                     : 'bg-muted/40 border border-muted/60 hover:bg-muted/60'
                 )}
               >
-                <div className="flex items-center gap-3 min-w-[80px]">
+                <div className="flex items-center gap-2 min-w-[60px]">
                   {getRankIcon(ranking.rank)}
-                  <span className="text-xl font-bold text-foreground/80">#{ranking.rank}</span>
+                  <span className="text-lg font-bold text-foreground/80">#{ranking.rank}</span>
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-base tracking-tight">{ranking.candidate_name}</p>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-3 leading-relaxed">{ranking.key_differentiator}</p>
+                  <p className="font-semibold text-sm tracking-tight">{ranking.candidate_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{ranking.key_differentiator}</p>
                 </div>
 
                 <div className={cn('text-2xl font-bold tabular-nums min-w-[60px] text-right', getScoreColor(ranking.score))}>
@@ -243,9 +243,9 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
             <table className="w-full">
               <thead>
                 <tr className="bg-[#100D0A] text-[#FDFAF0]">
-                  <th className="text-left py-4 px-5 font-semibold text-sm tracking-wide">Criterion</th>
+                  <th className="text-left py-3 px-3 font-semibold text-xs tracking-wide">Criterion</th>
                   {result.rankings.map((r) => (
-                    <th key={r.application_id} className="text-center py-4 px-4 font-semibold text-sm tracking-wide min-w-[180px]">
+                    <th key={r.application_id} className="text-center py-3 px-3 font-semibold text-xs tracking-wide min-w-[120px]">
                       {r.candidate_name}
                     </th>
                   ))}
@@ -260,18 +260,18 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                       idx % 2 === 0 ? "bg-background" : "bg-muted/20"
                     )}
                   >
-                    <td className="py-4 px-5 font-medium text-sm">{row.criterion}</td>
+                    <td className="py-3 px-3 font-medium text-xs">{row.criterion}</td>
                     {row.candidates.map((c) => (
-                      <td key={c.application_id} className="text-center py-4 px-4">
+                      <td key={c.application_id} className="text-center py-3 px-3">
                         <div className={cn(
-                          'inline-flex items-center justify-center w-14 h-8 rounded-md font-bold text-sm',
+                          'inline-flex items-center justify-center w-12 h-7 rounded-md font-bold text-xs',
                           c.score >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                           c.score >= 60 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                           'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                         )}>
                           {c.score}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-[200px] mx-auto">{c.notes}</p>
+                        <p className="text-xs text-muted-foreground mt-1 leading-tight max-w-[140px] mx-auto line-clamp-2">{c.notes}</p>
                       </td>
                     ))}
                   </tr>
@@ -291,7 +291,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {result.risks.filter(r => r.risks.length > 0 || result.rankings.find(rank => rank.candidate_name === r.candidate_name)?.score > 0).map((risk) => {
               const candidateRank = result.rankings.find(rank => rank.candidate_name === risk.candidate_name);
               const isTopCandidate = candidateRank?.rank === 1;
@@ -300,15 +300,15 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                 <div 
                   key={risk.application_id} 
                   className={cn(
-                    "rounded-xl p-6 border transition-all",
+                    "rounded-xl p-4 border transition-all",
                     isTopCandidate 
                       ? "bg-[#B88F5E]/5 border-[#B88F5E]/30" 
                       : "bg-muted/30 border-muted/50 hover:bg-muted/40"
                   )}
                 >
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold",
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
                       isTopCandidate 
                         ? "bg-[#B88F5E]/20 text-[#B88F5E]" 
                         : "bg-muted text-muted-foreground"
@@ -316,7 +316,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                       #{candidateRank?.rank || '-'}
                     </div>
                     <div>
-                      <p className="font-semibold tracking-tight">{risk.candidate_name}</p>
+                      <p className="font-semibold text-sm tracking-tight">{risk.candidate_name}</p>
                       <p className="text-xs text-muted-foreground">
                         {risk.risks.length === 0 ? 'Low risk profile' : `${risk.risks.length} risk${risk.risks.length > 1 ? 's' : ''} identified`}
                       </p>
@@ -324,20 +324,20 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                   </div>
                   
                   {risk.risks.length > 0 ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {risk.risks.map((r, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-sm">
-                          <div className="w-5 h-5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                        <li key={idx} className="flex items-start gap-2 text-xs">
+                          <div className="w-4 h-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <AlertTriangle className="w-2.5 h-2.5 text-yellow-600 dark:text-yellow-400" />
                           </div>
-                          <span className="text-muted-foreground leading-relaxed">{r}</span>
+                          <span className="text-muted-foreground leading-relaxed line-clamp-2">{r}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
                       </div>
                       <span className="text-muted-foreground">No significant risks identified</span>
                     </div>
@@ -374,22 +374,22 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                 </div>
 
                 {/* Candidate Responses Grid */}
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   {question.candidate_responses.map((resp) => (
                     <div 
                       key={resp.application_id} 
                       className={cn(
-                        "border rounded-xl p-5 transition-all",
+                        "border rounded-xl p-4 transition-all",
                         resp.candidate_name === question.best_response 
                           ? "border-[#B88F5E] bg-[#B88F5E]/5 shadow-sm" 
                           : "border-muted/60 hover:border-muted"
                       )}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-sm tracking-tight flex items-center gap-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-xs tracking-tight flex items-center gap-1.5">
                           {resp.candidate_name}
                           {resp.candidate_name === question.best_response && (
-                            <Trophy className="w-4 h-4 text-[#B88F5E]" />
+                            <Trophy className="w-3.5 h-3.5 text-[#B88F5E]" />
                           )}
                         </span>
                         <Badge className={cn(
@@ -401,10 +401,10 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                           {resp.score}/100
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-6 leading-relaxed">
+                      <p className="text-xs text-muted-foreground mb-2 line-clamp-4 leading-relaxed">
                         {resp.response_summary || 'No response provided'}
                       </p>
-                      <p className="text-xs italic text-[#93B1FF] leading-relaxed">
+                      <p className="text-xs italic text-[#93B1FF] leading-relaxed line-clamp-2">
                         {resp.assessment}
                       </p>
                     </div>
@@ -412,7 +412,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
                 </div>
 
                 {/* AI Comparative Analysis */}
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Brain className="w-4 h-4 text-primary" />
                     <span className="font-medium">AI Comparative Analysis</span>
