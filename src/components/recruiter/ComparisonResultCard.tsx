@@ -131,8 +131,12 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
   return (
     <div className="space-y-6">
       {/* Export Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleExportExecutiveReport} disabled={isGeneratingReport}>
+      <div className="flex justify-end items-center pr-4 py-2 border-b border-muted/30 mb-4">
+        <Button 
+          onClick={handleExportExecutiveReport} 
+          disabled={isGeneratingReport}
+          className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md"
+        >
           {isGeneratingReport ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
