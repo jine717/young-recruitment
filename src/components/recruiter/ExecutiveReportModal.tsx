@@ -8,13 +8,21 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
-import { ExecutiveReportContent, type PresentationContent, type ViableCandidate } from './ExecutiveReportContent';
+import { 
+  ExecutiveReportContent, 
+  type PresentationContent, 
+  type ViableCandidate,
+  type CandidateRanking,
+  type ComparisonMatrixItem 
+} from './ExecutiveReportContent';
 
 interface ExecutiveReportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   presentationContent: PresentationContent | null;
   viableCandidates: ViableCandidate[];
+  allRankings: CandidateRanking[];
+  comparisonMatrix: ComparisonMatrixItem[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -24,6 +32,8 @@ export function ExecutiveReportModal({
   onOpenChange,
   presentationContent,
   viableCandidates,
+  allRankings,
+  comparisonMatrix,
   confidence,
   jobTitle,
 }: ExecutiveReportModalProps) {
@@ -64,6 +74,8 @@ export function ExecutiveReportModal({
               <ExecutiveReportContent
                 presentationContent={presentationContent}
                 viableCandidates={viableCandidates}
+                allRankings={allRankings}
+                comparisonMatrix={comparisonMatrix}
                 confidence={confidence}
                 jobTitle={jobTitle}
               />
@@ -78,6 +90,8 @@ export function ExecutiveReportModal({
           <ExecutiveReportContent
             presentationContent={presentationContent}
             viableCandidates={viableCandidates}
+            allRankings={allRankings}
+            comparisonMatrix={comparisonMatrix}
             confidence={confidence}
             jobTitle={jobTitle}
           />
