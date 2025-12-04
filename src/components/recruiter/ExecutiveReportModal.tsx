@@ -162,8 +162,7 @@ export function ExecutiveReportModal({
               <div className="flex items-center gap-3">
                 <Button 
                   onClick={() => setEmailDialogOpen(true)}
-                  variant="outline"
-                  className="border-[#605738]/30 hover:bg-[#FDFAF0] text-[#100D0A] font-semibold"
+                  className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Share via Email
