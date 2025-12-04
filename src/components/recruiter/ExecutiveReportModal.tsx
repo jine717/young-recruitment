@@ -93,12 +93,20 @@ export function ExecutiveReportModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[95vw] w-[900px] max-h-[95vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 py-4 border-b bg-muted/50">
+          <DialogHeader className="px-6 py-5 border-b border-[#605738]/20 bg-[#FDFAF0]">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-semibold">
-                Executive Report Preview
-              </DialogTitle>
-              <Button onClick={handlePrint} className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A]">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-bold text-[#100D0A] tracking-tight">
+                  Executive Report
+                </DialogTitle>
+                <p className="text-sm text-[#605738]">
+                  Preview and export candidate evaluation report
+                </p>
+              </div>
+              <Button 
+                onClick={handlePrint} 
+                className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
+              >
                 <Printer className="w-4 h-4 mr-2" />
                 Print / Save as PDF
               </Button>
