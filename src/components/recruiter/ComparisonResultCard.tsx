@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download, FileText, Loader2 } from 'lucide-react';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
 import { exportComparisonToPdf } from '@/utils/exportComparisonPdf';
+import { exportPresentationToPdf, type PresentationContent, type ViableCandidate } from '@/utils/exportPresentationPdf';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
@@ -13,6 +17,9 @@ interface ComparisonResultCardProps {
 }
 
 export function ComparisonResultCard({ result, jobTitle = 'Position' }: ComparisonResultCardProps) {
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const { toast } = useToast();
+
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
@@ -49,13 +56,61 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
     exportComparisonToPdf({ result, jobTitle });
   };
 
+  const handleExportExecutiveReport = async () => {
+    setIsGeneratingReport(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-presentation-report', {
+        body: { comparisonResult: result, jobTitle },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      const { presentationContent, viableCandidates, confidence } = data as {
+        presentationContent: PresentationContent;
+        viableCandidates: ViableCandidate[];
+        confidence: 'high' | 'medium' | 'low';
+      };
+
+      exportPresentationToPdf({
+        presentationContent,
+        viableCandidates,
+        confidence,
+        jobTitle,
+      });
+
+      toast({
+        title: 'Report Generated',
+        description: 'Executive presentation report has been downloaded.',
+      });
+    } catch (error) {
+      console.error('Error generating executive report:', error);
+      toast({
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate executive report',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Export Button */}
-      <div className="flex justify-end">
+      {/* Export Buttons */}
+      <div className="flex justify-end gap-2">
         <Button onClick={handleExportPdf} variant="outline">
           <Download className="w-4 h-4 mr-2" />
-          Export to PDF
+          Export Full Report
+        </Button>
+        <Button onClick={handleExportExecutiveReport} disabled={isGeneratingReport}>
+          {isGeneratingReport ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <FileText className="w-4 h-4 mr-2" />
+          )}
+          {isGeneratingReport ? 'Generating...' : 'Executive Report (AI)'}
         </Button>
       </div>
 
@@ -132,7 +187,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
             <p className="text-muted-foreground">{result.recommendation.justification}</p>
           </div>
 
-          {result.recommendation.alternative && (
+          {result.recommendation.alternative && result.recommendation.alternative !== 'None' && (
             <>
               <Separator />
               <div>
@@ -192,7 +247,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            {result.risks.map((risk) => (
+            {result.risks.filter(r => r.risks.length > 0 || result.rankings.find(rank => rank.candidate_name === r.candidate_name)?.score > 0).map((risk) => (
               <div key={risk.application_id} className="p-4 rounded-lg bg-muted/50">
                 <p className="font-semibold mb-2">{risk.candidate_name}</p>
                 {risk.risks.length > 0 ? (

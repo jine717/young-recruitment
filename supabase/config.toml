@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.compare-candidates]
 verify_jwt = false
+
+[functions.generate-presentation-report]
+verify_jwt = false
