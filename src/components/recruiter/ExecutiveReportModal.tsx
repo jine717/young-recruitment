@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import {
   Dialog,
@@ -42,19 +42,39 @@ export function ExecutiveReportModal({
 }: ExecutiveReportModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
-  const formatFileName = (title: string) => {
+  const formatFileName = useCallback((title: string) => {
     const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     const timeStr = date.toTimeString().slice(0, 8).replace(/:/g, '');
     return `${sanitizedTitle}_evaluation_${dateStr}-${timeStr}`;
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let originalTitle = '';
+
+    const handleBeforePrint = () => {
+      originalTitle = document.title;
+      document.title = formatFileName(jobTitle);
+    };
+
+    const handleAfterPrint = () => {
+      document.title = originalTitle || 'Lovable';
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [open, jobTitle, formatFileName]);
 
   const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = formatFileName(jobTitle);
     window.print();
-    document.title = originalTitle;
   };
 
   if (!presentationContent) return null;
