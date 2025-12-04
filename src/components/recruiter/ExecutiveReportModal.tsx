@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, X } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { 
   ExecutiveReportContent, 
   type PresentationContent, 
@@ -98,15 +98,10 @@ export function ExecutiveReportModal({
               <DialogTitle className="text-xl font-semibold">
                 Executive Report Preview
               </DialogTitle>
-              <div className="flex items-center gap-2">
-                <Button onClick={handlePrint} className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A]">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print / Save as PDF
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button onClick={handlePrint} className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A]">
+                <Printer className="w-4 h-4 mr-2" />
+                Print / Save as PDF
+              </Button>
             </div>
           </DialogHeader>
           
