@@ -28,18 +28,23 @@ const typeLabels: Record<InterviewType, string> = {
   in_person: 'In-Person',
 };
 
-const statusColors: Record<InterviewStatus, string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-  rescheduled: 'bg-yellow-100 text-yellow-800',
-};
-
-const statusLabels: Record<InterviewStatus, string> = {
-  scheduled: 'Scheduled',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  rescheduled: 'Rescheduled',
+const statusConfig: Record<InterviewStatus, { className: string; label: string }> = {
+  scheduled: { 
+    className: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50', 
+    label: 'Scheduled' 
+  },
+  completed: { 
+    className: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50', 
+    label: 'Completed' 
+  },
+  cancelled: { 
+    className: 'bg-destructive/10 text-destructive border-destructive/50', 
+    label: 'Cancelled' 
+  },
+  rescheduled: { 
+    className: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50', 
+    label: 'Rescheduled' 
+  },
 };
 
 export function InterviewScheduleCard({ interviews, isLoading }: InterviewScheduleCardProps) {
@@ -57,9 +62,9 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
             Scheduled Interviews
           </CardTitle>
         </CardHeader>
@@ -76,9 +81,9 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <Calendar className="w-4 h-4" />
           Scheduled Interviews
           {activeInterviews.length > 0 && (
             <Badge variant="secondary">{activeInterviews.length}</Badge>
@@ -87,7 +92,10 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
       </CardHeader>
       <CardContent>
         {interviews.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No interviews scheduled yet.</p>
+          <div className="text-center py-6">
+            <Calendar className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-sm text-muted-foreground">No interviews scheduled yet.</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {interviews.map((interview) => (
@@ -100,8 +108,8 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge className={statusColors[interview.status]}>
-                        {statusLabels[interview.status]}
+                      <Badge className={statusConfig[interview.status].className}>
+                        {statusConfig[interview.status].label}
                       </Badge>
                       <span className="flex items-center gap-1 text-sm text-muted-foreground">
                         {typeIcons[interview.interview_type]}
@@ -152,7 +160,7 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
                   {interview.status === 'scheduled' && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

@@ -55,9 +55,9 @@ export function RecruiterNotes({ applicationId }: RecruiterNotesProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <StickyNote className="w-5 h-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <StickyNote className="w-4 h-4" />
           Recruiter Notes
         </CardTitle>
       </CardHeader>
@@ -74,6 +74,7 @@ export function RecruiterNotes({ applicationId }: RecruiterNotesProps) {
             onClick={handleAddNote}
             disabled={!newNote.trim() || addNote.isPending}
             size="sm"
+            variant="outline"
           >
             {addNote.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -92,14 +93,17 @@ export function RecruiterNotes({ applicationId }: RecruiterNotesProps) {
               <Skeleton className="h-20 w-full" />
             </>
           ) : notes?.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No notes yet. Add your first note above.
-            </p>
+            <div className="text-center py-6">
+              <StickyNote className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                No notes yet. Add your first note above.
+              </p>
+            </div>
           ) : (
             notes?.map((note) => (
               <div
                 key={note.id}
-                className="p-4 bg-muted/50 rounded-lg space-y-2"
+                className="p-3 bg-muted/30 rounded-lg space-y-2"
               >
                 <div className="flex items-start justify-between">
                   <p className="text-sm whitespace-pre-wrap flex-1">

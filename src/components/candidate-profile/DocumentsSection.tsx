@@ -75,22 +75,22 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <FileText className="w-5 h-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <FileText className="w-4 h-4" />
           Documents
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* CV Section */}
-        <div className="p-4 bg-muted/50 rounded-lg">
+        <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded">
-                <FileText className="w-5 h-5 text-primary" />
+                <FileText className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="font-medium">CV / Resume</p>
+                <p className="text-sm font-medium">CV / Resume</p>
                 <p className="text-xs text-muted-foreground">
                   {cvUrl ? 'Uploaded' : 'Not uploaded'}
                 </p>
@@ -126,14 +126,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
         </div>
 
         {/* DISC Section */}
-        <div className="p-4 bg-muted/50 rounded-lg">
+        <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-secondary/50 rounded">
-                <FileText className="w-5 h-5 text-secondary-foreground" />
+                <FileText className="w-4 h-4 text-secondary-foreground" />
               </div>
               <div>
-                <p className="font-medium">DISC Assessment</p>
+                <p className="text-sm font-medium">DISC Assessment</p>
                 <p className="text-xs text-muted-foreground">
                   {discUrl ? 'Uploaded' : 'Not uploaded'}
                 </p>
