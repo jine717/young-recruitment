@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download, FileText, Loader2 } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download, FileText, Loader2, FileQuestion, Brain } from 'lucide-react';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
 import { exportComparisonToPdf } from '@/utils/exportComparisonPdf';
@@ -302,6 +302,84 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           </div>
         </CardContent>
       </Card>
+
+      {/* Business Case Analysis */}
+      {result.business_case_analysis && result.business_case_analysis.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileQuestion className="w-5 h-5 text-primary" />
+              Business Case Responses Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {result.business_case_analysis.map((question, qIdx) => (
+              <div key={qIdx} className="space-y-4">
+                {/* Question Header */}
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-lg">
+                    Question {qIdx + 1}: {question.question_title}
+                  </h4>
+                  {question.question_description && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {question.question_description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Candidate Responses Grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {question.candidate_responses.map((resp) => (
+                    <div 
+                      key={resp.application_id} 
+                      className={cn(
+                        "border rounded-lg p-4",
+                        resp.candidate_name === question.best_response && "border-primary bg-primary/5"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold flex items-center gap-2">
+                          {resp.candidate_name}
+                          {resp.candidate_name === question.best_response && (
+                            <Trophy className="w-4 h-4 text-yellow-500" />
+                          )}
+                        </span>
+                        <Badge className={cn(
+                          resp.score >= 80 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                          resp.score >= 60 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                          "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                        )}>
+                          {resp.score}/100
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-4">
+                        {resp.response_summary || 'No response provided'}
+                      </p>
+                      <p className="text-xs italic text-primary/80">
+                        {resp.assessment}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* AI Comparative Analysis */}
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-4 h-4 text-primary" />
+                    <span className="font-medium">AI Comparative Analysis</span>
+                    <Badge variant="outline" className="ml-auto">
+                      Best: {question.best_response}
+                    </Badge>
+                  </div>
+                  <p className="text-sm">{question.comparative_analysis}</p>
+                </div>
+
+                {qIdx < (result.business_case_analysis?.length || 0) - 1 && <Separator />}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Executive Report Modal */}
       <ExecutiveReportModal
