@@ -7,6 +7,26 @@ export interface ViableCandidate {
   keyDifferentiator: string;
 }
 
+export interface CandidateRanking {
+  application_id: string;
+  candidate_name: string;
+  rank: number;
+  score: number;
+  key_differentiator: string;
+  strengths?: string[];
+  weaknesses?: string[];
+}
+
+export interface ComparisonMatrixItem {
+  criterion: string;
+  candidates: {
+    application_id: string;
+    candidate_name?: string;
+    score: number;
+    notes: string;
+  }[];
+}
+
 export interface PresentationContent {
   executiveSummary: string;
   topRecommendation: {
@@ -24,6 +44,8 @@ export interface PresentationContent {
 interface ExecutiveReportContentProps {
   presentationContent: PresentationContent;
   viableCandidates: ViableCandidate[];
+  allRankings: CandidateRanking[];
+  comparisonMatrix: ComparisonMatrixItem[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -31,6 +53,8 @@ interface ExecutiveReportContentProps {
 export function ExecutiveReportContent({
   presentationContent,
   viableCandidates,
+  allRankings,
+  comparisonMatrix,
   confidence,
   jobTitle,
 }: ExecutiveReportContentProps) {
@@ -49,6 +73,8 @@ export function ExecutiveReportContent({
   };
   
   const safeCandidates = viableCandidates ?? [];
+  const safeRankings = allRankings ?? [];
+  const safeMatrix = comparisonMatrix ?? [];
   const maxScore = Math.max(...safeCandidates.map(c => c.score), 1);
 
   const getConfidenceLabel = (conf: string) => {
@@ -88,7 +114,7 @@ export function ExecutiveReportContent({
           </div>
           <div>
             <span className="text-[#605738] uppercase tracking-wider">Candidates</span>
-            <p className="font-bold text-lg mt-1">{safeCandidates.length} evaluated</p>
+            <p className="font-bold text-lg mt-1">{safeRankings.length} evaluated</p>
           </div>
         </div>
 
@@ -222,13 +248,13 @@ export function ExecutiveReportContent({
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-6 border-t border-[#100D0A]/20">
-          <span>Page 2 of 3</span>
+          <span>Page 2 of 4</span>
           <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
 
       {/* ========== PAGE 3: Key Insights + Next Steps ========== */}
-      <div className="page-3 min-h-[297mm] p-10 flex flex-col">
+      <div className="page-3 min-h-[297mm] p-10 flex flex-col print:break-after-page">
         {/* Header Bar */}
         <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-8 flex items-center justify-between">
           <span className="font-black text-xl">YOUNG.</span>
@@ -295,8 +321,101 @@ export function ExecutiveReportContent({
         </div>
 
         {/* Footer */}
+        <div className="flex justify-between text-xs text-[#605738] mt-auto pt-6 border-t border-[#100D0A]/20">
+          <span>Page 3 of 4</span>
+          <span className="uppercase tracking-wider">Confidential</span>
+        </div>
+      </div>
+
+      {/* ========== PAGE 4: Detailed Comparison Matrix ========== */}
+      <div className="page-4 min-h-[297mm] p-10 flex flex-col">
+        {/* Header Bar */}
+        <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-8 flex items-center justify-between">
+          <span className="font-black text-xl">YOUNG.</span>
+          <span className="text-sm">Detailed Candidate Comparison</span>
+        </div>
+
+        {/* Section Title */}
+        <h3 className="text-2xl font-bold uppercase tracking-wide mb-6">Comparison Matrix</h3>
+
+        {/* Comparison Matrix Table */}
+        <div className="flex-1 overflow-x-auto">
+          {safeMatrix.length > 0 ? (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-[#100D0A] text-[#FDFAF0]">
+                  <th className="p-3 text-left font-bold">Criterion</th>
+                  {safeRankings.map(r => (
+                    <th key={r.application_id} className="p-3 text-center font-bold">
+                      {r.candidate_name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {safeMatrix.map((row, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#FDFAF0]'}>
+                    <td className="p-3 font-semibold border-b border-[#100D0A]/10">
+                      {row.criterion}
+                    </td>
+                    {row.candidates.map(c => (
+                      <td key={c.application_id} className="p-3 text-center border-b border-[#100D0A]/10">
+                        <span className={cn(
+                          "font-bold text-lg",
+                          c.score >= 80 ? "text-green-700" :
+                          c.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
+                        )}>
+                          {c.score}
+                        </span>
+                        {c.notes && (
+                          <p className="text-xs text-[#605738] mt-1 leading-tight">{c.notes}</p>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="italic text-[#605738]">No comparison data available</p>
+          )}
+        </div>
+
+        {/* Summary Row */}
+        {safeRankings.length > 0 && (
+          <div className="mt-6 pt-4 border-t-2 border-[#100D0A]">
+            <h4 className="text-lg font-bold uppercase tracking-wide mb-4">Overall Scores</h4>
+            <div className="flex gap-4 flex-wrap">
+              {safeRankings.map((r, idx) => (
+                <div 
+                  key={r.application_id} 
+                  className={cn(
+                    "flex-1 min-w-[150px] p-4 text-center",
+                    idx === 0 ? "bg-[#B88F5E] text-white" : "bg-[#605738]/10"
+                  )}
+                >
+                  <p className="font-semibold truncate">{r.candidate_name}</p>
+                  <p className={cn(
+                    "text-3xl font-black mt-1",
+                    idx === 0 ? "text-white" : "text-[#100D0A]"
+                  )}>
+                    {r.score}
+                  </p>
+                  <p className={cn(
+                    "text-xs uppercase tracking-wider mt-1",
+                    idx === 0 ? "text-white/80" : "text-[#605738]"
+                  )}>
+                    Rank #{r.rank}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
         <div className="bg-[#100D0A] text-[#FDFAF0] -mx-10 -mb-10 px-10 py-4 mt-8 flex justify-between text-xs uppercase tracking-wider">
-          <span>Page 3 of 3</span>
+          <span>Page 4 of 4</span>
           <span>Confidential · Young Recruitment</span>
         </div>
       </div>
