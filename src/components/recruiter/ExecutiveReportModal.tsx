@@ -13,7 +13,8 @@ import {
   type PresentationContent, 
   type ViableCandidate,
   type CandidateRanking,
-  type ComparisonMatrixItem 
+  type ComparisonMatrixItem,
+  type BusinessCaseAnalysisItem 
 } from './ExecutiveReportContent';
 
 interface ExecutiveReportModalProps {
@@ -23,6 +24,7 @@ interface ExecutiveReportModalProps {
   viableCandidates: ViableCandidate[];
   allRankings: CandidateRanking[];
   comparisonMatrix: ComparisonMatrixItem[];
+  businessCaseAnalysis: BusinessCaseAnalysisItem[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -34,6 +36,7 @@ export function ExecutiveReportModal({
   viableCandidates,
   allRankings,
   comparisonMatrix,
+  businessCaseAnalysis,
   confidence,
   jobTitle,
 }: ExecutiveReportModalProps) {
@@ -76,6 +79,7 @@ export function ExecutiveReportModal({
                 viableCandidates={viableCandidates}
                 allRankings={allRankings}
                 comparisonMatrix={comparisonMatrix}
+                businessCaseAnalysis={businessCaseAnalysis}
                 confidence={confidence}
                 jobTitle={jobTitle}
               />
@@ -92,6 +96,7 @@ export function ExecutiveReportModal({
             viableCandidates={viableCandidates}
             allRankings={allRankings}
             comparisonMatrix={comparisonMatrix}
+            businessCaseAnalysis={businessCaseAnalysis}
             confidence={confidence}
             jobTitle={jobTitle}
           />
