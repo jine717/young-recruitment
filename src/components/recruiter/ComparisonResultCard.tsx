@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, Download, FileText, Loader2, FileQuestion, Brain } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain } from 'lucide-react';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
 import { cn } from '@/lib/utils';
-import { exportComparisonToPdf } from '@/utils/exportComparisonPdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
@@ -60,10 +59,6 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
     if (score >= 80) return 'text-green-600 dark:text-green-400';
     if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-red-600 dark:text-red-400';
-  };
-
-  const handleExportPdf = () => {
-    exportComparisonToPdf({ result, jobTitle });
   };
 
   const handleExportExecutiveReport = async () => {
@@ -135,12 +130,8 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
 
   return (
     <div className="space-y-6">
-      {/* Export Buttons */}
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleExportPdf} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export Full Report
-        </Button>
+      {/* Export Button */}
+      <div className="flex justify-end">
         <Button onClick={handleExportExecutiveReport} disabled={isGeneratingReport}>
           {isGeneratingReport ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

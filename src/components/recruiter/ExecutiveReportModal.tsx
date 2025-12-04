@@ -111,10 +111,10 @@ export function ExecutiveReportModal({
           jobTitle,
           executiveSummary: presentationContent.executiveSummary || '',
           topRecommendation,
-          rankings: allRankings.map(r => ({
-            name: r.candidate_name,
-            score: r.score,
-            recommendation: r.key_differentiator || '',
+          rankings: viableCandidates.map(c => ({
+            name: c.name,
+            score: c.score,
+            recommendation: c.keyDifferentiator || '',
           })),
           keyInsights: presentationContent.keyInsights || [],
           confidence,
