@@ -74,14 +74,41 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      const { presentationContent, viableCandidates, confidence } = data as {
-        presentationContent: PresentationContent;
-        viableCandidates: ViableCandidate[];
-        confidence: 'high' | 'medium' | 'low';
+      // Transform snake_case API response to camelCase expected by ExecutiveReportContent
+      const apiContent = data.presentationContent || {};
+      const winnerSpotlight = apiContent.winner_spotlight || {};
+      const nextStepsData = apiContent.next_steps || {};
+
+      const transformedContent: PresentationContent = {
+        executiveSummary: apiContent.executive_narrative || '',
+        topRecommendation: {
+          name: winnerSpotlight.name || '',
+          score: winnerSpotlight.score || 0,
+          whyChosen: winnerSpotlight.why_chosen || '',
+          keyStrengths: winnerSpotlight.key_strengths || [],
+        },
+        keyInsights: apiContent.key_insights || [],
+        considerations: apiContent.considerations || [],
+        nextSteps: nextStepsData.actions || [],
+        timeline: nextStepsData.timeline || '',
       };
 
+      // Transform viableCandidates (already in correct format from API)
+      const transformedCandidates: ViableCandidate[] = (data.viableCandidates || []).map((c: any) => ({
+        name: c.name || '',
+        score: c.score || 0,
+        strengths: c.strengths || [],
+        keyDifferentiator: c.keyDifferentiator || c.key_differentiator || '',
+      }));
+
+      const confidence = data.confidence || 'medium';
+
       // Store data and open modal for preview
-      setReportData({ presentationContent, viableCandidates, confidence });
+      setReportData({ 
+        presentationContent: transformedContent, 
+        viableCandidates: transformedCandidates, 
+        confidence 
+      });
       setReportModalOpen(true);
 
       toast({
