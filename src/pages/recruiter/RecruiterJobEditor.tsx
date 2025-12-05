@@ -16,9 +16,11 @@ import { useCreateJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
+import { useJobFixedQuestionsForEditor, useCreateJobFixedQuestion, useUpdateJobFixedQuestion, useDeleteJobFixedQuestion } from '@/hooks/useJobFixedQuestionsMutation';
 import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
+import FixedInterviewQuestionsEditor, { FixedInterviewQuestion } from '@/components/recruiter/FixedInterviewQuestionsEditor';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { AITemplateSelector } from '@/components/recruiter/AITemplateSelector';
 import { SaveTemplateDialog } from '@/components/recruiter/SaveTemplateDialog';
@@ -35,11 +37,15 @@ export default function RecruiterJobEditor() {
 
   const { data: departments } = useDepartments();
   const { data: existingBusinessCases, isLoading: businessCasesLoading } = useJobBusinessCases(id);
+  const { data: existingFixedQuestions, isLoading: fixedQuestionsLoading } = useJobFixedQuestionsForEditor(id);
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const createBusinessCase = useCreateBusinessCase();
   const updateBusinessCase = useUpdateBusinessCase();
   const deleteBusinessCase = useDeleteBusinessCase();
+  const createFixedQuestion = useCreateJobFixedQuestion();
+  const updateFixedQuestion = useUpdateJobFixedQuestion();
+  const deleteFixedQuestion = useDeleteJobFixedQuestion();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -56,6 +62,7 @@ export default function RecruiterJobEditor() {
   });
 
   const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
+  const [fixedInterviewQuestions, setFixedInterviewQuestions] = useState<FixedInterviewQuestion[]>([]);
   const [loading, setLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -76,6 +83,21 @@ export default function RecruiterJobEditor() {
       );
     }
   }, [existingBusinessCases, businessCasesLoading]);
+
+  // Load existing fixed interview questions when editing
+  useEffect(() => {
+    if (existingFixedQuestions && !fixedQuestionsLoading) {
+      setFixedInterviewQuestions(
+        existingFixedQuestions.map((fq: any) => ({
+          id: fq.id,
+          question_order: fq.question_order,
+          question_text: fq.question_text,
+          category: fq.category,
+          priority: fq.priority,
+        }))
+      );
+    }
+  }, [existingFixedQuestions, fixedQuestionsLoading]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -165,6 +187,34 @@ export default function RecruiterJobEditor() {
     }
   };
 
+  const saveFixedInterviewQuestions = async (jobId: string) => {
+    const existingIds = existingFixedQuestions?.map((fq: any) => fq.id) || [];
+    const currentIds = fixedInterviewQuestions.filter((q) => q.id).map((q) => q.id!);
+    
+    // Delete removed questions
+    const toDelete = existingIds.filter((id: string) => !currentIds.includes(id));
+    for (const fqId of toDelete) {
+      await deleteFixedQuestion.mutateAsync({ id: fqId, jobId });
+    }
+
+    // Create or update questions
+    for (const question of fixedInterviewQuestions) {
+      const data = {
+        job_id: jobId,
+        question_order: question.question_order,
+        question_text: question.question_text,
+        category: question.category,
+        priority: question.priority,
+      };
+
+      if (question.id) {
+        await updateFixedQuestion.mutateAsync({ id: question.id, ...data });
+      } else {
+        await createFixedQuestion.mutateAsync(data);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'published') => {
     e.preventDefault();
     setIsSaving(true);
@@ -193,6 +243,9 @@ export default function RecruiterJobEditor() {
 
       // Save business case questions
       await saveBusinessCases(jobId);
+
+      // Save fixed interview questions
+      await saveFixedInterviewQuestions(jobId);
 
       navigate('/dashboard/jobs');
     } catch (error) {
@@ -488,6 +541,13 @@ export default function RecruiterJobEditor() {
               <BusinessCaseQuestionsEditor
                 questions={businessCaseQuestions}
                 onChange={setBusinessCaseQuestions}
+                disabled={isSubmitting}
+              />
+
+              {/* Fixed Interview Questions Section */}
+              <FixedInterviewQuestionsEditor
+                questions={fixedInterviewQuestions}
+                onChange={setFixedInterviewQuestions}
                 disabled={isSubmitting}
               />
 
