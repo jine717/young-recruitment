@@ -49,8 +49,8 @@ serve(async (req) => {
       throw new Error('At least 2 candidates are required for comparison');
     }
 
-    if (applicationIds.length > 5) {
-      throw new Error('Maximum 5 candidates can be compared at once');
+    if (applicationIds.length > 3) {
+      throw new Error('Maximum 3 candidates can be compared at once');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

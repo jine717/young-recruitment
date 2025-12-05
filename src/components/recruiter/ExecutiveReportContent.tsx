@@ -67,11 +67,11 @@ interface ExecutiveReportContentProps {
   jobTitle: string;
 }
 
-// Constants for limits
-const MAX_CANDIDATES_OVERVIEW = 8;
-const MAX_CANDIDATES_BUSINESS_CASE = 6;
-const MAX_CANDIDATES_MATRIX = 6;
-const MAX_CANDIDATES_SCORES = 6;
+// Constants for limits - optimized for 3 candidates max
+const MAX_CANDIDATES_OVERVIEW = 3;
+const MAX_CANDIDATES_BUSINESS_CASE = 3;
+const MAX_CANDIDATES_MATRIX = 3;
+const MAX_CANDIDATES_SCORES = 3;
 
 export function ExecutiveReportContent({
   presentationContent,
@@ -222,25 +222,25 @@ export function ExecutiveReportContent({
         {/* Separator */}
         <div className="border-t border-[#100D0A] my-4" />
 
-        {/* Candidate Overview - Limited to MAX_CANDIDATES_OVERVIEW */}
+        {/* Candidate Overview - Optimized for 3 candidates */}
         <div className="flex-1 avoid-break">
           <h4 className="text-lg font-bold uppercase tracking-wide mb-4">Candidate Overview</h4>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
             {safeRankings.slice(0, MAX_CANDIDATES_OVERVIEW).map((ranking) => {
               const isWinner = ranking.candidate_name === topCandidate.name;
               const maxRankingScore = Math.max(...safeRankings.map(r => r.score), 1);
               const barWidth = (ranking.score / maxRankingScore) * 100;
               
               return (
-                <div key={ranking.application_id} className="flex items-center gap-3">
+                <div key={ranking.application_id} className="flex items-center gap-4">
                   <span className={cn(
-                    "w-20 text-sm font-semibold truncate",
-                    isWinner && "font-black"
+                    "w-36 text-sm font-semibold",
+                    isWinner && "font-black text-[#B88F5E]"
                   )}>
                     {ranking.candidate_name}
                   </span>
-                  <div className="flex-1 h-6 bg-[#FDFAF0] border border-[#100D0A]/20 relative">
+                  <div className="flex-1 h-8 bg-[#FDFAF0] border border-[#100D0A]/20 relative">
                     <div
                       className={cn(
                         "h-full transition-all",
@@ -250,7 +250,7 @@ export function ExecutiveReportContent({
                     />
                   </div>
                   <span className={cn(
-                    "w-10 text-right font-bold text-sm",
+                    "w-14 text-right font-bold text-lg",
                     isWinner && "text-[#93B1FF]"
                   )}>
                     {ranking.score}
@@ -399,16 +399,16 @@ export function ExecutiveReportContent({
         {/* Section Title */}
         <h3 className="text-xl font-bold uppercase tracking-wide mb-4">Comparison Matrix</h3>
 
-        {/* Comparison Matrix Table - Limited columns */}
+        {/* Comparison Matrix Table - Optimized for 3 candidates */}
         <div className="flex-1 overflow-hidden">
           {safeMatrix.length > 0 ? (
-            <table className="w-full border-collapse text-xs avoid-break">
+            <table className="w-full border-collapse text-sm avoid-break">
               <thead>
                 <tr className="bg-[#100D0A] text-[#FDFAF0]">
-                  <th className="p-2 text-left font-bold">Criterion</th>
+                  <th className="p-3 text-left font-bold w-[25%]">Criterion</th>
                   {safeRankings.slice(0, MAX_CANDIDATES_MATRIX).map(r => (
-                    <th key={r.application_id} className="p-2 text-center font-bold">
-                      <span className="truncate block max-w-[80px]">{r.candidate_name}</span>
+                    <th key={r.application_id} className="p-3 text-center font-bold w-[25%]">
+                      {r.candidate_name}
                     </th>
                   ))}
                 </tr>
@@ -416,20 +416,20 @@ export function ExecutiveReportContent({
               <tbody>
                 {safeMatrix.map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#FDFAF0]'}>
-                    <td className="p-2 font-semibold border-b border-[#100D0A]/10 text-xs">
+                    <td className="p-3 font-semibold border-b border-[#100D0A]/10">
                       {row.criterion}
                     </td>
                     {row.candidates.slice(0, MAX_CANDIDATES_MATRIX).map(c => (
-                      <td key={c.application_id} className="p-2 text-center border-b border-[#100D0A]/10">
+                      <td key={c.application_id} className="p-3 text-center border-b border-[#100D0A]/10 align-top">
                         <span className={cn(
-                          "font-bold",
+                          "font-bold text-lg",
                           c.score >= 80 ? "text-green-700" :
                           c.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
                         )}>
                           {c.score}
                         </span>
                         {c.notes && (
-                          <p className="text-[10px] text-[#605738] mt-1 line-clamp-1">{c.notes}</p>
+                          <p className="text-xs text-[#605738] mt-2 text-left leading-relaxed">{c.notes}</p>
                         )}
                       </td>
                     ))}
@@ -442,28 +442,33 @@ export function ExecutiveReportContent({
           )}
         </div>
 
-        {/* Summary Row - Limited to MAX_CANDIDATES_SCORES */}
+        {/* Summary Row - Optimized for 3 candidates */}
         {safeRankings.length > 0 && (
-          <div className="mt-4 pt-4 border-t-2 border-[#100D0A] avoid-break">
-            <h4 className="text-sm font-bold uppercase tracking-wide mb-3">Overall Scores</h4>
-            <div className="flex gap-3 flex-wrap">
+          <div className="mt-6 pt-6 border-t-2 border-[#100D0A] avoid-break">
+            <h4 className="text-sm font-bold uppercase tracking-wide mb-4">Overall Scores</h4>
+            <div className="grid grid-cols-3 gap-4">
               {safeRankings.slice(0, MAX_CANDIDATES_SCORES).map((r, idx) => (
                 <div 
                   key={r.application_id} 
                   className={cn(
-                    "min-w-[90px] flex-1 p-3 text-center",
+                    "p-4 text-center",
                     idx === 0 ? "bg-[#B88F5E] text-white" : "bg-[#605738]/10"
                   )}
                 >
-                  <p className="text-xs font-semibold truncate">{r.candidate_name}</p>
                   <p className={cn(
-                    "text-2xl font-black mt-1",
+                    "text-sm font-semibold mb-2",
+                    idx === 0 ? "text-white" : "text-[#100D0A]"
+                  )}>
+                    {r.candidate_name}
+                  </p>
+                  <p className={cn(
+                    "text-3xl font-black",
                     idx === 0 ? "text-white" : "text-[#100D0A]"
                   )}>
                     {r.score}
                   </p>
                   <p className={cn(
-                    "text-[10px] uppercase tracking-wider mt-1",
+                    "text-xs uppercase tracking-wider mt-2",
                     idx === 0 ? "text-white/80" : "text-[#605738]"
                   )}>
                     Rank #{r.rank}
@@ -471,11 +476,6 @@ export function ExecutiveReportContent({
                 </div>
               ))}
             </div>
-            {safeRankings.length > MAX_CANDIDATES_SCORES && (
-              <p className="text-xs text-[#605738] mt-2 italic">
-                +{safeRankings.length - MAX_CANDIDATES_SCORES} more candidates
-              </p>
-            )}
           </div>
         )}
 

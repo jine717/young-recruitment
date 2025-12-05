@@ -24,7 +24,7 @@ export function CandidateSelector({
   candidates,
   selectedIds,
   onSelectionChange,
-  maxSelection = 5,
+  maxSelection = 3,
 }: CandidateSelectorProps) {
   const handleToggle = (candidateId: string) => {
     if (selectedIds.includes(candidateId)) {
