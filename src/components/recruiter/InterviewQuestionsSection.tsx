@@ -15,6 +15,7 @@ import {
   useDeleteInterviewQuestion
 } from '@/hooks/useInterviewQuestions';
 import { useJobFixedQuestions, JobFixedQuestion } from '@/hooks/useJobFixedQuestions';
+import { useFixedQuestionNotes, useUpsertFixedQuestionNote } from '@/hooks/useFixedQuestionNotes';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
@@ -72,10 +73,12 @@ const defaultFormData: QuestionFormData = {
 export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQuestionsSectionProps) {
   const { data: aiQuestions, isLoading: aiLoading } = useInterviewQuestions(applicationId);
   const { data: fixedQuestions, isLoading: fixedLoading } = useJobFixedQuestions(jobId);
+  const { data: fixedQuestionNotes, isLoading: fixedNotesLoading } = useFixedQuestionNotes(applicationId);
   const generateQuestions = useGenerateInterviewQuestions();
   const createQuestion = useCreateInterviewQuestion();
   const updateQuestion = useUpdateInterviewQuestion();
   const deleteQuestion = useDeleteInterviewQuestion();
+  const upsertFixedNote = useUpsertFixedQuestionNote();
   const { toast } = useToast();
   
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -84,6 +87,8 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
   const [formData, setFormData] = useState<QuestionFormData>(defaultFormData);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [editingFixedNoteId, setEditingFixedNoteId] = useState<string | null>(null);
+  const [fixedNoteText, setFixedNoteText] = useState('');
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [customInstructions, setCustomInstructions] = useState('');
 
@@ -230,7 +235,42 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
     setNoteText('');
   };
 
-  const isLoading = aiLoading || fixedLoading;
+  // Fixed question note handlers
+  const getFixedQuestionNote = (fixedQuestionId: string) => {
+    return fixedQuestionNotes?.find(n => n.fixed_question_id === fixedQuestionId);
+  };
+
+  const startEditingFixedNote = (fixedQuestionId: string) => {
+    const existingNote = getFixedQuestionNote(fixedQuestionId);
+    setEditingFixedNoteId(fixedQuestionId);
+    setFixedNoteText(existingNote?.note_text || '');
+  };
+
+  const saveFixedNote = async (fixedQuestionId: string) => {
+    try {
+      await upsertFixedNote.mutateAsync({
+        applicationId,
+        fixedQuestionId,
+        noteText: fixedNoteText.trim() || null,
+      });
+      setEditingFixedNoteId(null);
+      setFixedNoteText('');
+      toast({ title: "Note saved" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save note",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelEditingFixedNote = () => {
+    setEditingFixedNoteId(null);
+    setFixedNoteText('');
+  };
+
+  const isLoading = aiLoading || fixedLoading || fixedNotesLoading;
 
   if (isLoading) {
     return (
@@ -366,6 +406,14 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
                   index={index}
                   copiedId={copiedId}
                   onCopy={() => handleCopy(question.question_text, question.id)}
+                  noteText={getFixedQuestionNote(question.id)?.note_text || null}
+                  editingNoteId={editingFixedNoteId}
+                  currentNoteText={fixedNoteText}
+                  setNoteText={setFixedNoteText}
+                  onStartEditNote={() => startEditingFixedNote(question.id)}
+                  onSaveNote={() => saveFixedNote(question.id)}
+                  onCancelNote={cancelEditingFixedNote}
+                  isSavingNote={upsertFixedNote.isPending}
                 />
               ))
             )}
@@ -507,9 +555,32 @@ interface FixedQuestionItemProps {
   index: number;
   copiedId: string | null;
   onCopy: () => void;
+  noteText: string | null;
+  editingNoteId: string | null;
+  currentNoteText: string;
+  setNoteText: (text: string) => void;
+  onStartEditNote: () => void;
+  onSaveNote: () => void;
+  onCancelNote: () => void;
+  isSavingNote: boolean;
 }
 
-function FixedQuestionItem({ question, index, copiedId, onCopy }: FixedQuestionItemProps) {
+function FixedQuestionItem({ 
+  question, 
+  index, 
+  copiedId, 
+  onCopy,
+  noteText,
+  editingNoteId,
+  currentNoteText,
+  setNoteText,
+  onStartEditNote,
+  onSaveNote,
+  onCancelNote,
+  isSavingNote,
+}: FixedQuestionItemProps) {
+  const isEditingThisNote = editingNoteId === question.id;
+  
   return (
     <div className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group">
       <div className="flex items-start justify-between gap-2">
@@ -524,6 +595,42 @@ function FixedQuestionItem({ question, index, copiedId, onCopy }: FixedQuestionI
             </Badge>
           </div>
           <p className="text-sm">{question.question_text}</p>
+          
+          {/* Recruiter Note */}
+          <div className="mt-2">
+            {isEditingThisNote ? (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Add your note for this question..."
+                  value={currentNoteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={onSaveNote} disabled={isSavingNote}>
+                    {isSavingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={onCancelNote}>Cancel</Button>
+                </div>
+              </div>
+            ) : noteText ? (
+              <div 
+                className="mt-2 p-2 rounded bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+                onClick={onStartEditNote}
+              >
+                <div className="flex items-start gap-2">
+                  <StickyNote className="h-3 w-3 mt-0.5 text-primary" />
+                  <p className="text-xs text-foreground/80">{noteText}</p>
+                </div>
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={onStartEditNote}>
+                <StickyNote className="h-3 w-3 mr-1" />
+                Add note
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCopy}>
