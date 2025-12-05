@@ -12,13 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { applicationId } = await req.json();
+    const { applicationId, customInstructions } = await req.json();
     
     if (!applicationId) {
       throw new Error('applicationId is required');
     }
 
     console.log('Generating interview questions for application:', applicationId);
+    if (customInstructions) {
+      console.log('With custom instructions:', customInstructions.substring(0, 100) + '...');
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -126,7 +129,11 @@ Based on all this information, generate 6-8 targeted interview questions that wi
 3. Assess cultural fit and motivation
 4. Understand their problem-solving approach
 5. Clarify any gaps or ambiguities in their responses
+${customInstructions ? `
 
+RECRUITER'S SPECIFIC INSTRUCTIONS FOR THIS CANDIDATE:
+${customInstructions}
+` : ''}
 For each question, provide:
 - The question text
 - Category (skills_verification, concern_probing, cultural_fit, experience, motivation)

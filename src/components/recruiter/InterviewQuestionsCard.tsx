@@ -80,10 +80,22 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
   const [isOpen, setIsOpen] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState('');
 
-  const handleGenerate = async () => {
+  const openGenerateDialog = () => {
+    setCustomInstructions('');
+    setIsGenerateDialogOpen(true);
+  };
+
+  const handleGenerateWithInstructions = async () => {
     try {
-      await generateQuestions.mutateAsync(applicationId);
+      await generateQuestions.mutateAsync({
+        applicationId,
+        customInstructions: customInstructions.trim() || undefined,
+      });
+      setIsGenerateDialogOpen(false);
+      setCustomInstructions('');
       toast({
         title: "Questions Generated",
         description: "Interview questions have been generated successfully.",
@@ -231,7 +243,7 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
               </p>
               <div className="flex gap-2 justify-center">
                 <Button 
-                  onClick={handleGenerate} 
+                  onClick={openGenerateDialog} 
                   disabled={generateQuestions.isPending}
                   size="sm"
                 >
@@ -264,6 +276,14 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
           isEditing={!!editingQuestion}
           isSaving={createQuestion.isPending || updateQuestion.isPending}
         />
+        <GenerateQuestionsDialog
+          isOpen={isGenerateDialogOpen}
+          onClose={() => setIsGenerateDialogOpen(false)}
+          customInstructions={customInstructions}
+          setCustomInstructions={setCustomInstructions}
+          onGenerate={handleGenerateWithInstructions}
+          isGenerating={generateQuestions.isPending}
+        />
       </>
     );
   }
@@ -294,7 +314,7 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleGenerate}
+                onClick={openGenerateDialog}
                 disabled={generateQuestions.isPending}
               >
                 {generateQuestions.isPending ? (
@@ -428,7 +448,93 @@ export function InterviewQuestionsCard({ applicationId }: InterviewQuestionsCard
         isEditing={!!editingQuestion}
         isSaving={createQuestion.isPending || updateQuestion.isPending}
       />
+      <GenerateQuestionsDialog
+        isOpen={isGenerateDialogOpen}
+        onClose={() => setIsGenerateDialogOpen(false)}
+        customInstructions={customInstructions}
+        setCustomInstructions={setCustomInstructions}
+        onGenerate={handleGenerateWithInstructions}
+        isGenerating={generateQuestions.isPending}
+      />
     </>
+  );
+}
+
+// Generate Questions Dialog Component
+interface GenerateQuestionsDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  customInstructions: string;
+  setCustomInstructions: (value: string) => void;
+  onGenerate: () => void;
+  isGenerating: boolean;
+}
+
+function GenerateQuestionsDialog({ 
+  isOpen, 
+  onClose, 
+  customInstructions, 
+  setCustomInstructions, 
+  onGenerate, 
+  isGenerating 
+}: GenerateQuestionsDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[hsl(var(--young-blue))]" />
+            Generate AI Questions
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            AI will analyze the candidate's profile, CV, business case responses, 
+            and AI evaluation to generate targeted interview questions.
+          </p>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Custom Instructions (Optional)
+            </label>
+            <Textarea
+              placeholder="E.g., 'Focus on leadership experience', 'Probe into the 2-year gap in employment', 'Ask about specific Python frameworks mentioned in CV'..."
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty to generate questions using default criteria based on 
+              the candidate's profile and job requirements.
+            </p>
+          </div>
+        </div>
+        
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={onGenerate}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Questions
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

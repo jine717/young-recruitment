@@ -49,20 +49,25 @@ export function useInterviewQuestions(applicationId: string | undefined) {
   });
 }
 
+interface GenerateQuestionsInput {
+  applicationId: string;
+  customInstructions?: string;
+}
+
 export function useGenerateInterviewQuestions() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (applicationId: string) => {
+    mutationFn: async ({ applicationId, customInstructions }: GenerateQuestionsInput) => {
       const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
-        body: { applicationId },
+        body: { applicationId, customInstructions },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: (_, applicationId) => {
+    onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: ['interview-questions', applicationId] });
     },
   });
