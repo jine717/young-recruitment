@@ -360,6 +360,51 @@ export type Database = {
           },
         ]
       }
+      fixed_question_notes: {
+        Row: {
+          application_id: string
+          created_at: string
+          fixed_question_id: string
+          id: string
+          note_text: string | null
+          recruiter_id: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          fixed_question_id: string
+          id?: string
+          note_text?: string | null
+          recruiter_id: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          fixed_question_id?: string
+          id?: string
+          note_text?: string | null
+          recruiter_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_question_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_question_notes_fixed_question_id_fkey"
+            columns: ["fixed_question_id"]
+            isOneToOne: false
+            referencedRelation: "job_fixed_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiring_decisions: {
         Row: {
           application_id: string
