@@ -12,17 +12,11 @@ import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader'
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { DocumentsTab } from '@/components/candidate-profile/DocumentsTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
-import { QuickScoreWidget } from '@/components/candidate-profile/QuickScoreWidget';
-import { InterviewEvaluationForm } from '@/components/candidate-profile/InterviewEvaluationForm';
-import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, CalendarPlus, Trash2, FileText, Briefcase, Users } from 'lucide-react';
+import { FileText, Briefcase, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationDetail {
@@ -109,10 +103,7 @@ export default function CandidateProfile() {
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           <Skeleton className="h-32 w-full" />
-          <div className="grid lg:grid-cols-3 gap-6">
-            <Skeleton className="h-96 lg:col-span-2" />
-            <Skeleton className="h-64" />
-          </div>
+          <Skeleton className="h-96 w-full" />
         </div>
       </div>
     );
@@ -203,7 +194,7 @@ export default function CandidateProfile() {
       <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
 
       <div className="max-w-7xl mx-auto p-6 pt-24 space-y-6">
-        {/* Header */}
+        {/* Header with AI Score and Quick Actions */}
         <CandidateHeader
           candidateName={application.candidate_name || application.profile.full_name || 'Unknown Candidate'}
           email={application.candidate_email || application.profile.email || 'No email'}
@@ -214,6 +205,13 @@ export default function CandidateProfile() {
           status={application.status}
           onStatusChange={handleStatusChange}
           isUpdating={isUpdatingStatus}
+          aiScore={aiEvaluation?.overall_score ?? null}
+          aiRecommendation={aiEvaluation?.recommendation ?? null}
+          aiLoading={aiLoading}
+          applicationId={application.id}
+          onScheduleInterview={() => setShowScheduleModal(true)}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
         />
 
         {/* Schedule Interview Modal */}
@@ -225,133 +223,67 @@ export default function CandidateProfile() {
           jobTitle={application.job.title}
         />
 
-        {/* Main Content: Tabs + Sidebar */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column: Tabs */}
-          <div className="lg:col-span-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full justify-start mb-4">
-                <TabsTrigger value="overview" className="gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  Overview
-                  {application.ai_evaluation_status === 'pending' && (
-                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))] animate-pulse" />
-                  )}
-                  {aiEvaluation && (
-                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="gap-2">
-                  <FileText className="w-4 h-4" />
-                  Documents
-                  {(application.cv_url || application.disc_url) && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {[application.cv_url, application.disc_url].filter(Boolean).length}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="interview" className="gap-2">
-                  <Users className="w-4 h-4" />
-                  Interview
-                  {interviews.length > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]">
-                      {interviews.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-              </TabsList>
+        {/* Full-width Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start mb-4">
+            <TabsTrigger value="overview" className="gap-2">
+              <Briefcase className="w-4 h-4" />
+              Overview
+              {application.ai_evaluation_status === 'pending' && (
+                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))] animate-pulse" />
+              )}
+              {aiEvaluation && (
+                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Documents
+              {(application.cv_url || application.disc_url) && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  {[application.cv_url, application.disc_url].filter(Boolean).length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="interview" className="gap-2">
+              <Users className="w-4 h-4" />
+              Interview
+              {interviews.length > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]">
+                  {interviews.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="overview" className="mt-0">
-                <OverviewTab
-                  applicationId={application.id}
-                  jobId={application.job_id}
-                  aiEvaluation={aiEvaluation}
-                  aiLoading={aiLoading}
-                  onTriggerAI={handleTriggerAI}
-                  isTriggering={triggerAI.isPending}
-                />
-              </TabsContent>
-
-              <TabsContent value="documents" className="mt-0">
-                <DocumentsTab
-                  applicationId={application.id}
-                  cvUrl={application.cv_url}
-                  discUrl={application.disc_url}
-                />
-              </TabsContent>
-
-              <TabsContent value="interview" className="mt-0">
-                <InterviewTab
-                  applicationId={application.id}
-                  jobId={application.job_id}
-                  interviews={interviews}
-                  interviewsLoading={interviewsLoading}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Right Column: Sidebar */}
-          <div className="space-y-4">
-            {/* Quick AI Score Widget */}
-            <QuickScoreWidget
-              score={aiEvaluation?.overall_score ?? null}
-              recommendation={aiEvaluation?.recommendation ?? null}
-              isLoading={aiLoading}
-              onClick={() => setActiveTab('overview')}
+          <TabsContent value="overview" className="mt-0">
+            <OverviewTab
+              applicationId={application.id}
+              jobId={application.job_id}
+              aiEvaluation={aiEvaluation}
+              aiLoading={aiLoading}
+              onTriggerAI={handleTriggerAI}
+              isTriggering={triggerAI.isPending}
             />
+          </TabsContent>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  onClick={() => setShowScheduleModal(true)} 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  size="sm"
-                >
-                  <CalendarPlus className="w-4 h-4 mr-2" />
-                  Schedule Interview
-                </Button>
-                
-                <InterviewEvaluationForm applicationId={application.id} />
-                <HiringDecisionModal applicationId={application.id} />
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                      size="sm"
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Candidate
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. The candidate will be permanently removed from the system.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          <TabsContent value="documents" className="mt-0">
+            <DocumentsTab
+              applicationId={application.id}
+              cvUrl={application.cv_url}
+              discUrl={application.disc_url}
+            />
+          </TabsContent>
+
+          <TabsContent value="interview" className="mt-0">
+            <InterviewTab
+              applicationId={application.id}
+              jobId={application.job_id}
+              interviews={interviews}
+              interviewsLoading={interviewsLoading}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -7,9 +7,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Mail, Calendar, User } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { InterviewEvaluationForm } from './InterviewEvaluationForm';
+import { HiringDecisionModal } from './HiringDecisionModal';
 
 interface CandidateHeaderProps {
   candidateName: string;
@@ -21,6 +34,15 @@ interface CandidateHeaderProps {
   status: string;
   onStatusChange: (status: string) => void;
   isUpdating: boolean;
+  // AI Score props
+  aiScore: number | null;
+  aiRecommendation: string | null;
+  aiLoading: boolean;
+  // Quick Actions props
+  applicationId: string;
+  onScheduleInterview: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -39,6 +61,77 @@ const statusLabels: Record<string, string> = {
   rejected: 'Rejected',
 };
 
+function AIScoreBadge({ 
+  score, 
+  recommendation, 
+  isLoading 
+}: { 
+  score: number | null; 
+  recommendation: string | null; 
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border animate-pulse">
+        <Clock className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Analyzing...</span>
+      </div>
+    );
+  }
+
+  if (score === null) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border">
+        <Clock className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Pending</span>
+      </div>
+    );
+  }
+
+  const getRecommendationConfig = () => {
+    switch (recommendation) {
+      case 'proceed':
+        return {
+          icon: TrendingUp,
+          bgClass: 'bg-[hsl(var(--young-blue))]/10',
+          borderClass: 'border-[hsl(var(--young-blue))]/30',
+          textClass: 'text-[hsl(var(--young-blue))]',
+        };
+      case 'review':
+        return {
+          icon: AlertTriangle,
+          bgClass: 'bg-[hsl(var(--young-gold))]/10',
+          borderClass: 'border-[hsl(var(--young-gold))]/30',
+          textClass: 'text-[hsl(var(--young-gold))]',
+        };
+      case 'reject':
+        return {
+          icon: XCircle,
+          bgClass: 'bg-destructive/10',
+          borderClass: 'border-destructive/30',
+          textClass: 'text-destructive',
+        };
+      default:
+        return {
+          icon: TrendingUp,
+          bgClass: 'bg-muted/50',
+          borderClass: 'border-border',
+          textClass: 'text-muted-foreground',
+        };
+    }
+  };
+
+  const config = getRecommendationConfig();
+  const Icon = config.icon;
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bgClass} border ${config.borderClass}`}>
+      <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
+      <Icon className={`w-4 h-4 ${config.textClass}`} />
+    </div>
+  );
+}
+
 export function CandidateHeader({
   candidateName,
   email,
@@ -49,63 +142,135 @@ export function CandidateHeader({
   status,
   onStatusChange,
   isUpdating,
+  aiScore,
+  aiRecommendation,
+  aiLoading,
+  applicationId,
+  onScheduleInterview,
+  onDelete,
+  isDeleting,
 }: CandidateHeaderProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-4">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
+      {/* Top row: Back link */}
+      <Link
+        to="/dashboard"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Dashboard
+      </Link>
 
+      {/* Main content */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        {/* Left: Candidate info with AI Score */}
+        <div className="flex items-start gap-4">
+          {/* AI Score Badge */}
+          <AIScoreBadge 
+            score={aiScore} 
+            recommendation={aiRecommendation} 
+            isLoading={aiLoading} 
+          />
+          
+          {/* Candidate details */}
           <div>
             <h1 className="text-2xl font-bold">{candidateName}</h1>
             <p className="text-muted-foreground mt-1">
               {jobTitle} {departmentName && `• ${departmentName}`}
             </p>
-          </div>
 
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Mail className="w-4 h-4" />
-              <a href={`mailto:${email}`} className="hover:text-primary">
-                {email}
-              </a>
-            </div>
-            {phone && (
+            <div className="flex flex-wrap gap-4 text-sm mt-3">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="w-4 h-4" />
-                {phone}
+                <Mail className="w-4 h-4" />
+                <a href={`mailto:${email}`} className="hover:text-primary">
+                  {email}
+                </a>
               </div>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              Applied {format(new Date(applicationDate), 'MMM d, yyyy')}
+              {phone && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="w-4 h-4" />
+                  {phone}
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="w-4 h-4" />
+                Applied {format(new Date(applicationDate), 'MMM d, yyyy')}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Badge className={statusColors[status]}>
-            {statusLabels[status] || status}
-          </Badge>
+        {/* Right: Status + Quick Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Status Badge & Selector */}
+          <div className="flex items-center gap-2">
+            <Badge className={statusColors[status]}>
+              {statusLabels[status] || status}
+            </Badge>
+            <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Change status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="interview">Interview</SelectItem>
+                <SelectItem value="hired">Hired</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Change status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="interview">Interview</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={onScheduleInterview} 
+              variant="outline" 
+              size="sm"
+              className="gap-1"
+            >
+              <CalendarPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </Button>
+            
+            <InterviewEvaluationForm applicationId={applicationId} />
+            <HiringDecisionModal applicationId={applicationId} />
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The candidate will be permanently removed from the system.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={onDelete} 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </div>
     </div>
