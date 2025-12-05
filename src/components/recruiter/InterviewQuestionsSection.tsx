@@ -344,7 +344,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
             </p>
             <div className="mt-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to={`/recruiter/jobs/${jobId}/edit`}>
+                <Link to={`/dashboard/jobs/${jobId}/edit`}>
                   <ExternalLink className="h-3 w-3 mr-1" />
                   Edit in Job Settings
                 </Link>
