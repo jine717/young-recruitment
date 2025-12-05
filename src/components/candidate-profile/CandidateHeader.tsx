@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -162,67 +161,61 @@ export function CandidateHeader({
       </Link>
 
       {/* Main content */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        {/* Left: Candidate info with AI Score */}
-        <div className="flex items-start gap-4">
-          {/* AI Score Badge */}
-          <AIScoreBadge 
-            score={aiScore} 
-            recommendation={aiRecommendation} 
-            isLoading={aiLoading} 
-          />
-          
-          {/* Candidate details */}
-          <div>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        {/* Left: Candidate info */}
+        <div className="flex-1">
+          {/* Name + AI Score inline */}
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">{candidateName}</h1>
-            <p className="text-muted-foreground mt-1">
-              {jobTitle} {departmentName && `• ${departmentName}`}
-            </p>
+            <AIScoreBadge 
+              score={aiScore} 
+              recommendation={aiRecommendation} 
+              isLoading={aiLoading} 
+            />
+          </div>
+          
+          <p className="text-muted-foreground mt-1">
+            {jobTitle} {departmentName && `• ${departmentName}`}
+          </p>
 
-            <div className="flex flex-wrap gap-4 text-sm mt-3">
+          <div className="flex flex-wrap gap-4 text-sm mt-3">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Mail className="w-4 h-4" />
+              <a href={`mailto:${email}`} className="hover:text-primary">
+                {email}
+              </a>
+            </div>
+            {phone && (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="w-4 h-4" />
-                <a href={`mailto:${email}`} className="hover:text-primary">
-                  {email}
-                </a>
+                <User className="w-4 h-4" />
+                {phone}
               </div>
-              {phone && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  {phone}
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                Applied {format(new Date(applicationDate), 'MMM d, yyyy')}
-              </div>
+            )}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              Applied {format(new Date(applicationDate), 'MMM d, yyyy')}
             </div>
           </div>
         </div>
 
-        {/* Right: Status + Quick Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          {/* Status Badge & Selector */}
-          <div className="flex items-center gap-2">
-            <Badge className={statusColors[status]}>
-              {statusLabels[status] || status}
-            </Badge>
-            <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Change status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="interview">Interview</SelectItem>
-                <SelectItem value="hired">Hired</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Right: Status & Quick Actions */}
+        <div className="flex flex-col gap-3">
+          {/* Status Selector */}
+          <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Change status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="under_review">Under Review</SelectItem>
+              <SelectItem value="interview">Interview</SelectItem>
+              <SelectItem value="hired">Hired</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button 
               onClick={onScheduleInterview} 
               variant="outline" 

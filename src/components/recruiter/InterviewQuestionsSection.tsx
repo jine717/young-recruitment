@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2, StickyNote, ClipboardList, ExternalLink } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2, StickyNote, ClipboardList, ExternalLink, ChevronDown } from 'lucide-react';
 import { 
   InterviewQuestion, 
   useInterviewQuestions, 
@@ -81,6 +82,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
   const upsertFixedNote = useUpsertFixedQuestionNote();
   const { toast } = useToast();
   
+  const [isOpen, setIsOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<InterviewQuestion | null>(null);
@@ -280,22 +282,38 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
     );
   }
 
+  const totalQuestions = (aiQuestions?.length || 0) + (fixedQuestions?.length || 0);
+
   return (
     <>
-      {/* Header with actions */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          Interview Questions
-        </h3>
-        <Button variant="outline" size="sm" onClick={handleCopyAll}>
-          <Copy className="h-3 w-3 mr-1" />
-          Copy All
-        </Button>
-      </div>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        {/* Collapsible Header */}
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors mb-2">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Interview Questions
+              {totalQuestions > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {totalQuestions}
+                </Badge>
+              )}
+            </h3>
+            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          </div>
+        </CollapsibleTrigger>
 
-      {/* Two-column layout */}
-      <div className="grid md:grid-cols-2 gap-4">
+        <CollapsibleContent>
+          {/* Copy All button */}
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" size="sm" onClick={handleCopyAll}>
+              <Copy className="h-3 w-3 mr-1" />
+              Copy All
+            </Button>
+          </div>
+
+          {/* Two-column layout */}
+          <div className="grid md:grid-cols-2 gap-4">
         {/* Left Column: AI-Generated Questions */}
         <Card>
           <CardHeader className="pb-3">
@@ -419,7 +437,9 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
             )}
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Dialogs */}
       <QuestionDialog 
