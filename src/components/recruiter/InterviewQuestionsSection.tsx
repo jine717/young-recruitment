@@ -6,7 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2, StickyNote, ClipboardList, ExternalLink, ChevronDown } from 'lucide-react';
+import { Loader2, MessageSquare, Copy, Check, Sparkles, Plus, Pencil, Trash2, StickyNote, ClipboardList, ExternalLink, ChevronDown, FileText } from 'lucide-react';
+import { useRecruiterNotes, useAddRecruiterNote, useDeleteRecruiterNote } from '@/hooks/useRecruiterNotes';
+import { format } from 'date-fns';
 import { 
   InterviewQuestion, 
   useInterviewQuestions, 
@@ -93,6 +95,12 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
   const [fixedNoteText, setFixedNoteText] = useState('');
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [customInstructions, setCustomInstructions] = useState('');
+  
+  // Interview Notes state and hooks
+  const { data: interviewNotes, isLoading: notesLoading } = useRecruiterNotes(applicationId);
+  const addNote = useAddRecruiterNote();
+  const deleteNote = useDeleteRecruiterNote();
+  const [newInterviewNote, setNewInterviewNote] = useState('');
 
   const openGenerateDialog = () => {
     setCustomInstructions('');
@@ -126,17 +134,36 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleCopyAll = async () => {
-    const allQuestions = [
-      ...(aiQuestions || []).map((q, i) => `AI Q${i + 1}. ${q.question_text}`),
-      ...(fixedQuestions || []).map((q, i) => `Fixed Q${i + 1}. ${q.question_text}`),
-    ];
-    if (!allQuestions.length) return;
-    await navigator.clipboard.writeText(allQuestions.join('\n\n'));
-    toast({
-      title: "Copied",
-      description: "All questions copied to clipboard",
-    });
+  // Interview Notes handlers
+  const handleAddInterviewNote = async () => {
+    if (!newInterviewNote.trim()) return;
+    try {
+      await addNote.mutateAsync({
+        applicationId,
+        noteText: newInterviewNote.trim(),
+      });
+      setNewInterviewNote('');
+      toast({ title: "Note added" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add note",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteInterviewNote = async (noteId: string) => {
+    try {
+      await deleteNote.mutateAsync({ noteId, applicationId });
+      toast({ title: "Note deleted" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete note",
+        variant: "destructive",
+      });
+    }
   };
 
   const openAddDialog = () => {
@@ -272,7 +299,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
     setFixedNoteText('');
   };
 
-  const isLoading = aiLoading || fixedLoading || fixedNotesLoading;
+  const isLoading = aiLoading || fixedLoading || fixedNotesLoading || notesLoading;
 
   if (isLoading) {
     return (
@@ -307,14 +334,62 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-            <CardContent className="pt-0">
-              {/* Copy All button */}
-              <div className="flex justify-end mb-4">
-                <Button variant="outline" size="sm" onClick={handleCopyAll}>
-                  <Copy className="h-3 w-3 mr-1" />
-                  Copy All
-                </Button>
-              </div>
+            <CardContent className="pt-0 space-y-4">
+              {/* Interview Notes Card */}
+              <Card className="border-dashed">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+                    Interview Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  {/* Input for new note */}
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Take notes during the interview..."
+                      value={newInterviewNote}
+                      onChange={(e) => setNewInterviewNote(e.target.value)}
+                      rows={2}
+                      className="resize-none text-sm"
+                    />
+                    <Button
+                      onClick={handleAddInterviewNote}
+                      disabled={!newInterviewNote.trim() || addNote.isPending}
+                      size="sm"
+                      variant="outline"
+                      className="self-end"
+                    >
+                      {addNote.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  
+                  {/* List of existing notes */}
+                  {interviewNotes && interviewNotes.length > 0 && (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {interviewNotes.map((note) => (
+                        <div key={note.id} className="flex items-start justify-between p-2 bg-muted/30 rounded text-sm gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteInterviewNote(note.id)}
+                            disabled={deleteNote.isPending}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Two-column layout */}
               <div className="grid md:grid-cols-2 gap-4">
