@@ -68,10 +68,12 @@ export default function RecruiterJobEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [manageTemplatesOpen, setManageTemplatesOpen] = useState(false);
+  const [hasLoadedBusinessCases, setHasLoadedBusinessCases] = useState(false);
+  const [hasLoadedFixedQuestions, setHasLoadedFixedQuestions] = useState(false);
 
-  // Load existing business cases when editing
+  // Load existing business cases when editing (only on initial load)
   useEffect(() => {
-    if (existingBusinessCases && !businessCasesLoading) {
+    if (existingBusinessCases && !businessCasesLoading && !hasLoadedBusinessCases) {
       setBusinessCaseQuestions(
         existingBusinessCases.map((bc) => ({
           id: bc.id,
@@ -82,12 +84,13 @@ export default function RecruiterJobEditor() {
           video_url: bc.video_url,
         }))
       );
+      setHasLoadedBusinessCases(true);
     }
-  }, [existingBusinessCases, businessCasesLoading]);
+  }, [existingBusinessCases, businessCasesLoading, hasLoadedBusinessCases]);
 
-  // Load existing fixed interview questions when editing
+  // Load existing fixed interview questions when editing (only on initial load)
   useEffect(() => {
-    if (existingFixedQuestions && !fixedQuestionsLoading) {
+    if (existingFixedQuestions && !fixedQuestionsLoading && !hasLoadedFixedQuestions) {
       setFixedInterviewQuestions(
         existingFixedQuestions.map((fq: any) => ({
           id: fq.id,
@@ -97,8 +100,9 @@ export default function RecruiterJobEditor() {
           priority: fq.priority,
         }))
       );
+      setHasLoadedFixedQuestions(true);
     }
-  }, [existingFixedQuestions, fixedQuestionsLoading]);
+  }, [existingFixedQuestions, fixedQuestionsLoading, hasLoadedFixedQuestions]);
 
   useEffect(() => {
     if (isEditing && id) {
