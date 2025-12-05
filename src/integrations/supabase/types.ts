@@ -566,6 +566,47 @@ export type Database = {
           },
         ]
       }
+      job_fixed_questions: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          job_id: string
+          priority: number
+          question_order: number
+          question_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          job_id: string
+          priority?: number
+          question_order?: number
+          question_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          priority?: number
+          question_order?: number
+          question_text?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_fixed_questions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           ai_system_prompt: string | null

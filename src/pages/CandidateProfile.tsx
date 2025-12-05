@@ -283,6 +283,7 @@ export default function CandidateProfile() {
               <TabsContent value="interview" className="mt-0">
                 <InterviewTab
                   applicationId={application.id}
+                  jobId={application.job_id}
                   interviews={interviews}
                   interviewsLoading={interviewsLoading}
                 />
