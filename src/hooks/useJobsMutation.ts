@@ -14,6 +14,7 @@ export interface JobInput {
   tags: string[];
   status: 'draft' | 'published' | 'closed';
   ai_system_prompt?: string | null;
+  ai_interview_prompt?: string | null;
 }
 
 export function useAllJobs() {

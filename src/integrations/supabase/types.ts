@@ -609,6 +609,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          ai_interview_prompt: string | null
           ai_system_prompt: string | null
           benefits: string[] | null
           created_at: string
@@ -625,6 +626,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_interview_prompt?: string | null
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
@@ -641,6 +643,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_interview_prompt?: string | null
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
