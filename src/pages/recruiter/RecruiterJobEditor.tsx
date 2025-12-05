@@ -17,7 +17,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
 import { useJobFixedQuestionsForEditor, useCreateJobFixedQuestion, useUpdateJobFixedQuestion, useDeleteJobFixedQuestion } from '@/hooks/useJobFixedQuestionsMutation';
-import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll } from 'lucide-react';
+import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll, MessageSquareText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import FixedInterviewQuestionsEditor, { FixedInterviewQuestion } from '@/components/recruiter/FixedInterviewQuestionsEditor';
@@ -59,6 +59,7 @@ export default function RecruiterJobEditor() {
     tags: [''],
     status: 'draft' as JobStatus,
     ai_system_prompt: '',
+    ai_interview_prompt: '',
   });
 
   const [businessCaseQuestions, setBusinessCaseQuestions] = useState<BusinessCaseQuestion[]>([]);
@@ -127,6 +128,7 @@ export default function RecruiterJobEditor() {
             tags: data.tags?.length ? data.tags : [''],
             status: data.status as JobStatus,
             ai_system_prompt: data.ai_system_prompt || '',
+            ai_interview_prompt: data.ai_interview_prompt || '',
           });
         }
         setLoading(false);
@@ -229,6 +231,7 @@ export default function RecruiterJobEditor() {
         benefits: formData.benefits.filter((b) => b.trim()),
         tags: formData.tags.filter((t) => t.trim()),
         ai_system_prompt: formData.ai_system_prompt || null,
+        ai_interview_prompt: formData.ai_interview_prompt || null,
       };
 
       let jobId: string;
@@ -550,6 +553,28 @@ export default function RecruiterJobEditor() {
                 onChange={setFixedInterviewQuestions}
                 disabled={isSubmitting}
               />
+
+              {/* AI Interview Questions Instructions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquareText className="h-5 w-5" />
+                    AI Interview Questions Instructions
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Define default instructions for how AI should generate personalized interview questions for candidates of this position.
+                    These instructions will be pre-filled when generating AI questions for any candidate.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={formData.ai_interview_prompt}
+                    onChange={(e) => setFormData({ ...formData, ai_interview_prompt: e.target.value })}
+                    placeholder="Example: Focus on technical problem-solving scenarios. Include questions about team collaboration. Ask about their experience with agile methodologies..."
+                    rows={5}
+                  />
+                </CardContent>
+              </Card>
 
               {/* AI Evaluation Instructions */}
               <Card>
