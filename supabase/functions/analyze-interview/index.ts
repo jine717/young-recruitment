@@ -347,24 +347,44 @@ serve(async (req) => {
 
     console.log("Interview analysis saved to document_analyses");
 
-    // Update AI evaluation with new scores
+    // Update AI evaluation with new scores, preserving initial scores
     const { data: existingEval } = await supabase
       .from("ai_evaluations")
-      .select("id")
+      .select("id, overall_score, skills_match_score, communication_score, cultural_fit_score, recommendation, evaluation_stage")
       .eq("application_id", applicationId)
       .maybeSingle();
 
     if (existingEval) {
-      await supabase
+      // If this is the first interview analysis, preserve initial scores
+      const isFirstInterviewAnalysis = existingEval.evaluation_stage !== 'post_interview';
+      
+      const updateData: Record<string, unknown> = {
+        overall_score: newScore,
+        skills_match_score: analysisResult.new_skills_score,
+        communication_score: analysisResult.new_communication_score,
+        cultural_fit_score: analysisResult.new_cultural_fit_score,
+        recommendation: analysisResult.new_recommendation,
+        evaluation_stage: 'post_interview'
+      };
+
+      // Only save initial scores on first interview analysis
+      if (isFirstInterviewAnalysis) {
+        updateData.initial_overall_score = existingEval.overall_score;
+        updateData.initial_skills_match_score = existingEval.skills_match_score;
+        updateData.initial_communication_score = existingEval.communication_score;
+        updateData.initial_cultural_fit_score = existingEval.cultural_fit_score;
+        updateData.initial_recommendation = existingEval.recommendation;
+      }
+
+      const { error: updateError } = await supabase
         .from("ai_evaluations")
-        .update({
-          overall_score: newScore,
-          skills_match_score: analysisResult.new_skills_score,
-          communication_score: analysisResult.new_communication_score,
-          cultural_fit_score: analysisResult.new_cultural_fit_score,
-          recommendation: analysisResult.new_recommendation
-        })
+        .update(updateData)
         .eq("id", existingEval.id);
+
+      if (updateError) {
+        console.error("Failed to update ai_evaluations:", updateError);
+        throw new Error(`Failed to update AI evaluation: ${updateError.message}`);
+      }
     }
 
     // Update application ai_score

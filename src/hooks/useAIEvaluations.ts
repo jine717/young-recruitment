@@ -14,6 +14,13 @@ export interface AIEvaluation {
   communication_score: number | null;
   raw_response: unknown;
   created_at: string;
+  // Pre-interview scores (preserved when interview analysis is run)
+  initial_overall_score: number | null;
+  initial_skills_match_score: number | null;
+  initial_communication_score: number | null;
+  initial_cultural_fit_score: number | null;
+  initial_recommendation: string | null;
+  evaluation_stage: 'initial' | 'post_interview';
 }
 
 export function useAIEvaluation(applicationId: string | undefined) {
