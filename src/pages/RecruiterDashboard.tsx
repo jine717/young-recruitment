@@ -53,6 +53,7 @@ const RecruiterDashboard = () => {
   const sendNotification = useSendNotification();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -70,6 +71,14 @@ const RecruiterDashboard = () => {
   const filteredApplications = applications?.filter(app => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
+    
+    // Stage filter
+    if (stageFilter !== "all") {
+      const evaluation = evaluationsMap.get(app.id);
+      const stage = evaluation?.evaluation_stage ?? 'initial';
+      if (stageFilter === "interviewed" && stage !== 'post_interview') return false;
+      if (stageFilter === "initial" && stage === 'post_interview') return false;
+    }
     
     // Date filter
     if (dateFilter !== "all") {
@@ -125,11 +134,17 @@ const RecruiterDashboard = () => {
     setCurrentPage(1);
   };
   
-  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all";
+  const handleStageFilterChange = (value: string) => {
+    setStageFilter(value);
+    setCurrentPage(1);
+  };
+  
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all";
   
   const clearAllFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
+    setStageFilter("all");
     setSortBy("date");
     setDateFilter("all");
     setCurrentPage(1);
@@ -536,7 +551,40 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
-                        <TableHead className="w-[100px]">Stage</TableHead>
+                        <TableHead className="w-[100px]">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Stage
+                              <ChevronDown className="h-3 w-3" />
+                              {stageFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleStageFilterChange("all")} className="flex items-center justify-between">
+                                All Stages
+                                {stageFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleStageFilterChange("initial")} className="flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                  <FileQuestion className="h-4 w-4" />
+                                  Initial
+                                </span>
+                                {stageFilter === "initial" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStageFilterChange("interviewed")} className="flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                  <FileCheck className="h-4 w-4 text-[hsl(var(--young-blue))]" />
+                                  Interviewed
+                                </span>
+                                {stageFilter === "interviewed" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
                         <TableHead>
                           <DropdownMenu>
                             <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
