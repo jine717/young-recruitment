@@ -1,6 +1,6 @@
 import { InterviewQuestionsSection } from '@/components/recruiter/InterviewQuestionsSection';
 import { InterviewScheduleCard } from '@/components/candidate-profile/InterviewScheduleCard';
-import { InterviewAnalysisSection } from '@/components/candidate-profile/InterviewAnalysisSection';
+import { InterviewAnalysisCard } from '@/components/candidate-profile/InterviewAnalysisCard';
 
 interface InterviewTabProps {
   applicationId: string;
@@ -13,7 +13,7 @@ export function InterviewTab({ applicationId, jobId, interviews, interviewsLoadi
   return (
     <div className="space-y-4">
       <InterviewQuestionsSection applicationId={applicationId} jobId={jobId} />
-      <InterviewAnalysisSection applicationId={applicationId} />
+      <InterviewAnalysisCard applicationId={applicationId} />
       <InterviewScheduleCard interviews={interviews} isLoading={interviewsLoading} />
     </div>
   );
