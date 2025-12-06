@@ -600,7 +600,13 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <AIScoreBadge score={app.ai_score ?? null} status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null} size="sm" />
+                                  <AIScoreBadge 
+                                    score={app.ai_score ?? null} 
+                                    status={app.ai_evaluation_status as 'pending' | 'processing' | 'completed' | 'failed' | null} 
+                                    size="sm"
+                                    initialScore={evaluation?.initial_overall_score ?? null}
+                                    evaluationStage={evaluation?.evaluation_stage ?? null}
+                                  />
                                   {evaluation && <CollapsibleTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={e => e.stopPropagation()}>
                                         <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
