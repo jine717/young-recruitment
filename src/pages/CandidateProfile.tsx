@@ -208,6 +208,8 @@ export default function CandidateProfile() {
           aiScore={aiEvaluation?.overall_score ?? null}
           aiRecommendation={aiEvaluation?.recommendation ?? null}
           aiLoading={aiLoading}
+          initialScore={aiEvaluation?.initial_overall_score ?? null}
+          evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
           onScheduleInterview={() => setShowScheduleModal(true)}
           onDelete={handleDelete}

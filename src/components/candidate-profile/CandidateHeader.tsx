@@ -37,6 +37,9 @@ interface CandidateHeaderProps {
   aiScore: number | null;
   aiRecommendation: string | null;
   aiLoading: boolean;
+  // Pre/Post interview differentiation
+  initialScore: number | null;
+  evaluationStage: 'initial' | 'post_interview' | null;
   // Quick Actions props
   applicationId: string;
   onScheduleInterview: () => void;
@@ -63,11 +66,15 @@ const statusLabels: Record<string, string> = {
 function AIScoreBadge({ 
   score, 
   recommendation, 
-  isLoading 
+  isLoading,
+  initialScore,
+  evaluationStage
 }: { 
   score: number | null; 
   recommendation: string | null; 
   isLoading: boolean;
+  initialScore: number | null;
+  evaluationStage: 'initial' | 'post_interview' | null;
 }) {
   if (isLoading) {
     return (
@@ -123,10 +130,34 @@ function AIScoreBadge({
   const config = getRecommendationConfig();
   const Icon = config.icon;
 
+  // Check if this is post-interview score
+  const isPostInterview = evaluationStage === 'post_interview';
+  const scoreChange = isPostInterview && initialScore !== null ? score - initialScore : null;
+
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bgClass} border ${config.borderClass}`}>
-      <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
-      <Icon className={`w-4 h-4 ${config.textClass}`} />
+    <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bgClass} border ${config.borderClass}`}>
+        {isPostInterview && initialScore !== null ? (
+          <>
+            <span className="text-sm text-muted-foreground line-through">{initialScore}</span>
+            <span className="text-muted-foreground">→</span>
+            <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
+            {scoreChange !== null && scoreChange !== 0 && (
+              <span className={`text-xs font-medium ${scoreChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ({scoreChange > 0 ? '+' : ''}{scoreChange})
+              </span>
+            )}
+          </>
+        ) : (
+          <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
+        )}
+        <Icon className={`w-4 h-4 ${config.textClass}`} />
+      </div>
+      {isPostInterview && (
+        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/20">
+          Post-Interview
+        </span>
+      )}
     </div>
   );
 }
@@ -144,6 +175,8 @@ export function CandidateHeader({
   aiScore,
   aiRecommendation,
   aiLoading,
+  initialScore,
+  evaluationStage,
   applicationId,
   onScheduleInterview,
   onDelete,
@@ -170,7 +203,9 @@ export function CandidateHeader({
             <AIScoreBadge 
               score={aiScore} 
               recommendation={aiRecommendation} 
-              isLoading={aiLoading} 
+              isLoading={aiLoading}
+              initialScore={initialScore}
+              evaluationStage={evaluationStage}
             />
           </div>
           

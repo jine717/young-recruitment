@@ -51,7 +51,13 @@ export type Database = {
           concerns: string[] | null
           created_at: string
           cultural_fit_score: number | null
+          evaluation_stage: string | null
           id: string
+          initial_communication_score: number | null
+          initial_cultural_fit_score: number | null
+          initial_overall_score: number | null
+          initial_recommendation: string | null
+          initial_skills_match_score: number | null
           overall_score: number | null
           raw_response: Json | null
           recommendation:
@@ -67,7 +73,13 @@ export type Database = {
           concerns?: string[] | null
           created_at?: string
           cultural_fit_score?: number | null
+          evaluation_stage?: string | null
           id?: string
+          initial_communication_score?: number | null
+          initial_cultural_fit_score?: number | null
+          initial_overall_score?: number | null
+          initial_recommendation?: string | null
+          initial_skills_match_score?: number | null
           overall_score?: number | null
           raw_response?: Json | null
           recommendation?:
@@ -83,7 +95,13 @@ export type Database = {
           concerns?: string[] | null
           created_at?: string
           cultural_fit_score?: number | null
+          evaluation_stage?: string | null
           id?: string
+          initial_communication_score?: number | null
+          initial_cultural_fit_score?: number | null
+          initial_overall_score?: number | null
+          initial_recommendation?: string | null
+          initial_skills_match_score?: number | null
           overall_score?: number | null
           raw_response?: Json | null
           recommendation?:
