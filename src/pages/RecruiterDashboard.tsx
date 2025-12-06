@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3 } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -536,6 +536,7 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
+                        <TableHead className="w-[100px]">Stage</TableHead>
                         <TableHead>
                           <DropdownMenu>
                             <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
@@ -635,6 +636,19 @@ const RecruiterDashboard = () => {
                                   {statusLabels[app.status]}
                                 </Badge>
                               </TableCell>
+                              <TableCell>
+                                {evaluation?.evaluation_stage === 'post_interview' ? (
+                                  <div className="flex items-center gap-1.5 text-[hsl(var(--young-blue))]">
+                                    <FileCheck className="h-4 w-4" />
+                                    <span className="text-xs font-medium">Interviewed</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <FileQuestion className="h-4 w-4" />
+                                    <span className="text-xs">Initial</span>
+                                  </div>
+                                )}
+                              </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {format(new Date(app.created_at), "MMM d, yyyy 'at' HH:mm")}
                               </TableCell>
@@ -679,7 +693,7 @@ const RecruiterDashboard = () => {
                             </TableRow>
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
-                                  <TableCell colSpan={7} className="bg-muted/30 p-0">
+                                  <TableCell colSpan={8} className="bg-muted/30 p-0">
                                     <div className="p-4">
                                       <AIEvaluationCard evaluation={evaluation} />
                                     </div>
