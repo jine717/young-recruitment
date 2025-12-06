@@ -92,15 +92,20 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
             <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Business Case Responses
-              </CardTitle>
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+              Business Case Responses
+            </CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={completedCount === totalCount ? 'default' : 'secondary'}>
+                <Badge 
+                  className={completedCount === totalCount 
+                    ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30' 
+                    : 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30'
+                  }
+                >
                   {completedCount}/{totalCount} Completed
                 </Badge>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
             </div>
           </CollapsibleTrigger>
@@ -108,11 +113,10 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
         <CollapsibleContent>
           <CardContent className="space-y-4 pt-0">
             {businessCases?.length === 0 ? (
-              <div className="text-center py-6">
-                <MessageSquare className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No business case questions for this position.
-                </p>
+              <div className="text-center py-6 text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">No business case questions</p>
+                <p className="text-xs mt-1">This position has no business case questions configured</p>
               </div>
             ) : (
               businessCases?.map((bc) => {

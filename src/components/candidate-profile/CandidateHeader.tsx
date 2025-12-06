@@ -249,20 +249,20 @@ export function CandidateHeader({
             </SelectContent>
           </Select>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Button 
-              onClick={onScheduleInterview} 
-              variant="outline" 
-              size="sm"
-              className="gap-1"
-            >
-              <CalendarPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Schedule</span>
-            </Button>
-            
-            <InterviewEvaluationForm applicationId={applicationId} />
-            <HiringDecisionModal applicationId={applicationId} />
+        {/* Quick Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            onClick={onScheduleInterview} 
+            variant="outline" 
+            size="sm"
+            className="gap-1"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Schedule</span>
+          </Button>
+          
+          <InterviewEvaluationForm applicationId={applicationId} />
+          <HiringDecisionModal applicationId={applicationId} />
             
             <AlertDialog>
               <AlertDialogTrigger asChild>

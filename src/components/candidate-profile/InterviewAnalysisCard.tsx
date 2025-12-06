@@ -115,19 +115,19 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   };
 
   const getChangeColor = () => {
-    if (isPositive) return 'text-green-600 bg-green-50 border-green-200';
-    if (isNegative) return 'text-red-600 bg-red-50 border-red-200';
+    if (isPositive) return 'text-[hsl(var(--young-blue))] bg-[hsl(var(--young-blue))]/10 border-[hsl(var(--young-blue))]/30';
+    if (isNegative) return 'text-destructive bg-destructive/10 border-destructive/30';
     return 'text-muted-foreground bg-muted/50 border-muted';
   };
 
   const getRecommendationStyle = () => {
     switch (analysis!.new_recommendation) {
       case 'proceed':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30';
       case 'review':
         return 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30';
       case 'reject':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-destructive/10 text-destructive border-destructive/30';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -169,7 +169,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
                     </>
                   )}
                 </Button>
-                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
             </div>
           </CardHeader>
@@ -253,13 +253,13 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
             {analysis!.strengths_demonstrated.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <CheckCircle2 className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                   Strengths Demonstrated
                 </h4>
                 <div className="space-y-1">
                   {analysis!.strengths_demonstrated.map((strength, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="text-green-600">•</span>
+                      <span className="text-[hsl(var(--young-blue))]">•</span>
                       <span>{strength}</span>
                     </div>
                   ))}

@@ -30,14 +30,18 @@ export function OverviewTab({
         <AIEvaluationCard evaluation={aiEvaluation} />
       ) : (
         <div className="p-6 bg-muted/30 rounded-lg text-center space-y-3 border border-dashed">
-          <Brain className="w-10 h-10 mx-auto text-muted-foreground" />
+          <Brain className="w-8 h-8 mx-auto text-muted-foreground opacity-50" />
           <div>
-            <p className="font-medium">No AI Evaluation Yet</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-medium">No AI Evaluation Yet</p>
+            <p className="text-xs text-muted-foreground mt-1">
               Run AI analysis to get insights about this candidate
             </p>
           </div>
-          <Button onClick={onTriggerAI} disabled={isTriggering}>
+          <Button 
+            onClick={onTriggerAI} 
+            disabled={isTriggering}
+            className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
+          >
             {isTriggering ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (

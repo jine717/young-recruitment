@@ -91,9 +91,12 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">
+        <Button 
+          size="sm"
+          className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
+        >
           <Gavel className="w-4 h-4 mr-2" />
-          Make Final Decision
+          Decision
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -111,7 +114,7 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
               <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
                 <RadioGroupItem value="hired" id="hired" />
                 <Label htmlFor="hired" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                   Hire Candidate
                 </Label>
               </div>
@@ -125,7 +128,7 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
               <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
                 <RadioGroupItem value="on_hold" id="on_hold" />
                 <Label htmlFor="on_hold" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Clock className="w-4 h-4 text-amber-600" />
+                  <Clock className="w-4 h-4 text-[hsl(var(--young-gold))]" />
                   Put On Hold
                 </Label>
               </div>
@@ -182,7 +185,11 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={addDecision.isPending}>
+            <Button 
+              type="submit" 
+              disabled={addDecision.isPending}
+              className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
+            >
               {addDecision.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Confirm Decision
             </Button>
