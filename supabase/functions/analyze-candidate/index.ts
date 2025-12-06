@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +38,300 @@ interface DISCAnalysis {
   potential_challenges?: string[];
   management_tips?: string;
   team_fit_considerations?: string;
+}
+
+const CV_ANALYSIS_PROMPT = `You are an expert HR analyst. Analyze this CV/Resume document and provide a structured analysis.
+
+Extract and analyze:
+1. A brief candidate summary (2-3 sentences)
+2. Estimated years of experience
+3. Key skills identified (5-10 most relevant)
+4. Education history (degrees, institutions)
+5. Work history (companies, roles, durations)
+6. Key strengths based on the CV
+7. Any potential red flags or concerns
+8. Your overall impression of the candidate
+
+Be objective and thorough in your analysis.`;
+
+const DISC_ANALYSIS_PROMPT = `You are an expert in DISC personality assessments. Analyze this DISC assessment document and provide a structured analysis.
+
+Identify and analyze:
+1. The dominant profile type (D, I, S, or C)
+2. A description of what this profile means
+3. The person's dominant personality traits
+4. Their preferred communication style
+5. Their work style and preferences
+6. Key strengths of this profile
+7. Potential challenges or blind spots
+8. Tips for managing/working with this person
+9. Team fit considerations
+
+Provide actionable insights for recruiters.`;
+
+// Helper function to analyze a single document
+async function analyzeDocument(
+  supabase: SupabaseClient,
+  lovableApiKey: string,
+  applicationId: string,
+  documentType: 'cv' | 'disc',
+  documentPath: string | null
+): Promise<CVAnalysis | DISCAnalysis | null> {
+  if (!documentPath) {
+    console.log(`No ${documentType} document path available`);
+    return null;
+  }
+
+  // Check if analysis already exists and is completed
+  const { data: existing } = await supabase
+    .from('document_analyses')
+    .select('analysis, status')
+    .eq('application_id', applicationId)
+    .eq('document_type', documentType)
+    .maybeSingle();
+
+  if (existing?.status === 'completed' && existing?.analysis) {
+    console.log(`${documentType} analysis already completed, using cached result`);
+    return existing.analysis as CVAnalysis | DISCAnalysis;
+  }
+
+  console.log(`Starting ${documentType} analysis for application ${applicationId}`);
+
+  // Create or update analysis record with processing status
+  await supabase
+    .from('document_analyses')
+    .upsert({
+      application_id: applicationId,
+      document_type: documentType,
+      status: 'processing',
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'application_id,document_type'
+    });
+
+  try {
+    // Get signed URL for the document
+    const bucketName = documentType === 'cv' ? 'cvs' : 'disc-assessments';
+    
+    // Extract relative path from full URL if needed
+    let relativePath = documentPath;
+    if (documentPath.includes('storage/v1/object/public/')) {
+      const regex = new RegExp(`storage/v1/object/public/${bucketName}/(.+)$`);
+      const match = documentPath.match(regex);
+      if (match) {
+        relativePath = match[1];
+      }
+    } else if (documentPath.includes('storage/v1/object/sign/')) {
+      const regex = new RegExp(`storage/v1/object/sign/${bucketName}/(.+?)\\?`);
+      const match = documentPath.match(regex);
+      if (match) {
+        relativePath = match[1];
+      }
+    }
+    
+    console.log(`${documentType} - Document path:`, documentPath);
+    console.log(`${documentType} - Relative path:`, relativePath);
+    
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(relativePath, 3600);
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error(`Error getting signed URL for ${documentType}:`, signedUrlError);
+      throw new Error('Failed to get document URL');
+    }
+
+    // Download the document
+    const documentResponse = await fetch(signedUrlData.signedUrl);
+    if (!documentResponse.ok) {
+      throw new Error('Failed to download document');
+    }
+
+    // For PDFs, we'll send the base64 content to the AI
+    const documentBuffer = await documentResponse.arrayBuffer();
+    const base64Content = btoa(String.fromCharCode(...new Uint8Array(documentBuffer)));
+
+    // Determine content type
+    const contentType = documentResponse.headers.get('content-type') || 'application/pdf';
+    const isImage = contentType.startsWith('image/');
+    const isPdf = contentType.includes('pdf');
+
+    // Build the message for AI
+    const systemPrompt = documentType === 'cv' ? CV_ANALYSIS_PROMPT : DISC_ANALYSIS_PROMPT;
+    
+    let userContent: any[];
+    
+    if (isImage) {
+      userContent = [
+        { type: 'text', text: `Please analyze this ${documentType === 'cv' ? 'CV/Resume' : 'DISC Assessment'} document:` },
+        { type: 'image_url', image_url: { url: `data:${contentType};base64,${base64Content}` } }
+      ];
+    } else if (isPdf) {
+      console.log(`Processing ${documentType} PDF document, size:`, base64Content.length, 'characters');
+      userContent = [
+        { 
+          type: 'text', 
+          text: `Please carefully analyze this ${documentType === 'cv' ? 'CV/Resume' : 'DISC Assessment'} PDF document. Extract ALL information EXACTLY as it appears in the document. Do not invent or assume any data - only report what you can actually read from the document.`
+        },
+        { 
+          type: 'image_url', 
+          image_url: { 
+            url: `data:application/pdf;base64,${base64Content}` 
+          } 
+        }
+      ];
+    } else {
+      // Text content
+      const textContent = new TextDecoder().decode(documentBuffer);
+      userContent = [
+        { type: 'text', text: `Please analyze this ${documentType === 'cv' ? 'CV/Resume' : 'DISC Assessment'} document:\n\n${textContent}` }
+      ];
+    }
+
+    // Define the tool for structured output
+    const analysisTools = documentType === 'cv' ? [
+      {
+        type: 'function',
+        function: {
+          name: 'analyze_cv',
+          description: 'Provide structured CV analysis',
+          parameters: {
+            type: 'object',
+            properties: {
+              candidate_summary: { type: 'string', description: 'Brief 2-3 sentence summary of the candidate' },
+              experience_years: { type: 'number', description: 'Estimated years of professional experience' },
+              key_skills: { type: 'array', items: { type: 'string' }, description: '5-10 key skills identified' },
+              education: { 
+                type: 'array', 
+                items: { 
+                  type: 'object',
+                  properties: {
+                    degree: { type: 'string' },
+                    institution: { type: 'string' },
+                    year: { type: 'string' }
+                  },
+                  required: ['degree', 'institution']
+                }
+              },
+              work_history: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    company: { type: 'string' },
+                    role: { type: 'string' },
+                    duration: { type: 'string' }
+                  },
+                  required: ['company', 'role', 'duration']
+                }
+              },
+              strengths: { type: 'array', items: { type: 'string' } },
+              red_flags: { type: 'array', items: { type: 'string' } },
+              overall_impression: { type: 'string' }
+            },
+            required: ['candidate_summary', 'experience_years', 'key_skills', 'education', 'work_history', 'strengths', 'red_flags', 'overall_impression']
+          }
+        }
+      }
+    ] : [
+      {
+        type: 'function',
+        function: {
+          name: 'analyze_disc',
+          description: 'Provide structured DISC assessment analysis',
+          parameters: {
+            type: 'object',
+            properties: {
+              profile_type: { type: 'string', enum: ['D', 'I', 'S', 'C'], description: 'Dominant DISC profile type' },
+              profile_description: { type: 'string', description: 'Description of what this profile means' },
+              dominant_traits: { type: 'array', items: { type: 'string' } },
+              communication_style: { type: 'string' },
+              work_style: { type: 'string' },
+              strengths: { type: 'array', items: { type: 'string' } },
+              potential_challenges: { type: 'array', items: { type: 'string' } },
+              management_tips: { type: 'string' },
+              team_fit_considerations: { type: 'string' }
+            },
+            required: ['profile_type', 'profile_description', 'dominant_traits', 'communication_style', 'work_style', 'strengths', 'potential_challenges', 'management_tips', 'team_fit_considerations']
+          }
+        }
+      }
+    ];
+
+    // Call Lovable AI
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent }
+        ],
+        tools: analysisTools,
+        tool_choice: { type: 'function', function: { name: documentType === 'cv' ? 'analyze_cv' : 'analyze_disc' } }
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error(`${documentType} AI API error:`, aiResponse.status, errorText);
+      throw new Error(`AI API error: ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    console.log(`${documentType} AI Response received`);
+
+    // Extract the analysis from tool call
+    let analysis: CVAnalysis | DISCAnalysis;
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (toolCall?.function?.arguments) {
+      analysis = JSON.parse(toolCall.function.arguments);
+    } else {
+      throw new Error('No structured analysis returned from AI');
+    }
+
+    // Generate summary
+    const summary = documentType === 'cv' 
+      ? (analysis as CVAnalysis).candidate_summary
+      : `${(analysis as DISCAnalysis).profile_type} Profile: ${(analysis as DISCAnalysis).profile_description}`;
+
+    // Update analysis record with results
+    await supabase
+      .from('document_analyses')
+      .update({
+        status: 'completed',
+        analysis: analysis,
+        summary: summary,
+        error_message: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('application_id', applicationId)
+      .eq('document_type', documentType);
+
+    console.log(`${documentType} analysis completed successfully`);
+    return analysis;
+
+  } catch (error) {
+    console.error(`Error analyzing ${documentType}:`, error);
+    
+    // Update status to failed
+    await supabase
+      .from('document_analyses')
+      .update({ 
+        status: 'failed', 
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        updated_at: new Date().toISOString()
+      })
+      .eq('application_id', applicationId)
+      .eq('document_type', documentType);
+    
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -92,7 +386,22 @@ serve(async (req) => {
       throw new Error("Application not found");
     }
 
-    // Fetch business case responses
+    // === STEP 1: Analyze CV and DISC documents in parallel ===
+    console.log('Starting document analyses in parallel...');
+    console.log(`CV URL: ${application.cv_url}`);
+    console.log(`DISC URL: ${application.disc_url}`);
+
+    const [cvAnalysis, discAnalysis] = await Promise.all([
+      analyzeDocument(supabase, lovableApiKey, applicationId, 'cv', application.cv_url),
+      analyzeDocument(supabase, lovableApiKey, applicationId, 'disc', application.disc_url)
+    ]);
+
+    console.log('Document analyses completed:', {
+      cvAnalysis: cvAnalysis ? 'completed' : 'not available',
+      discAnalysis: discAnalysis ? 'completed' : 'not available'
+    });
+
+    // === STEP 2: Fetch business case responses ===
     const { data: responses, error: respError } = await supabase
       .from("business_case_responses")
       .select(`
@@ -118,23 +427,11 @@ serve(async (req) => {
       .eq("id", application.candidate_id)
       .maybeSingle();
 
-    // Fetch document analyses (CV and DISC)
-    const { data: documentAnalyses } = await supabase
-      .from("document_analyses")
-      .select("document_type, analysis, status")
-      .eq("application_id", applicationId)
-      .eq("status", "completed");
-
-    const cvAnalysis = documentAnalyses?.find(d => d.document_type === "cv")?.analysis as CVAnalysis | null;
-    const discAnalysis = documentAnalyses?.find(d => d.document_type === "disc")?.analysis as DISCAnalysis | null;
-
-    console.log(`Document analyses found - CV: ${!!cvAnalysis}, DISC: ${!!discAnalysis}`);
-
-    // Build the analysis prompt
+    // === STEP 3: Build prompt and run comprehensive AI evaluation ===
     const job = application.jobs;
-    const prompt = buildAnalysisPrompt(job, responses || [], profile, cvAnalysis, discAnalysis);
+    const prompt = buildAnalysisPrompt(job, responses || [], profile, application, cvAnalysis, discAnalysis);
 
-    console.log("Calling Lovable AI for analysis...");
+    console.log("Calling Lovable AI for comprehensive evaluation...");
 
     // Build system prompt with custom instructions if provided
     const baseSystemPrompt = `You are an expert recruitment analyst for a modern, disruptive company called Young. 
@@ -340,12 +637,16 @@ function buildAnalysisPrompt(
     business_cases: { question_title: string; question_description: string; question_number: number } | null;
   }>,
   profile: { full_name: string | null; email: string | null } | null,
+  application: { candidate_name: string | null; candidate_email: string | null } | null,
   cvAnalysis: CVAnalysis | null,
   discAnalysis: DISCAnalysis | null
 ): string {
+  // Use application candidate info if profile not available (anonymous applications)
+  const candidateName = profile?.full_name || application?.candidate_name || "Unknown";
+  
   let prompt = `## Candidate Evaluation Request
 
-**Candidate:** ${profile?.full_name || "Unknown"}
+**Candidate:** ${candidateName}
 **Position:** ${job?.title || "Unknown Position"}
 
 ### Job Description
@@ -471,10 +772,9 @@ Please analyze this candidate comprehensively using ALL available information an
 3. Key strengths (3-5 points) from across CV, DISC, and responses
 4. Concerns or areas to probe in interview (1-3 points) including any red flags
 5. Your recommendation (proceed/review/reject) based on the complete profile
-6. Scores for: skills match (CV-weighted), communication quality (responses + DISC), and cultural fit (DISC + values alignment)
+6. Individual scores for skills match, communication, and cultural fit
 
-Be fair and constructive. Consider potential and growth mindset, not just current experience.
-If CV or DISC analysis is missing, base your evaluation on the available information.`;
+Use the submit_evaluation function to provide your structured analysis.`;
 
   return prompt;
 }
