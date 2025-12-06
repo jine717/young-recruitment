@@ -1,5 +1,4 @@
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
-import { AIInsightsCard } from '@/components/candidate-profile/AIInsightsCard';
 import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,9 +47,6 @@ export function OverviewTab({
           </Button>
         </div>
       )}
-
-      {/* AI Insights - Key factors from CV, DISC, Business Case */}
-      <AIInsightsCard applicationId={applicationId} jobId={jobId} />
 
       {/* Business Case Responses */}
       <BusinessCaseViewer applicationId={applicationId} jobId={jobId} />
