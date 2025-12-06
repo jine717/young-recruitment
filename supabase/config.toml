@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.analyze-document]
 verify_jwt = false
 
+[functions.analyze-interview]
+verify_jwt = false
+
 [functions.generate-interview-questions]
 verify_jwt = false
 
