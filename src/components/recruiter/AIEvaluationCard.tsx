@@ -17,21 +17,21 @@ export function AIEvaluationCard({ evaluation }: AIEvaluationCardProps) {
     switch (rec) {
       case 'proceed':
         return (
-          <Badge className="bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50">
+          <Badge className="bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30">
             <ThumbsUp className="w-3 h-3 mr-1" />
             Proceed
           </Badge>
         );
       case 'review':
         return (
-          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50">
+          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30">
             <AlertTriangle className="w-3 h-3 mr-1" />
             Review
           </Badge>
         );
       case 'reject':
         return (
-          <Badge className="bg-destructive/10 text-destructive border-destructive/50">
+          <Badge className="bg-destructive/10 text-destructive border-destructive/30">
             <ThumbsDown className="w-3 h-3 mr-1" />
             Reject
           </Badge>
@@ -48,7 +48,7 @@ export function AIEvaluationCard({ evaluation }: AIEvaluationCardProps) {
           <CollapsibleTrigger asChild>
             <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Brain className="w-4 h-4 text-primary" />
+                <Brain className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 AI Analysis
                 {evaluation.overall_score !== null && (
                   <span className="text-xs text-muted-foreground font-normal">
@@ -58,7 +58,7 @@ export function AIEvaluationCard({ evaluation }: AIEvaluationCardProps) {
               </CardTitle>
               <div className="flex items-center gap-2">
                 {getRecommendationBadge(evaluation.recommendation)}
-                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
             </div>
           </CollapsibleTrigger>

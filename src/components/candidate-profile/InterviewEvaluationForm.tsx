@@ -102,7 +102,7 @@ export function InterviewEvaluationForm({ applicationId }: InterviewEvaluationFo
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <ClipboardList className="w-4 h-4 mr-2" />
-          Record Interview Feedback
+          Evaluate
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -200,7 +200,11 @@ export function InterviewEvaluationForm({ applicationId }: InterviewEvaluationFo
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={addEvaluation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={addEvaluation.isPending}
+              className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
+            >
               {addEvaluation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Evaluation
             </Button>

@@ -62,12 +62,12 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Scheduled Interviews
-          </CardTitle>
-        </CardHeader>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+          Scheduled Interviews
+        </CardTitle>
+      </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="h-20 bg-muted rounded" />
@@ -83,7 +83,7 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
           Scheduled Interviews
           {activeInterviews.length > 0 && (
             <Badge variant="secondary">{activeInterviews.length}</Badge>
@@ -92,9 +92,10 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
       </CardHeader>
       <CardContent>
         {interviews.length === 0 ? (
-          <div className="text-center py-6">
-            <Calendar className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">No interviews scheduled yet.</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-medium">No interviews scheduled</p>
+            <p className="text-xs mt-1">Schedule an interview from the header actions</p>
           </div>
         ) : (
           <div className="space-y-4">

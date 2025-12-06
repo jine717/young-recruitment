@@ -77,7 +77,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
-          <FileText className="w-4 h-4" />
+          <FileText className="w-4 h-4 text-[hsl(var(--young-blue))]" />
           Documents
         </CardTitle>
       </CardHeader>
@@ -86,8 +86,8 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
         <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded">
-                <FileText className="w-4 h-4 text-primary" />
+              <div className="p-2 bg-[hsl(var(--young-blue))]/10 rounded">
+                <FileText className="w-4 h-4 text-[hsl(var(--young-blue))]" />
               </div>
               <div>
                 <p className="text-sm font-medium">CV / Resume</p>
@@ -99,10 +99,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
             {cvUrl && (
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => handleAnalyze('cv', cvUrl)}
                   disabled={analyzingCv}
+                  className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
                 >
                   {analyzingCv ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -129,8 +129,8 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
         <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-secondary/50 rounded">
-                <FileText className="w-4 h-4 text-secondary-foreground" />
+              <div className="p-2 bg-[hsl(var(--young-gold))]/10 rounded">
+                <FileText className="w-4 h-4 text-[hsl(var(--young-gold))]" />
               </div>
               <div>
                 <p className="text-sm font-medium">DISC Assessment</p>
@@ -142,10 +142,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
             {discUrl && (
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => handleAnalyze('disc', discUrl)}
                   disabled={analyzingDisc}
+                  className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
                 >
                   {analyzingDisc ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

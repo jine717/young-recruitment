@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Briefcase, GraduationCap, AlertTriangle, Star, User, MessageSquare, Target } from 'lucide-react';
+import { ChevronDown, Briefcase, GraduationCap, AlertTriangle, Star, User, MessageSquare, Target, FileText } from 'lucide-react';
 import { useState } from 'react';
 import type { CVAnalysis, DISCAnalysis, DocumentAnalysis } from '@/hooks/useDocumentAnalysis';
 
@@ -11,10 +10,10 @@ interface DocumentAnalysisCardProps {
 }
 
 const DISC_COLORS = {
-  D: 'bg-red-100 text-red-800 border-red-300',
-  I: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  S: 'bg-green-100 text-green-800 border-green-300',
-  C: 'bg-blue-100 text-blue-800 border-blue-300',
+  D: 'bg-destructive/10 text-destructive border-destructive/30',
+  I: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30',
+  S: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30',
+  C: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/30',
 };
 
 const DISC_LABELS = {
@@ -35,17 +34,16 @@ export function DocumentAnalysisCard({ analysis }: DocumentAnalysisCardProps) {
   const data = analysis.analysis as CVAnalysis | DISCAnalysis;
 
   return (
-    <Card className="mt-4 border-primary/20">
+    <Card className="mt-4 border-[hsl(var(--young-blue))]/20">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3">
+          <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3">
             <CardTitle className="text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
-                {isCVAnalysis ? '📄 CV Analysis' : '🎯 DISC Analysis'}
+                <FileText className={`w-4 h-4 ${isCVAnalysis ? 'text-[hsl(var(--young-blue))]' : 'text-[hsl(var(--young-gold))]'}`} />
+                {isCVAnalysis ? 'CV Analysis' : 'DISC Analysis'}
               </span>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </CardTitle>
           </CardHeader>
         </CollapsibleTrigger>
@@ -126,10 +124,14 @@ function CVAnalysisContent({ data }: { data: CVAnalysis }) {
       {/* Strengths */}
       {data.strengths.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-green-600 mb-2">✓ Strengths</h4>
+          <h4 className="text-xs font-semibold text-[hsl(var(--young-blue))] mb-2 flex items-center gap-1">
+            <Star className="w-3 h-3" /> Strengths
+          </h4>
           <ul className="text-xs space-y-1">
             {data.strengths.map((strength, i) => (
-              <li key={i} className="text-muted-foreground">• {strength}</li>
+              <li key={i} className="text-muted-foreground flex items-start gap-1">
+                <span className="text-[hsl(var(--young-blue))]">•</span> {strength}
+              </li>
             ))}
           </ul>
         </div>
@@ -138,19 +140,21 @@ function CVAnalysisContent({ data }: { data: CVAnalysis }) {
       {/* Red Flags */}
       {data.red_flags.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-destructive mb-2 flex items-center gap-1">
+          <h4 className="text-xs font-semibold text-[hsl(var(--young-gold))] mb-2 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" /> Potential Concerns
           </h4>
           <ul className="text-xs space-y-1">
             {data.red_flags.map((flag, i) => (
-              <li key={i} className="text-muted-foreground">• {flag}</li>
+              <li key={i} className="text-muted-foreground flex items-start gap-1">
+                <span className="text-[hsl(var(--young-gold))]">•</span> {flag}
+              </li>
             ))}
           </ul>
         </div>
       )}
 
       {/* Overall Impression */}
-      <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+      <div className="p-3 bg-[hsl(var(--young-blue))]/5 rounded-lg border border-[hsl(var(--young-blue))]/10">
         <h4 className="text-xs font-semibold mb-1">Overall Impression</h4>
         <p className="text-xs text-muted-foreground">{data.overall_impression}</p>
       </div>
@@ -204,35 +208,45 @@ function DISCAnalysisContent({ data }: { data: DISCAnalysis }) {
 
       {/* Strengths */}
       <div>
-        <h4 className="text-xs font-semibold text-green-600 mb-2">✓ Strengths</h4>
+        <h4 className="text-xs font-semibold text-[hsl(var(--young-blue))] mb-2 flex items-center gap-1">
+          <Star className="w-3 h-3" /> Strengths
+        </h4>
         <ul className="text-xs space-y-1">
           {data.strengths.map((strength, i) => (
-            <li key={i} className="text-muted-foreground">• {strength}</li>
+            <li key={i} className="text-muted-foreground flex items-start gap-1">
+              <span className="text-[hsl(var(--young-blue))]">•</span> {strength}
+            </li>
           ))}
         </ul>
       </div>
 
       {/* Challenges */}
       <div>
-        <h4 className="text-xs font-semibold text-amber-600 mb-2 flex items-center gap-1">
+        <h4 className="text-xs font-semibold text-[hsl(var(--young-gold))] mb-2 flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" /> Potential Challenges
         </h4>
         <ul className="text-xs space-y-1">
           {data.potential_challenges.map((challenge, i) => (
-            <li key={i} className="text-muted-foreground">• {challenge}</li>
+            <li key={i} className="text-muted-foreground flex items-start gap-1">
+              <span className="text-[hsl(var(--young-gold))]">•</span> {challenge}
+            </li>
           ))}
         </ul>
       </div>
 
       {/* Management Tips */}
-      <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
-        <h4 className="text-xs font-semibold mb-1">💡 Management Tips</h4>
+      <div className="p-3 bg-[hsl(var(--young-blue))]/5 rounded-lg border border-[hsl(var(--young-blue))]/10">
+        <h4 className="text-xs font-semibold mb-1 flex items-center gap-1">
+          <Target className="w-3 h-3 text-[hsl(var(--young-blue))]" /> Management Tips
+        </h4>
         <p className="text-xs text-muted-foreground">{data.management_tips}</p>
       </div>
 
       {/* Team Fit */}
-      <div className="p-3 bg-secondary/30 rounded-lg">
-        <h4 className="text-xs font-semibold mb-1">👥 Team Fit Considerations</h4>
+      <div className="p-3 bg-[hsl(var(--young-gold))]/5 rounded-lg border border-[hsl(var(--young-gold))]/10">
+        <h4 className="text-xs font-semibold mb-1 flex items-center gap-1">
+          <User className="w-3 h-3 text-[hsl(var(--young-gold))]" /> Team Fit Considerations
+        </h4>
         <p className="text-xs text-muted-foreground">{data.team_fit_considerations}</p>
       </div>
     </>
