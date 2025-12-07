@@ -104,24 +104,35 @@ export default function CandidatesEvaluation() {
 
         {/* Progress Steps */}
         <div className="flex items-center gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center">
-              <div
-                className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                  step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+          {[1, 2, 3, 4].map((s) => {
+            const isCompleted = s < step;
+            const isCurrent = s === step;
+            const canNavigate = isCompleted && step !== 4;
+            
+            return (
+              <div key={s} className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => canNavigate && setStep(s)}
+                  disabled={!canNavigate}
+                  className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                    step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                    canNavigate && 'cursor-pointer hover:ring-2 hover:ring-primary/50 hover:scale-105',
+                    !canNavigate && 'cursor-default'
+                  )}
+                >
+                  {s}
+                </button>
+                {s < 4 && (
+                  <ChevronRight className={cn(
+                    'w-5 h-5 mx-1',
+                    step > s ? 'text-primary' : 'text-muted-foreground'
+                  )} />
                 )}
-              >
-                {s}
               </div>
-              {s < 4 && (
-                <ChevronRight className={cn(
-                  'w-5 h-5 mx-1',
-                  step > s ? 'text-primary' : 'text-muted-foreground'
-                )} />
-              )}
-            </div>
-          ))}
+            );
+          })}
           <span className="ml-4 text-sm text-muted-foreground">
             {step === 1 && 'Select Job Position'}
             {step === 2 && 'Select Candidates'}
