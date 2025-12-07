@@ -2,25 +2,25 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Trash2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sparkles, Send, Trash2, RefreshCw } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { useAIAssistantInsights } from '@/hooks/useAIAssistantInsights';
 import { useApplications } from '@/hooks/useApplications';
 import { AIAssistantChat } from './AIAssistantChat';
-import { QuickInsightsCard } from './QuickInsightsCard';
+
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 
 export const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
-  const [insightsOpen, setInsightsOpen] = useState(true);
+  
   const { messages, isLoading, error, sendMessage, clearConversation } = useAIAssistant();
-  const { data: insights, isLoading: insightsLoading } = useAIAssistantInsights();
+  const { data: insights } = useAIAssistantInsights();
   const { data: applications } = useApplications();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
@@ -193,29 +193,8 @@ export const AIAssistant = () => {
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-h-0">
             {messages.length === 0 ? (
-              /* Empty State with Quick Insights and Suggested Questions */
+              /* Empty State with Suggested Questions */
               <div className="flex-1 flex flex-col px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto">
-                {/* Quick Insights Card */}
-                <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen} className="mb-4">
-                  <CollapsibleTrigger asChild>
-                    <button className="flex items-center justify-between w-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2">
-                      <span>Quick Insights</span>
-                      {insightsOpen ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <QuickInsightsCard 
-                      insights={insights} 
-                      isLoading={insightsLoading} 
-                      isMobile={isMobile} 
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-
                 {/* Welcome Message */}
                 <div className="flex flex-col items-center justify-center py-4">
                   <div className={cn(
