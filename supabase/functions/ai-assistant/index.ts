@@ -696,18 +696,36 @@ You are helping the recruiter evaluate this specific candidate. Focus your answe
       if (cv.experienceYears) prompt += `- **Years of Experience:** ${cv.experienceYears}\n`;
       if (cv.keySkills?.length) prompt += `- **Key Skills:** ${cv.keySkills.join(', ')}\n`;
       
-      if (cv.education?.length) {
+      // Handle education - could be string or array
+      if (cv.education) {
         prompt += `- **Education:**\n`;
-        cv.education.forEach(edu => {
-          prompt += `  - ${edu.degree} from ${edu.institution}${edu.year ? ` (${edu.year})` : ''}\n`;
-        });
+        if (Array.isArray(cv.education)) {
+          cv.education.forEach(edu => {
+            if (typeof edu === 'string') {
+              prompt += `  - ${edu}\n`;
+            } else {
+              prompt += `  - ${edu.degree} from ${edu.institution}${edu.year ? ` (${edu.year})` : ''}\n`;
+            }
+          });
+        } else if (typeof cv.education === 'string') {
+          prompt += `  - ${cv.education}\n`;
+        }
       }
       
-      if (cv.workHistory?.length) {
+      // Handle work history - could be string or array
+      if (cv.workHistory) {
         prompt += `- **Work History:**\n`;
-        cv.workHistory.forEach(work => {
-          prompt += `  - ${work.role} at ${work.company}${work.duration ? ` (${work.duration})` : ''}\n`;
-        });
+        if (Array.isArray(cv.workHistory)) {
+          cv.workHistory.forEach(work => {
+            if (typeof work === 'string') {
+              prompt += `  - ${work}\n`;
+            } else {
+              prompt += `  - ${work.role} at ${work.company}${work.duration ? ` (${work.duration})` : ''}\n`;
+            }
+          });
+        } else if (typeof cv.workHistory === 'string') {
+          prompt += `  - ${cv.workHistory}\n`;
+        }
       }
       
       if (cv.strengths?.length) prompt += `- **CV Strengths:** ${cv.strengths.join(', ')}\n`;
