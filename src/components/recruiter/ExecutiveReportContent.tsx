@@ -307,11 +307,11 @@ export function ExecutiveReportContent({
           </div>
 
           {/* Section Title */}
-          <h3 className="text-xl font-bold uppercase tracking-wide mb-5">Interview Performance Comparison</h3>
+          <h3 className="text-xl font-bold uppercase tracking-wide mb-4">Interview Performance Comparison</h3>
 
-          {/* Vertical Layout for Full Content Display */}
-          <div className="flex-1 space-y-4">
-            {safeInterviewPerformance.filter(ip => ip.has_interview).slice(0, 3).map((perf) => {
+          {/* 3-Column Horizontal Grid Layout */}
+          <div className="flex-1 grid grid-cols-3 gap-4">
+            {safeInterviewPerformance.filter(ip => ip.has_interview).slice(0, 3).map((perf, idx) => {
               const isTopCandidate = perf.candidate_name === topCandidate.name;
               const trajectory = perf.score_trajectory;
               const changeColor = trajectory && trajectory.change > 0 ? 'text-green-700' : 
@@ -321,103 +321,101 @@ export function ExecutiveReportContent({
                 <div 
                   key={perf.application_id}
                   className={cn(
-                    "border-2 p-5",
+                    "border-2 p-4 flex flex-col h-full",
                     isTopCandidate ? "border-[#B88F5E] bg-[#B88F5E]/5" : "border-[#100D0A]/20 bg-white"
                   )}
                 >
-                  {/* Header Row: Name + Score Trajectory + Interview Score */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <h4 className={cn(
-                        "text-lg font-bold",
-                        isTopCandidate && "text-[#B88F5E]"
+                  {/* Header: Rank + Name + Score */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                        isTopCandidate ? "bg-[#B88F5E]/20 text-[#B88F5E]" : "bg-[#100D0A]/10"
                       )}>
-                        {perf.candidate_name}
-                        {isTopCandidate && <span className="ml-2">★</span>}
-                      </h4>
-                      
-                      {/* Performance Badge */}
-                      {perf.application_vs_interview && (
-                        <span className={cn(
-                          "px-2 py-1 text-xs font-medium rounded",
-                          perf.application_vs_interview.toLowerCase().includes('exceeded') 
-                            ? "bg-green-100 text-green-800"
-                            : perf.application_vs_interview.toLowerCase().includes('below')
-                            ? "bg-red-100 text-red-800"
-                            : "bg-[#93B1FF]/20 text-[#100D0A]"
-                        )}>
-                          {perf.application_vs_interview}
-                        </span>
-                      )}
+                        #{idx + 1}
+                      </span>
+                      <h4 className="text-sm font-bold leading-tight">{perf.candidate_name}</h4>
                     </div>
-
-                    {/* Score Trajectory - Prominent Display */}
-                    <div className="flex items-center gap-6">
-                      {trajectory && (
-                        <div className="flex items-center gap-3 bg-[#93B1FF]/10 px-4 py-2 rounded">
-                          <div className="text-center">
-                            <p className="text-[10px] uppercase text-[#605738]">Initial</p>
-                            <p className="text-lg font-medium">{trajectory.initial_score}</p>
-                          </div>
-                          <span className="text-xl text-[#605738]">→</span>
-                          <div className="text-center">
-                            <p className="text-[10px] uppercase text-[#605738]">Final</p>
-                            <p className="text-2xl font-black text-[#93B1FF]">{trajectory.final_score}</p>
-                          </div>
-                          <span className={cn("text-lg font-bold", changeColor)}>
-                            ({trajectory.change > 0 ? '+' : ''}{trajectory.change})
-                          </span>
-                        </div>
-                      )}
-                      
-                      {perf.interview_score !== undefined && (
-                        <div className="bg-[#100D0A] text-white px-4 py-2 text-center">
-                          <p className="text-[10px] uppercase opacity-80">Interview</p>
-                          <p className="text-xl font-bold">{perf.interview_score}</p>
-                        </div>
-                      )}
-                    </div>
+                    <span className={cn(
+                      "text-2xl font-black",
+                      isTopCandidate ? "text-[#B88F5E]" : "text-[#100D0A]"
+                    )}>
+                      {trajectory?.final_score || perf.interview_score}
+                    </span>
                   </div>
 
-                  {/* Score Trajectory Explanation - Full text */}
-                  {trajectory?.explanation && (
-                    <p className="text-sm text-[#605738] mb-4 leading-relaxed bg-[#FDFAF0] p-3 border-l-2 border-[#93B1FF]">
-                      {trajectory.explanation}
-                    </p>
+                  {/* Performance Badge */}
+                  {perf.application_vs_interview && (
+                    <div className="mb-3">
+                      <span className={cn(
+                        "px-2 py-0.5 text-[10px] font-medium rounded-full",
+                        perf.application_vs_interview.toLowerCase().includes('exceeded') 
+                          ? "bg-green-100 text-green-800"
+                          : perf.application_vs_interview.toLowerCase().includes('below')
+                          ? "bg-red-100 text-red-800"
+                          : "bg-[#93B1FF]/20 text-[#100D0A]"
+                      )}>
+                        {perf.application_vs_interview.includes('Exceeded') ? '↗' : 
+                         perf.application_vs_interview.includes('Below') ? '↘' : '−'} {perf.application_vs_interview}
+                      </span>
+                    </div>
                   )}
 
-                  {/* Strengths & Concerns - Two Column Layout */}
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Strengths - Full list */}
-                    {perf.strengths_demonstrated && perf.strengths_demonstrated.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-wider text-[#605738] mb-2 font-semibold">Strengths Demonstrated</p>
-                        <ul className="space-y-1.5">
-                          {perf.strengths_demonstrated.map((str, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm">
-                              <span className="text-green-600 shrink-0 mt-0.5">✓</span>
-                              <span>{str}</span>
-                            </li>
-                          ))}
-                        </ul>
+                  {/* Score Change Box */}
+                  {trajectory && (
+                    <div className="bg-[#FDFAF0] border border-[#100D0A]/10 p-3 mb-3">
+                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1">Score Change</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1 text-sm">
+                          <span className="text-[#605738]">{trajectory.initial_score}</span>
+                          <span className="text-[#605738]">→</span>
+                          <span className="font-bold text-[#93B1FF]">{trajectory.final_score}</span>
+                        </div>
+                        <span className={cn("text-sm font-bold", changeColor)}>
+                          {trajectory.change > 0 ? '↗' : trajectory.change < 0 ? '↘' : '−'} {trajectory.change > 0 ? '+' : ''}{trajectory.change}
+                        </span>
                       </div>
-                    )}
+                      {trajectory.explanation && (
+                        <p className="text-[10px] text-[#605738] leading-tight line-clamp-2">
+                          {trajectory.explanation}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-                    {/* Concerns - Full list */}
-                    {perf.concerns_raised && perf.concerns_raised.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-wider text-[#605738] mb-2 font-semibold">Areas to Explore</p>
-                        <ul className="space-y-1.5">
-                          {perf.concerns_raised.map((concern, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm">
-                              <span className="text-[#B88F5E] shrink-0 mt-0.5">!</span>
-                              <span>{concern}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                  {/* Strengths - Max 4 items */}
+                  {perf.strengths_demonstrated && perf.strengths_demonstrated.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1 flex items-center gap-1">
+                        <span className="text-green-600">✓</span> Strengths
+                      </p>
+                      <ul className="space-y-0.5">
+                        {perf.strengths_demonstrated.slice(0, 4).map((str, i) => (
+                          <li key={i} className="flex items-start gap-1.5 text-[11px] leading-tight">
+                            <span className="text-green-600 shrink-0">•</span>
+                            <span className="line-clamp-1">{str}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Concerns - Max 3 items */}
+                  {perf.concerns_raised && perf.concerns_raised.length > 0 && (
+                    <div className="mt-auto">
+                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1 flex items-center gap-1">
+                        <span className="text-[#B88F5E]">⚠</span> Concerns
+                      </p>
+                      <ul className="space-y-0.5">
+                        {perf.concerns_raised.slice(0, 3).map((concern, i) => (
+                          <li key={i} className="flex items-start gap-1.5 text-[11px] leading-tight">
+                            <span className="text-[#B88F5E] shrink-0">•</span>
+                            <span className="line-clamp-1">{concern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -434,9 +432,9 @@ export function ExecutiveReportContent({
           )}
 
           {/* Footer */}
-          <div className="flex justify-between text-xs text-[#605738] mt-4 pt-4 border-t border-[#100D0A]/20">
+          <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-auto flex justify-between text-xs uppercase tracking-wider">
             <span>Page 2 of {totalPages}</span>
-            <span className="uppercase tracking-wider">Confidential</span>
+            <span>Confidential · Young Recruitment</span>
           </div>
         </div>
       )}
