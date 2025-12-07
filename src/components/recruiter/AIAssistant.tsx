@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Trash2, X } from 'lucide-react';
+import { Sparkles, Send, Trash2, RefreshCw } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { AIAssistantChat } from './AIAssistantChat';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const SUGGESTED_QUESTIONS = [
   "Who are the top candidates with highest AI scores?",
@@ -18,8 +19,10 @@ const SUGGESTED_QUESTIONS = [
 export const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { messages, isLoading, sendMessage, clearConversation } = useAIAssistant();
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
+  const { messages, isLoading, error, sendMessage, clearConversation } = useAIAssistant();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
 
   // Focus textarea when sheet opens
   useEffect(() => {
@@ -28,12 +31,38 @@ export const AIAssistant = () => {
     }
   }, [isOpen]);
 
+  // Show toast on error
+  useEffect(() => {
+    if (error) {
+      const isRateLimit = error.includes('Rate limit') || error.includes('429');
+      const isQuotaExceeded = error.includes('usage limit') || error.includes('402');
+      
+      toast({
+        variant: 'destructive',
+        title: isRateLimit ? 'Too many requests' : isQuotaExceeded ? 'Usage limit reached' : 'Error',
+        description: error,
+      });
+    }
+  }, [error, toast]);
+
   const handleSubmit = async (message?: string) => {
     const content = message || input;
     if (!content.trim() || isLoading) return;
     
     setInput('');
+    setLastFailedMessage(content);
     await sendMessage(content);
+    
+    // Clear last failed message on success
+    if (!error) {
+      setLastFailedMessage(null);
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastFailedMessage) {
+      handleSubmit(lastFailedMessage);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -46,6 +75,10 @@ export const AIAssistant = () => {
   const handleSuggestedQuestion = (question: string) => {
     handleSubmit(question);
   };
+
+  // Check if the last message is an error message
+  const hasError = error && messages.length > 0 && 
+    messages[messages.length - 1]?.content?.includes('Sorry, I encountered an error');
 
   return (
     <>
@@ -124,6 +157,22 @@ export const AIAssistant = () => {
               <AIAssistantChat messages={messages} isLoading={isLoading} />
             )}
           </div>
+
+          {/* Error Retry Button */}
+          {hasError && lastFailedMessage && (
+            <div className="px-4 pb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                disabled={isLoading}
+                className="w-full gap-2"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry last message
+              </Button>
+            </div>
+          )}
 
           {/* Input Area */}
           <div className="flex-shrink-0 p-4 border-t bg-background">
