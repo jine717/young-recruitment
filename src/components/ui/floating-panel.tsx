@@ -20,26 +20,35 @@ interface Position {
   y: number;
 }
 
-const DEFAULT_POSITION: Position = { x: -1, y: -1 }; // -1 means use default (bottom-right)
-const PANEL_WIDTH = 400;
-const PANEL_MIN_HEIGHT = 500;
+interface Size {
+  width: number;
+  height: number;
+}
+
+const DEFAULT_POSITION: Position = { x: -1, y: -1 };
+const DEFAULT_SIZE: Size = { width: 400, height: 600 };
+const MIN_WIDTH = 320;
+const MAX_WIDTH = 600;
+const MIN_HEIGHT = 400;
+const MAX_HEIGHT = 800;
 
 export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps>(
   ({ isOpen, onOpenChange, children, className, title, subtitle, headerIcon, headerActions, storageKey = "floating-panel" }, ref) => {
     const [isMinimized, setIsMinimized] = React.useState(false);
     const [position, setPosition] = React.useState<Position>(DEFAULT_POSITION);
+    const [size, setSize] = React.useState<Size>(DEFAULT_SIZE);
     const [isDragging, setIsDragging] = React.useState(false);
+    const [isResizing, setIsResizing] = React.useState<string | null>(null);
     const [dragOffset, setDragOffset] = React.useState<Position>({ x: 0, y: 0 });
     const panelRef = React.useRef<HTMLDivElement>(null);
 
-    // Load position from localStorage
+    // Load position and size from localStorage
     React.useEffect(() => {
       try {
-        const saved = localStorage.getItem(`${storageKey}-position`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setPosition(parsed);
-        }
+        const savedPos = localStorage.getItem(`${storageKey}-position`);
+        if (savedPos) setPosition(JSON.parse(savedPos));
+        const savedSize = localStorage.getItem(`${storageKey}-size`);
+        if (savedSize) setSize(JSON.parse(savedSize));
       } catch {
         // Ignore parse errors
       }
@@ -55,6 +64,15 @@ export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps
         }
       }
     }, [position, storageKey]);
+
+    // Save size to localStorage
+    React.useEffect(() => {
+      try {
+        localStorage.setItem(`${storageKey}-size`, JSON.stringify(size));
+      } catch {
+        // Ignore storage errors
+      }
+    }, [size, storageKey]);
 
     // Calculate actual position (default to bottom-right if not set)
     const getActualPosition = React.useCallback(() => {
@@ -84,26 +102,63 @@ export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps
       }
     };
 
-    // Handle drag move
+    // Handle resize start
+    const handleResizeStart = (e: React.MouseEvent, direction: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsResizing(direction);
+    };
+
+    // Handle drag and resize move
     React.useEffect(() => {
-      if (!isDragging) return;
+      if (!isDragging && !isResizing) return;
 
       const handleMouseMove = (e: MouseEvent) => {
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
-        
-        // Keep panel within viewport
-        const maxX = window.innerWidth - PANEL_WIDTH - 10;
-        const maxY = window.innerHeight - 60;
-        
-        setPosition({
-          x: Math.max(10, Math.min(newX, maxX)),
-          y: Math.max(10, Math.min(newY, maxY)),
-        });
+        if (isDragging) {
+          const newX = e.clientX - dragOffset.x;
+          const newY = e.clientY - dragOffset.y;
+          
+          const maxX = window.innerWidth - size.width - 10;
+          const maxY = window.innerHeight - 60;
+          
+          setPosition({
+            x: Math.max(10, Math.min(newX, maxX)),
+            y: Math.max(10, Math.min(newY, maxY)),
+          });
+        } else if (isResizing) {
+          const rect = panelRef.current?.getBoundingClientRect();
+          if (!rect) return;
+
+          if (isResizing.includes('e')) {
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, e.clientX - rect.left));
+            setSize(prev => ({ ...prev, width: newWidth }));
+          }
+          if (isResizing.includes('w')) {
+            const deltaX = rect.left - e.clientX;
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, rect.width + deltaX));
+            if (newWidth !== rect.width && position.x !== -1) {
+              setPosition(prev => ({ ...prev, x: prev.x - (newWidth - rect.width) }));
+            }
+            setSize(prev => ({ ...prev, width: newWidth }));
+          }
+          if (isResizing.includes('s')) {
+            const newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, e.clientY - rect.top));
+            setSize(prev => ({ ...prev, height: newHeight }));
+          }
+          if (isResizing.includes('n')) {
+            const deltaY = rect.top - e.clientY;
+            const newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, rect.height + deltaY));
+            if (newHeight !== rect.height && position.y !== -1) {
+              setPosition(prev => ({ ...prev, y: prev.y - (newHeight - rect.height) }));
+            }
+            setSize(prev => ({ ...prev, height: newHeight }));
+          }
+        }
       };
 
       const handleMouseUp = () => {
         setIsDragging(false);
+        setIsResizing(null);
       };
 
       document.addEventListener('mousemove', handleMouseMove);
@@ -113,13 +168,13 @@ export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
-    }, [isDragging, dragOffset]);
+    }, [isDragging, isResizing, dragOffset, position, size.width]);
 
     // Reset position when window resizes
     React.useEffect(() => {
       const handleResize = () => {
         if (position.x !== -1 && position.y !== -1) {
-          const maxX = window.innerWidth - PANEL_WIDTH - 10;
+          const maxX = window.innerWidth - size.width - 10;
           const maxY = window.innerHeight - 60;
           
           if (position.x > maxX || position.y > maxY) {
@@ -133,7 +188,7 @@ export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps
 
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
-    }, [position]);
+    }, [position, size.width]);
 
     if (!isOpen) return null;
 
@@ -148,16 +203,44 @@ export const FloatingPanel = React.forwardRef<HTMLDivElement, FloatingPanelProps
         }}
         className={cn(
           "fixed z-50 bg-background border rounded-lg shadow-2xl flex flex-col",
-          "transition-all duration-200 ease-out",
-          isDragging && "cursor-grabbing select-none",
-          isMinimized ? "h-auto" : "h-[600px] max-h-[80vh]",
+          "transition-shadow duration-200 ease-out",
+          (isDragging || isResizing) && "select-none",
+          isDragging && "cursor-grabbing",
           className
         )}
         style={{
-          width: PANEL_WIDTH,
+          width: size.width,
+          height: isMinimized ? 'auto' : size.height,
+          maxHeight: isMinimized ? 'auto' : '90vh',
           ...actualPos,
         }}
       >
+        {/* Resize handles */}
+        {!isMinimized && (
+          <>
+            <div
+              className="absolute -right-1 top-4 bottom-4 w-2 cursor-ew-resize hover:bg-primary/20 rounded"
+              onMouseDown={(e) => handleResizeStart(e, 'e')}
+            />
+            <div
+              className="absolute -left-1 top-4 bottom-4 w-2 cursor-ew-resize hover:bg-primary/20 rounded"
+              onMouseDown={(e) => handleResizeStart(e, 'w')}
+            />
+            <div
+              className="absolute -bottom-1 left-4 right-4 h-2 cursor-ns-resize hover:bg-primary/20 rounded"
+              onMouseDown={(e) => handleResizeStart(e, 's')}
+            />
+            <div
+              className="absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize hover:bg-primary/20 rounded"
+              onMouseDown={(e) => handleResizeStart(e, 'se')}
+            />
+            <div
+              className="absolute -bottom-1 -left-1 w-4 h-4 cursor-nesw-resize hover:bg-primary/20 rounded"
+              onMouseDown={(e) => handleResizeStart(e, 'sw')}
+            />
+          </>
+        )}
+
         {/* Draggable Header */}
         <div
           className={cn(
