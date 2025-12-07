@@ -1,31 +1,51 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Trash2, RefreshCw } from 'lucide-react';
+import { Sparkles, Send, Trash2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { useAIAssistantInsights } from '@/hooks/useAIAssistantInsights';
+import { useApplications } from '@/hooks/useApplications';
 import { AIAssistantChat } from './AIAssistantChat';
+import { QuickInsightsCard } from './QuickInsightsCard';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-const SUGGESTED_QUESTIONS = [
-  "Who are the top candidates with highest AI scores?",
-  "What's the current pipeline status?",
-  "Which candidates should I prioritize interviewing?",
-  "Compare interview conversion rates across jobs",
-  "Who has strong leadership experience?",
-];
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [insightsOpen, setInsightsOpen] = useState(true);
   const { messages, isLoading, error, sendMessage, clearConversation } = useAIAssistant();
+  const { data: insights, isLoading: insightsLoading } = useAIAssistantInsights();
+  const { data: applications } = useApplications();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Build candidate map for quick actions
+  const candidateMap = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>();
+    applications?.forEach(app => {
+      const name = app.candidate_name || app.profiles?.full_name;
+      if (name) {
+        map.set(app.id, { id: app.id, name });
+      }
+    });
+    return map;
+  }, [applications]);
+
+  // Get dynamic suggested questions
+  const suggestedQuestions = insights?.suggestedQuestions || [
+    "Who are the top candidates with highest AI scores?",
+    "What's the current pipeline status?",
+    "Which candidates should I prioritize interviewing?",
+    "Compare interview conversion rates across jobs",
+    "Who has strong leadership experience?",
+  ];
 
   // Focus textarea when sheet opens
   useEffect(() => {
@@ -55,7 +75,6 @@ export const AIAssistant = () => {
         e.preventDefault();
         setIsOpen(prev => !prev);
       }
-      // Escape to close
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
@@ -74,7 +93,6 @@ export const AIAssistant = () => {
     setSelectedSuggestionIndex(-1);
     await sendMessage(content);
     
-    // Clear last failed message on success
     if (!error) {
       setLastFailedMessage(null);
     }
@@ -87,28 +105,26 @@ export const AIAssistant = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Submit on Enter (without Shift) or Ctrl/Cmd + Enter
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (messages.length === 0 && selectedSuggestionIndex >= 0) {
-        handleSubmit(SUGGESTED_QUESTIONS[selectedSuggestionIndex]);
+        handleSubmit(suggestedQuestions[selectedSuggestionIndex]);
       } else {
         handleSubmit();
       }
       return;
     }
 
-    // Arrow key navigation for suggestions (only in empty state)
     if (messages.length === 0 && !input.trim()) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedSuggestionIndex(prev => 
-          prev < SUGGESTED_QUESTIONS.length - 1 ? prev + 1 : 0
+          prev < suggestedQuestions.length - 1 ? prev + 1 : 0
         );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedSuggestionIndex(prev => 
-          prev > 0 ? prev - 1 : SUGGESTED_QUESTIONS.length - 1
+          prev > 0 ? prev - 1 : suggestedQuestions.length - 1
         );
       }
     }
@@ -118,13 +134,11 @@ export const AIAssistant = () => {
     handleSubmit(question);
   };
 
-  // Check if the last message is an error message
   const hasError = error && messages.length > 0 && 
     messages[messages.length - 1]?.content?.includes('Sorry, I encountered an error');
 
   return (
     <>
-      {/* Floating Action Button */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button
@@ -133,7 +147,6 @@ export const AIAssistant = () => {
               "fixed bottom-6 right-6 z-50 rounded-full shadow-lg",
               "bg-primary hover:bg-primary/90 text-primary-foreground",
               "transition-transform hover:scale-105",
-              // Mobile: larger touch target
               isMobile ? "h-16 w-16" : "h-14 w-14"
             )}
           >
@@ -145,7 +158,6 @@ export const AIAssistant = () => {
           side="right" 
           className={cn(
             "p-0 flex flex-col bg-background",
-            // Mobile: full width, Desktop: fixed width
             isMobile ? "w-full sm:w-full" : "w-[400px] sm:w-[440px]"
           )}
         >
@@ -181,47 +193,101 @@ export const AIAssistant = () => {
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-h-0">
             {messages.length === 0 ? (
-              /* Empty State with Suggested Questions */
-              <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
-                <div className={cn(
-                  "rounded-full bg-primary/10 flex items-center justify-center mb-4",
-                  isMobile ? "w-14 h-14" : "w-16 h-16"
-                )}>
-                  <Sparkles className={cn("text-primary", isMobile ? "w-7 h-7" : "w-8 h-8")} />
+              /* Empty State with Quick Insights and Suggested Questions */
+              <div className="flex-1 flex flex-col px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto">
+                {/* Quick Insights Card */}
+                <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen} className="mb-4">
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center justify-between w-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2">
+                      <span>Quick Insights</span>
+                      {insightsOpen ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <QuickInsightsCard 
+                      insights={insights} 
+                      isLoading={insightsLoading} 
+                      isMobile={isMobile} 
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Welcome Message */}
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className={cn(
+                    "rounded-full bg-primary/10 flex items-center justify-center mb-3",
+                    isMobile ? "w-12 h-12" : "w-14 h-14"
+                  )}>
+                    <Sparkles className={cn("text-primary", isMobile ? "w-6 h-6" : "w-7 h-7")} />
+                  </div>
+                  <h3 className="text-base font-semibold mb-1">How can I help?</h3>
+                  <p className="text-xs text-muted-foreground text-center mb-4">
+                    Ask about candidates, pipeline, or analytics
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">How can I help?</h3>
-                <p className="text-sm text-muted-foreground text-center mb-6">
-                  Ask me about candidates, pipeline status, analytics, or get recommendations.
-                </p>
+
+                {/* Dynamic Suggested Questions */}
                 <div className="w-full space-y-2">
-                  {SUGGESTED_QUESTIONS.map((question, index) => (
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Suggested questions</p>
+                  {suggestedQuestions.map((question, index) => (
                     <button
                       key={index}
                       onClick={() => handleSuggestedQuestion(question)}
                       className={cn(
-                        "w-full text-left px-4 py-3 rounded-lg text-sm",
+                        "w-full text-left px-3 py-2.5 rounded-lg text-sm",
                         "transition-colors",
                         "border",
-                        // Highlight selected suggestion (keyboard nav)
                         selectedSuggestionIndex === index
                           ? "bg-primary/10 border-primary"
                           : "bg-muted/50 hover:bg-muted border-transparent hover:border-border",
-                        // Mobile: larger touch target
-                        isMobile && "py-4"
+                        isMobile && "py-3"
                       )}
                     >
                       {question}
                     </button>
                   ))}
                 </div>
+
+                {/* Top Candidates Quick Access */}
+                {insights?.topCandidates && insights.topCandidates.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Top candidates</p>
+                    <div className="space-y-1.5">
+                      {insights.topCandidates.slice(0, 3).map((candidate) => (
+                        <button
+                          key={candidate.id}
+                          onClick={() => handleSuggestedQuestion(`Tell me about ${candidate.name}'s profile and qualifications`)}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted transition-colors text-left"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{candidate.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{candidate.jobTitle}</p>
+                          </div>
+                          <div className="flex-shrink-0 ml-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            {candidate.score}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {!isMobile && (
-                  <p className="text-xs text-muted-foreground mt-4">
+                  <p className="text-xs text-muted-foreground mt-4 text-center">
                     Use ↑↓ arrows to navigate, Enter to select
                   </p>
                 )}
               </div>
             ) : (
-              <AIAssistantChat messages={messages} isLoading={isLoading} />
+              <AIAssistantChat 
+                messages={messages} 
+                isLoading={isLoading} 
+                candidateMap={candidateMap}
+              />
             )}
           </div>
 
