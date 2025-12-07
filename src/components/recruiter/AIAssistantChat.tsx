@@ -1,19 +1,83 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, User } from 'lucide-react';
+import { Sparkles, User, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import type { Message } from '@/hooks/useAIAssistant';
 
 interface AIAssistantChatProps {
   messages: Message[];
   isLoading: boolean;
+  candidateMap?: Map<string, { id: string; name: string }>;
 }
 
-export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) => {
+// Parse candidate names from text and create clickable links
+const parseCandidateReferences = (
+  text: string,
+  candidateMap: Map<string, { id: string; name: string }>,
+  onCandidateClick: (id: string) => void
+) => {
+  if (!candidateMap.size) return null;
+
+  // Create a regex pattern to match candidate names
+  const names = Array.from(candidateMap.values()).map(c => c.name);
+  if (!names.length) return null;
+
+  // Escape special regex characters and create pattern
+  const escapedNames = names.map(name => 
+    name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+  const pattern = new RegExp(`\\b(${escapedNames.join('|')})\\b`, 'gi');
+
+  const parts: (string | JSX.Element)[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    // Find the candidate
+    const matchedName = match[1];
+    const candidate = Array.from(candidateMap.values()).find(
+      c => c.name.toLowerCase() === matchedName.toLowerCase()
+    );
+
+    if (candidate) {
+      parts.push(
+        <button
+          key={`${candidate.id}-${match.index}`}
+          onClick={() => onCandidateClick(candidate.id)}
+          className="inline-flex items-center gap-0.5 text-primary font-medium hover:underline"
+        >
+          {matchedName}
+          <ExternalLink className="w-3 h-3" />
+        </button>
+      );
+    } else {
+      parts.push(matchedName);
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : null;
+};
+
+export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map() }: AIAssistantChatProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -21,6 +85,10 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleCandidateClick = (id: string) => {
+    navigate(`/candidate/${id}`);
+  };
 
   if (messages.length === 0) {
     return null;
@@ -49,7 +117,6 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
             <div
               className={cn(
                 'rounded-2xl px-4 py-3',
-                // Mobile: allow more width for messages
                 isMobile ? 'max-w-[85%] text-sm' : 'max-w-[80%] text-sm',
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
@@ -60,24 +127,45 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <ReactMarkdown
                     components={{
-                      // Style headings
                       h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2 first:mt-0">{children}</h1>,
                       h2: ({ children }) => <h2 className="text-sm font-bold mt-3 mb-1.5 first:mt-0">{children}</h2>,
                       h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h3>,
-                      // Style paragraphs
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      // Style lists
+                      p: ({ children }) => {
+                        // Try to parse candidate references in paragraphs
+                        if (typeof children === 'string' && candidateMap.size > 0) {
+                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                          if (parsed) {
+                            return <p className="mb-2 last:mb-0">{parsed}</p>;
+                          }
+                        }
+                        return <p className="mb-2 last:mb-0">{children}</p>;
+                      },
                       ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
                       ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                      li: ({ children }) => <li className="text-sm">{children}</li>,
-                      // Style bold/italic
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      li: ({ children }) => {
+                        // Try to parse candidate references in list items
+                        if (typeof children === 'string' && candidateMap.size > 0) {
+                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                          if (parsed) {
+                            return <li className="text-sm">{parsed}</li>;
+                          }
+                        }
+                        return <li className="text-sm">{children}</li>;
+                      },
+                      strong: ({ children }) => {
+                        // Parse candidate names in bold text
+                        if (typeof children === 'string' && candidateMap.size > 0) {
+                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                          if (parsed) {
+                            return <strong className="font-semibold">{parsed}</strong>;
+                          }
+                        }
+                        return <strong className="font-semibold">{children}</strong>;
+                      },
                       em: ({ children }) => <em className="italic">{children}</em>,
-                      // Style code
                       code: ({ children }) => (
                         <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
                       ),
-                      // Style links
                       a: ({ href, children }) => (
                         <a href={href} className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
                           {children}
