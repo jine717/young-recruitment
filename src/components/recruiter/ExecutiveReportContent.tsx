@@ -300,9 +300,9 @@ export function ExecutiveReportContent({
         </div>
 
         {/* Footer */}
-        <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-auto flex justify-between text-xs uppercase tracking-wider">
+        <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
           <span>Page 1 of {totalPages}</span>
-          <span>Confidential · Young Recruitment</span>
+          <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
 
@@ -463,9 +463,9 @@ export function ExecutiveReportContent({
           )}
 
           {/* Footer */}
-          <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-auto flex justify-between text-xs uppercase tracking-wider">
+          <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
             <span>Page 2 of {totalPages}</span>
-            <span>Confidential · Young Recruitment</span>
+            <span className="uppercase tracking-wider">Confidential</span>
           </div>
         </div>
       )}
@@ -626,42 +626,6 @@ export function ExecutiveReportContent({
           )}
         </div>
 
-        {/* Overall Scores Summary */}
-        {safeRankings.length > 0 && (
-          <div className="mt-5 pt-5 border-t-2 border-[#100D0A]">
-            <h4 className="text-sm font-bold uppercase tracking-wide mb-4">Overall Scores</h4>
-            <div className="grid grid-cols-3 gap-4">
-              {safeRankings.slice(0, MAX_CANDIDATES_SCORES).map((r, idx) => (
-                <div 
-                  key={r.application_id} 
-                  className={cn(
-                    "p-4 text-center",
-                    idx === 0 ? "bg-[#B88F5E] text-white" : "bg-[#605738]/10"
-                  )}
-                >
-                  <p className={cn(
-                    "text-sm font-semibold mb-2",
-                    idx === 0 ? "text-white" : "text-[#100D0A]"
-                  )}>
-                    {r.candidate_name}
-                  </p>
-                  <p className={cn(
-                    "text-3xl font-black",
-                    idx === 0 ? "text-white" : "text-[#100D0A]"
-                  )}>
-                    {r.score}
-                  </p>
-                  <p className={cn(
-                    "text-xs uppercase tracking-wider mt-2",
-                    idx === 0 ? "text-white/80" : "text-[#605738]"
-                  )}>
-                    Rank #{r.rank}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
@@ -738,9 +702,9 @@ export function ExecutiveReportContent({
         </div>
 
         {/* Final Footer */}
-        <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-5 flex justify-between text-xs uppercase tracking-wider">
+        <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
           <span>Page {totalPages} of {totalPages}</span>
-          <span>Confidential · Young Recruitment</span>
+          <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
     </div>
