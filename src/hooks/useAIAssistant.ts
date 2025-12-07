@@ -7,6 +7,27 @@ export interface Message {
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  followUpSuggestions?: string[];
+}
+
+export interface CandidateContext {
+  id: string;
+  name: string;
+  email?: string;
+  jobTitle: string;
+  jobId: string;
+  aiScore?: number | null;
+  recommendation?: string | null;
+  status: string;
+  cvSummary?: string;
+  discProfile?: string;
+  strengths?: string[];
+  concerns?: string[];
+}
+
+interface UseAIAssistantOptions {
+  candidateContext?: CandidateContext;
+  sessionKey?: string;
 }
 
 interface UseAIAssistantReturn {
@@ -15,9 +36,14 @@ interface UseAIAssistantReturn {
   error: string | null;
   sendMessage: (content: string) => Promise<void>;
   clearConversation: () => void;
+  pinnedQuestions: string[];
+  pinQuestion: (question: string) => void;
+  unpinQuestion: (question: string) => void;
 }
 
-const SESSION_STORAGE_KEY = 'ai-assistant-messages';
+const DEFAULT_SESSION_KEY = 'ai-assistant-messages';
+const PINNED_QUESTIONS_KEY = 'ai-assistant-pinned-questions';
+const MAX_PINNED_QUESTIONS = 8;
 
 // Helper to serialize/deserialize messages with Date objects
 const serializeMessages = (messages: Message[]): string => {
@@ -40,22 +66,49 @@ const deserializeMessages = (data: string): Message[] => {
   }
 };
 
-export const useAIAssistant = (): UseAIAssistantReturn => {
+export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantReturn => {
+  const sessionKey = options?.sessionKey || DEFAULT_SESSION_KEY;
+  const candidateContext = options?.candidateContext;
+
   const [messages, setMessages] = useState<Message[]>(() => {
     // Restore messages from session storage on init
-    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const stored = sessionStorage.getItem(sessionKey);
     return stored ? deserializeMessages(stored) : [];
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pinnedQuestions, setPinnedQuestions] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(PINNED_QUESTIONS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Persist messages to session storage
   useEffect(() => {
     if (messages.length > 0) {
-      sessionStorage.setItem(SESSION_STORAGE_KEY, serializeMessages(messages));
+      sessionStorage.setItem(sessionKey, serializeMessages(messages));
     }
-  }, [messages]);
+  }, [messages, sessionKey]);
+
+  // Persist pinned questions to localStorage
+  useEffect(() => {
+    localStorage.setItem(PINNED_QUESTIONS_KEY, JSON.stringify(pinnedQuestions));
+  }, [pinnedQuestions]);
+
+  const pinQuestion = useCallback((question: string) => {
+    setPinnedQuestions(prev => {
+      if (prev.includes(question) || prev.length >= MAX_PINNED_QUESTIONS) return prev;
+      return [...prev, question];
+    });
+  }, []);
+
+  const unpinQuestion = useCallback((question: string) => {
+    setPinnedQuestions(prev => prev.filter(q => q !== question));
+  }, []);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
@@ -109,6 +162,7 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
           body: JSON.stringify({
             question: content.trim(),
             conversationHistory,
+            candidateContext,
           }),
           signal: abortControllerRef.current.signal,
         }
@@ -166,11 +220,14 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
         }
       }
 
-      // Mark streaming as complete
+      // Generate follow-up suggestions based on the response
+      const followUpSuggestions = generateFollowUpSuggestions(content, fullContent, candidateContext);
+
+      // Mark streaming as complete and add follow-up suggestions
       setMessages(prev => 
         prev.map(m => 
           m.id === assistantMessageId
-            ? { ...m, isStreaming: false }
+            ? { ...m, isStreaming: false, followUpSuggestions }
             : m
         )
       );
@@ -194,16 +251,16 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, candidateContext]);
 
   const clearConversation = useCallback(() => {
     setMessages([]);
     setError(null);
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    sessionStorage.removeItem(sessionKey);
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-  }, []);
+  }, [sessionKey]);
 
   return {
     messages,
@@ -211,5 +268,72 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
     error,
     sendMessage,
     clearConversation,
+    pinnedQuestions,
+    pinQuestion,
+    unpinQuestion,
   };
 };
+
+// Generate contextual follow-up suggestions
+function generateFollowUpSuggestions(
+  userQuestion: string,
+  aiResponse: string,
+  candidateContext?: CandidateContext
+): string[] {
+  const suggestions: string[] = [];
+  const questionLower = userQuestion.toLowerCase();
+  const responseLower = aiResponse.toLowerCase();
+
+  if (candidateContext) {
+    // Candidate-specific follow-ups
+    if (questionLower.includes('strength') || responseLower.includes('strength')) {
+      suggestions.push(`What are ${candidateContext.name}'s areas for improvement?`);
+    }
+    if (questionLower.includes('concern') || questionLower.includes('weakness') || responseLower.includes('concern')) {
+      suggestions.push(`How can we address these concerns in the interview?`);
+    }
+    if (questionLower.includes('experience') || responseLower.includes('experience')) {
+      suggestions.push(`What interview questions would assess ${candidateContext.name}'s experience?`);
+    }
+    if (questionLower.includes('fit') || responseLower.includes('cultural fit')) {
+      suggestions.push(`How does ${candidateContext.name} compare to other candidates?`);
+    }
+    if (questionLower.includes('interview') || responseLower.includes('interview')) {
+      suggestions.push(`What red flags should I watch for with ${candidateContext.name}?`);
+    }
+    if (questionLower.includes('score') || responseLower.includes('score')) {
+      suggestions.push(`Break down the scoring criteria for ${candidateContext.name}`);
+    }
+    // Default candidate follow-ups
+    if (suggestions.length === 0) {
+      suggestions.push(`What makes ${candidateContext.name} stand out?`);
+      suggestions.push(`Suggest interview questions for ${candidateContext.name}`);
+    }
+  } else {
+    // General follow-ups
+    if (questionLower.includes('top') || questionLower.includes('best')) {
+      suggestions.push('Compare these top candidates in detail');
+      suggestions.push('What interview questions should I prioritize?');
+    }
+    if (questionLower.includes('pipeline') || questionLower.includes('status')) {
+      suggestions.push('Which candidates need immediate attention?');
+      suggestions.push('Show conversion rates by stage');
+    }
+    if (questionLower.includes('analytics') || questionLower.includes('metrics')) {
+      suggestions.push('What can we improve in our hiring process?');
+      suggestions.push('Which job has the best candidates?');
+    }
+    if (questionLower.includes('interview')) {
+      suggestions.push('Who should I interview next?');
+      suggestions.push('Show upcoming interview schedule');
+    }
+    // Default general follow-ups
+    if (suggestions.length === 0) {
+      suggestions.push('Tell me more about the top candidates');
+      suggestions.push('What actions should I prioritize today?');
+    }
+  }
+
+  // Return max 3 suggestions
+  return suggestions.slice(0, 3);
+}
