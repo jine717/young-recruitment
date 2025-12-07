@@ -542,7 +542,7 @@ export function ExecutiveReportContent({
 
           {/* Footer */}
           <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
-            <span>Page {1 + matrixPages + 1} of {totalPages}</span>
+            <span>Page {2 + matrixPages} of {totalPages}</span>
             <span className="uppercase tracking-wider">Confidential</span>
           </div>
         </div>
@@ -595,11 +595,12 @@ export function ExecutiveReportContent({
                         <div 
                           key={resp.application_id}
                           className={cn(
-                            "p-4 border",
+                            "p-4 rounded-lg border",
                             isBest 
                               ? "border-[#B88F5E] bg-[#B88F5E]/10" 
-                              : "border-[#100D0A]/20 bg-white"
+                              : "border-[#100D0A]/20 bg-[#FDFAF0]"
                           )}
+                          style={{ pageBreakInside: 'avoid' }}
                         >
                           <div className="flex justify-between items-center mb-2">
                             <span className={cn(
@@ -629,7 +630,7 @@ export function ExecutiveReportContent({
                   </div>
 
                   {/* AI Comparative Analysis */}
-                  <div className="bg-[#93B1FF]/20 border border-[#93B1FF] p-4 mt-auto">
+                  <div className="bg-[#93B1FF]/20 border border-[#93B1FF] rounded-lg p-4 mt-auto" style={{ pageBreakInside: 'avoid' }}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-sm uppercase tracking-wider">AI Analysis</span>
                       <span className="ml-auto text-sm font-semibold text-[#B88F5E]">
