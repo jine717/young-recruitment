@@ -4,7 +4,7 @@ import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Scale, Users, Loader2, ChevronRight, History } from 'lucide-react';
+import { ArrowLeft, Scale, Users, Loader2, ChevronRight, History, Check } from 'lucide-react';
 import { CandidateSelector } from '@/components/recruiter/CandidateSelector';
 import { ComparisonResultCard } from '@/components/recruiter/ComparisonResultCard';
 import { ComparisonHistoryDialog } from '@/components/recruiter/ComparisonHistoryDialog';
@@ -122,7 +122,7 @@ export default function CandidatesEvaluation() {
                     !canNavigate && 'cursor-default'
                   )}
                 >
-                  {s}
+                  {isCompleted ? <Check className="w-4 h-4" /> : s}
                 </button>
                 {s < 4 && (
                   <ChevronRight className={cn(
