@@ -81,6 +81,12 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
       const winnerSpotlight = apiContent.winner_spotlight || {};
       const nextStepsData = apiContent.next_steps || {};
 
+      // Get alternative candidate info from the comparison result
+      const alternativeName = result.recommendation.alternative;
+      const alternativeRanking = alternativeName && alternativeName !== 'None' 
+        ? result.rankings.find(r => r.candidate_name === alternativeName)
+        : null;
+
       const transformedContent: PresentationContent = {
         executiveSummary: apiContent.executive_narrative || '',
         topRecommendation: {
@@ -89,6 +95,11 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           whyChosen: winnerSpotlight.why_chosen || '',
           keyStrengths: winnerSpotlight.key_strengths || [],
         },
+        alternativeOption: alternativeRanking ? {
+          name: alternativeName,
+          score: alternativeRanking.score,
+          justification: result.recommendation.alternative_justification || '',
+        } : undefined,
         keyInsights: apiContent.key_insights || [],
         considerations: apiContent.considerations || [],
         nextSteps: nextStepsData.actions || [],

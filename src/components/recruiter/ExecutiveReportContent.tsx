@@ -67,6 +67,11 @@ export interface PresentationContent {
     whyChosen: string;
     keyStrengths: string[];
   };
+  alternativeOption?: {
+    name: string;
+    score: number;
+    justification: string;
+  };
   keyInsights: string[];
   considerations: string[];
   nextSteps: string[];
@@ -182,23 +187,37 @@ export function ExecutiveReportContent({
         {/* Separator */}
         <div className="border-t border-[#100D0A]/20 my-3" />
 
-        {/* Top Recommendation Section */}
+        {/* AI Recommendation Section */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">★</span>
-            <h3 className="text-lg font-bold uppercase tracking-wide text-[#B88F5E]">Our Recommendation</h3>
+            <span className="text-xl text-green-600">✓</span>
+            <h3 className="text-lg font-bold uppercase tracking-wide text-[#93B1FF]">AI Recommendation</h3>
+            {/* Confidence Badge */}
+            <span className={cn(
+              "px-2 py-0.5 text-xs font-medium rounded-full ml-auto",
+              confidence === 'high' ? "bg-green-100 text-green-800" :
+              confidence === 'medium' ? "bg-yellow-100 text-yellow-800" :
+              "bg-red-100 text-red-800"
+            )}>
+              {getConfidenceLabel(confidence)} Confidence
+            </span>
           </div>
 
-          <div className="border-2 border-[#B88F5E] p-4">
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="text-xl font-black">{topCandidate.name}</h4>
+          {/* Top Choice Box - Gold border */}
+          <div className="border-2 border-[#B88F5E] p-4 mb-3">
+            <div className="flex items-start gap-3 mb-2">
+              <span className="text-2xl">🏆</span>
+              <div className="flex-1">
+                <h4 className="text-xl font-black">{topCandidate.name}</h4>
+              </div>
               <div className="bg-[#93B1FF] w-12 h-12 flex items-center justify-center shrink-0">
                 <span className="text-xl font-black">{topCandidate.score}</span>
               </div>
             </div>
             
-            <p className="italic text-sm text-[#605738] mb-3">
-              "{topCandidate.whyChosen}"
+            <h5 className="font-semibold text-sm mb-1">Why this candidate?</h5>
+            <p className="text-sm text-[#605738] leading-relaxed mb-3">
+              {topCandidate.whyChosen}
             </p>
 
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -210,6 +229,23 @@ export function ExecutiveReportContent({
               ))}
             </ul>
           </div>
+
+          {/* Alternative Option - If exists */}
+          {presentationContent?.alternativeOption && (
+            <div className="border border-[#605738]/30 p-4 bg-[#605738]/5">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="font-semibold text-sm text-[#605738]">
+                  Alternative Option: {presentationContent.alternativeOption.name}
+                </h5>
+                <span className="text-sm font-bold text-[#605738]">
+                  {presentationContent.alternativeOption.score}/100
+                </span>
+              </div>
+              <p className="text-sm text-[#605738] leading-relaxed">
+                {presentationContent.alternativeOption.justification}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Separator */}
