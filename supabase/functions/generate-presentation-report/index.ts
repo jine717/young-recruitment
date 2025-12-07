@@ -37,12 +37,29 @@ interface CandidateRisk {
   risks: string[];
 }
 
+interface InterviewPerformanceItem {
+  application_id: string;
+  candidate_name: string;
+  has_interview: boolean;
+  interview_score?: number;
+  interview_vs_application?: string;
+  score_trajectory?: {
+    initial_score: number;
+    final_score: number;
+    change: number;
+    explanation: string;
+  };
+  strengths_demonstrated?: string[];
+  concerns_raised?: string[];
+}
+
 interface ComparisonResult {
   executive_summary: string;
   rankings: CandidateRanking[];
   comparison_matrix: ComparisonMatrixItem[];
   recommendation: ComparisonRecommendation;
   risks: CandidateRisk[];
+  interview_performance_analysis?: InterviewPerformanceItem[];
 }
 
 interface PresentationContent {
@@ -99,6 +116,38 @@ serve(async (req) => {
       r => r.candidate_name === topCandidate?.candidate_name
     )?.risks || [];
 
+    // Get interview performance data
+    const interviewPerformance = comparisonResult.interview_performance_analysis || [];
+    const candidatesWithInterviews = interviewPerformance.filter(ip => ip.has_interview);
+    const topCandidateInterview = interviewPerformance.find(
+      ip => ip.candidate_name === topCandidate?.candidate_name
+    );
+
+    // Build interview performance summary for prompt
+    let interviewSummary = '';
+    if (candidatesWithInterviews.length > 0) {
+      interviewSummary = `\n\nINTERVIEW PERFORMANCE DATA:\n`;
+      candidatesWithInterviews.forEach(ip => {
+        interviewSummary += `\n${ip.candidate_name}:\n`;
+        if (ip.score_trajectory) {
+          interviewSummary += `- Score Trajectory: ${ip.score_trajectory.initial_score} → ${ip.score_trajectory.final_score} (${ip.score_trajectory.change > 0 ? '+' : ''}${ip.score_trajectory.change})\n`;
+          interviewSummary += `- Trajectory Explanation: ${ip.score_trajectory.explanation}\n`;
+        }
+        if (ip.interview_score) {
+          interviewSummary += `- Interview Score: ${ip.interview_score}/100\n`;
+        }
+        if (ip.interview_vs_application) {
+          interviewSummary += `- Application vs Interview: ${ip.interview_vs_application}\n`;
+        }
+        if (ip.strengths_demonstrated?.length) {
+          interviewSummary += `- Strengths Demonstrated: ${ip.strengths_demonstrated.join(', ')}\n`;
+        }
+        if (ip.concerns_raised?.length) {
+          interviewSummary += `- Concerns Raised: ${ip.concerns_raised.join(', ')}\n`;
+        }
+      });
+    }
+
     const systemPrompt = `You are an executive recruitment consultant creating a presentation-quality report for stakeholders. Your writing style is:
 - Professional and confident
 - Action-oriented
@@ -111,7 +160,9 @@ CRITICAL RULES:
 3. Frame "risks" as "areas to explore" or "considerations"
 4. Write for C-level executives who need quick decisions
 5. Maximum 3-4 sentences per section
-6. Use active voice and strong verbs`;
+6. Use active voice and strong verbs
+7. When interview data is available, incorporate interview performance insights into the narrative
+8. Highlight candidates who improved significantly during interviews`;
 
     const userPrompt = `Generate executive presentation content for this candidate comparison report.
 
@@ -121,6 +172,7 @@ TOP RECOMMENDED CANDIDATE:
 - Name: ${topCandidate?.candidate_name || 'No viable candidate'}
 - Score: ${topCandidate?.score || 0}/100
 - Key Differentiator: ${topCandidate?.key_differentiator || 'N/A'}
+${topCandidateInterview?.score_trajectory ? `- Interview Score Change: ${topCandidateInterview.score_trajectory.initial_score} → ${topCandidateInterview.score_trajectory.final_score} (${topCandidateInterview.score_trajectory.change > 0 ? '+' : ''}${topCandidateInterview.score_trajectory.change})` : ''}
 
 ORIGINAL AI SUMMARY:
 ${comparisonResult.executive_summary}
@@ -135,6 +187,7 @@ ${viableCandidates.map(c => `- ${c.candidate_name}: ${c.score}/100 - ${c.key_dif
 
 AREAS TO EXPLORE FOR TOP CANDIDATE:
 ${topCandidateRisks.length > 0 ? topCandidateRisks.join('\n') : 'No specific concerns identified'}
+${interviewSummary}
 
 Generate the presentation content following the exact structure specified in the tool.`;
 
