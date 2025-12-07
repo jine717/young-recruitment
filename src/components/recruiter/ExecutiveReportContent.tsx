@@ -125,13 +125,13 @@ export function ExecutiveReportContent({
   const safeBusinessCase = businessCaseAnalysis ?? [];
   const safeInterviewPerformance = interviewPerformance ?? [];
 
-  // Check if there's interview data to display
-  const hasInterviewData = safeInterviewPerformance.some(ip => ip.has_interview);
-  const interviewPages = hasInterviewData ? 1 : 0;
+  // Check if there's comparison matrix data to display (replaces interview page)
+  const hasComparisonData = safeMatrix.length > 0;
+  const detailedComparisonPages = hasComparisonData ? 1 : 0;
 
-  // Calculate total pages: Cover+Recommendation(1) + Interview(optional) + Business Case (1 per question) + Matrix + Insights
+  // Calculate total pages: Cover+Recommendation(1) + Detailed Comparison(optional) + Business Case (1 per question) + Matrix + Insights
   const businessCasePages = safeBusinessCase.length;
-  const totalPages = 1 + interviewPages + businessCasePages + 1 + 1;
+  const totalPages = 1 + detailedComparisonPages + businessCasePages + 1 + 1;
 
   const getConfidenceLabel = (conf: string) => {
     switch (conf) {
@@ -297,168 +297,81 @@ export function ExecutiveReportContent({
         </div>
       </div>
 
-      {/* ========== PAGE 2 (OPTIONAL): Interview Performance Comparison ========== */}
-      {hasInterviewData && (
-        <div className="page-interview min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
+      {/* ========== PAGE 2: Detailed Comparison ========== */}
+      {safeMatrix.length > 0 && (
+        <div className="page-comparison min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
           {/* Header Bar */}
           <div className="bg-[#93B1FF] -mx-8 -mt-8 px-8 py-4 mb-5 flex items-center justify-between">
             <span className="font-black text-xl">YOUNG.</span>
-            <span className="text-sm">Interview Performance Analysis</span>
+            <span className="text-sm">Detailed Comparison</span>
           </div>
 
           {/* Section Title */}
-          <h3 className="text-xl font-bold uppercase tracking-wide mb-4">Interview Performance Comparison</h3>
+          <h3 className="text-xl font-bold uppercase tracking-wide mb-4">Detailed Comparison</h3>
 
-          {/* 3-Column Flexbox Layout (Inline Styles for Reliable Rendering) */}
-          <div 
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'row', 
-              gap: '12px',
-              flex: '1 1 0%'
-            }}
-          >
-            {safeInterviewPerformance.filter(ip => ip.has_interview).slice(0, 3).map((perf, idx) => {
-              const isTopCandidate = perf.candidate_name === topCandidate.name;
-              const trajectory = perf.score_trajectory;
-              
+          {/* Row-based Comparison Table */}
+          <div className="flex-1 flex flex-col gap-2">
+            {safeMatrix.slice(0, 12).map((row, idx) => {
+              // Helper to get candidate name from application_id
+              const getCandidateName = (appId: string) => {
+                const ranking = allRankings.find(r => r.application_id === appId);
+                return ranking?.candidate_name?.split(' ')[0] || 'Unknown';
+              };
+
+              // Score color helper
+              const getScoreStyle = (score: number) => {
+                if (score >= 80) return { bg: '#dcfce7', text: '#166534' };
+                if (score >= 60) return { bg: '#fef9c3', text: '#854d0e' };
+                return { bg: '#fecaca', text: '#991b1b' };
+              };
+
               return (
                 <div 
-                  key={perf.application_id}
+                  key={idx}
                   style={{
-                    flex: '1 1 0%',
-                    minWidth: '0',
                     display: 'flex',
-                    flexDirection: 'column',
-                    border: `2px solid ${isTopCandidate ? '#B88F5E' : 'rgba(16,13,10,0.2)'}`,
-                    backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.05)' : 'white',
-                    padding: '12px',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: idx % 2 === 0 ? '#FDFAF0' : 'white',
+                    border: '1px solid rgba(16,13,10,0.1)',
+                    padding: '10px 16px',
                   }}
                 >
-                  {/* Header: Rank + Name + Score */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.2)' : 'rgba(16,13,10,0.1)',
-                        color: isTopCandidate ? '#B88F5E' : '#100D0A',
-                      }}>
-                        #{idx + 1}
-                      </span>
-                      <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{perf.candidate_name}</span>
-                    </div>
-                    <span style={{ 
-                      fontSize: '22px', 
-                      fontWeight: '900',
-                      color: isTopCandidate ? '#B88F5E' : '#100D0A'
-                    }}>
-                      {trajectory?.final_score || perf.interview_score}
-                    </span>
+                  {/* Criterion Name (Left) */}
+                  <span style={{ fontWeight: '600', fontSize: '13px', color: '#100D0A', flex: '1' }}>
+                    {row.criterion}
+                  </span>
+                  
+                  {/* Candidate Scores (Right) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    {row.candidates.slice(0, 3).map((c, cIdx) => {
+                      const candidateName = getCandidateName(c.application_id);
+                      const scoreStyle = getScoreStyle(c.score);
+                      return (
+                        <div key={cIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '90px' }}>
+                          <span style={{ fontSize: '12px', color: '#605738', fontWeight: '500' }}>
+                            {candidateName}:
+                          </span>
+                          <span style={{
+                            padding: '3px 10px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            borderRadius: '4px',
+                            backgroundColor: scoreStyle.bg,
+                            color: scoreStyle.text,
+                            minWidth: '32px',
+                            textAlign: 'center',
+                          }}>
+                            {c.score}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  {/* Performance Badge */}
-                  {perf.application_vs_interview && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <span style={{
-                        padding: '2px 8px',
-                        fontSize: '10px',
-                        fontWeight: '500',
-                        borderRadius: '9999px',
-                        backgroundColor: perf.application_vs_interview.toLowerCase().includes('exceeded') 
-                          ? '#dcfce7' : perf.application_vs_interview.toLowerCase().includes('below')
-                          ? '#fecaca' : 'rgba(147,177,255,0.2)',
-                        color: perf.application_vs_interview.toLowerCase().includes('exceeded')
-                          ? '#166534' : perf.application_vs_interview.toLowerCase().includes('below')
-                          ? '#991b1b' : '#100D0A',
-                      }}>
-                        {perf.application_vs_interview.includes('Exceeded') ? '↗' : 
-                         perf.application_vs_interview.includes('Below') ? '↘' : '−'} {perf.application_vs_interview}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Score Change Box */}
-                  {trajectory && (
-                    <div style={{ 
-                      backgroundColor: '#FDFAF0', 
-                      border: '1px solid rgba(16,13,10,0.1)', 
-                      padding: '10px', 
-                      marginBottom: '10px' 
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '12px', color: '#605738' }}>
-                          {trajectory.initial_score} → <strong style={{ color: '#93B1FF' }}>{trajectory.final_score}</strong>
-                        </span>
-                        <span style={{ 
-                          fontSize: '12px', 
-                          fontWeight: 'bold',
-                          color: trajectory.change > 0 ? '#15803d' : trajectory.change < 0 ? '#b91c1c' : '#605738'
-                        }}>
-                          {trajectory.change > 0 ? '↗ +' : trajectory.change < 0 ? '↘ ' : '− '}{trajectory.change}
-                        </span>
-                      </div>
-                      {trajectory.explanation && (
-                        <p style={{ fontSize: '10px', color: '#605738', margin: 0, lineHeight: '1.3' }}>
-                          {trajectory.explanation.length > 80 ? trajectory.explanation.slice(0, 80) + '...' : trajectory.explanation}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Strengths - Max 3 items */}
-                  {perf.strengths_demonstrated && perf.strengths_demonstrated.length > 0 && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#605738', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: '#16a34a' }}>✓</span> Strengths
-                      </p>
-                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                        {perf.strengths_demonstrated.slice(0, 3).map((str, i) => (
-                          <li key={i} style={{ fontSize: '11px', marginBottom: '2px', display: 'flex', gap: '6px', lineHeight: '1.3' }}>
-                            <span style={{ color: '#16a34a', flexShrink: 0 }}>•</span>
-                            <span>{str.length > 50 ? str.slice(0, 50) + '...' : str}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Concerns - Max 2 items */}
-                  {perf.concerns_raised && perf.concerns_raised.length > 0 && (
-                    <div style={{ marginTop: 'auto' }}>
-                      <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#605738', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: '#B88F5E' }}>⚠</span> Concerns
-                      </p>
-                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                        {perf.concerns_raised.slice(0, 2).map((concern, i) => (
-                          <li key={i} style={{ fontSize: '11px', marginBottom: '2px', display: 'flex', gap: '6px', lineHeight: '1.3' }}>
-                            <span style={{ color: '#B88F5E', flexShrink: 0 }}>•</span>
-                            <span>{concern.length > 50 ? concern.slice(0, 50) + '...' : concern}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
-
-          {/* Candidates without interview */}
-          {safeInterviewPerformance.filter(ip => !ip.has_interview).length > 0 && (
-            <div className="mt-4 p-3 bg-[#605738]/10 border border-[#605738]/20">
-              <p className="text-sm text-[#605738]">
-                <strong>Not yet interviewed:</strong>{' '}
-                {safeInterviewPerformance.filter(ip => !ip.has_interview).map(ip => ip.candidate_name).join(', ')}
-              </p>
-            </div>
-          )}
 
           {/* Footer */}
           <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-auto flex justify-between text-xs uppercase tracking-wider">
@@ -472,7 +385,7 @@ export function ExecutiveReportContent({
       {safeBusinessCase.length > 0 && (
         <>
           {safeBusinessCase.map((question, questionIdx) => {
-            const currentPageNum = 2 + interviewPages + questionIdx;
+            const currentPageNum = 2 + detailedComparisonPages + questionIdx;
             
             return (
               <div 
@@ -663,7 +576,7 @@ export function ExecutiveReportContent({
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
-          <span>Page {2 + interviewPages + businessCasePages} of {totalPages}</span>
+          <span>Page {2 + detailedComparisonPages + businessCasePages} of {totalPages}</span>
           <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
