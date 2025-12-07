@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Message } from '@/hooks/useAIAssistant';
 
 interface AIAssistantChatProps {
@@ -12,6 +13,7 @@ interface AIAssistantChatProps {
 
 export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -25,25 +27,30 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
   }
 
   return (
-    <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+    <ScrollArea className={cn("flex-1", isMobile ? "px-3" : "px-4")} ref={scrollRef}>
       <div className="space-y-4 py-4">
         {messages.map((message) => (
           <div
             key={message.id}
             className={cn(
-              'flex gap-3',
+              'flex gap-2 sm:gap-3',
               message.role === 'user' ? 'justify-end' : 'justify-start'
             )}
           >
             {message.role === 'assistant' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
+              <div className={cn(
+                "flex-shrink-0 rounded-full bg-primary flex items-center justify-center",
+                isMobile ? "w-7 h-7" : "w-8 h-8"
+              )}>
+                <Sparkles className={cn("text-primary-foreground", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
               </div>
             )}
             
             <div
               className={cn(
-                'max-w-[80%] rounded-2xl px-4 py-3 text-sm',
+                'rounded-2xl px-4 py-3',
+                // Mobile: allow more width for messages
+                isMobile ? 'max-w-[85%] text-sm' : 'max-w-[80%] text-sm',
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-card border border-border text-foreground'
@@ -92,8 +99,11 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
             </div>
 
             {message.role === 'user' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                <User className="w-4 h-4 text-muted-foreground" />
+              <div className={cn(
+                "flex-shrink-0 rounded-full bg-muted flex items-center justify-center",
+                isMobile ? "w-7 h-7" : "w-8 h-8"
+              )}>
+                <User className={cn("text-muted-foreground", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
               </div>
             )}
           </div>
@@ -101,9 +111,12 @@ export const AIAssistantChat = ({ messages, isLoading }: AIAssistantChatProps) =
 
         {/* Enhanced typing indicator */}
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
-          <div className="flex gap-3 justify-start">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground animate-pulse" />
+          <div className="flex gap-2 sm:gap-3 justify-start">
+            <div className={cn(
+              "flex-shrink-0 rounded-full bg-primary flex items-center justify-center",
+              isMobile ? "w-7 h-7" : "w-8 h-8"
+            )}>
+              <Sparkles className={cn("text-primary-foreground animate-pulse", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
             </div>
             <div className="bg-card border border-border rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2">
