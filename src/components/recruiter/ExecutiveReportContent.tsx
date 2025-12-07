@@ -309,52 +309,75 @@ export function ExecutiveReportContent({
           {/* Section Title */}
           <h3 className="text-xl font-bold uppercase tracking-wide mb-4">Interview Performance Comparison</h3>
 
-          {/* 3-Column Horizontal Grid Layout */}
-          <div className="flex-1 grid grid-cols-3 gap-4">
+          {/* 3-Column Flexbox Layout (Inline Styles for Reliable Rendering) */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              gap: '12px',
+              flex: '1 1 0%'
+            }}
+          >
             {safeInterviewPerformance.filter(ip => ip.has_interview).slice(0, 3).map((perf, idx) => {
               const isTopCandidate = perf.candidate_name === topCandidate.name;
               const trajectory = perf.score_trajectory;
-              const changeColor = trajectory && trajectory.change > 0 ? 'text-green-700' : 
-                                  trajectory && trajectory.change < 0 ? 'text-red-700' : 'text-[#605738]';
               
               return (
                 <div 
                   key={perf.application_id}
-                  className={cn(
-                    "border-2 p-4 flex flex-col h-full",
-                    isTopCandidate ? "border-[#B88F5E] bg-[#B88F5E]/5" : "border-[#100D0A]/20 bg-white"
-                  )}
+                  style={{
+                    flex: '1 1 0%',
+                    minWidth: '0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    border: `2px solid ${isTopCandidate ? '#B88F5E' : 'rgba(16,13,10,0.2)'}`,
+                    backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.05)' : 'white',
+                    padding: '12px',
+                  }}
                 >
                   {/* Header: Rank + Name + Score */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                        isTopCandidate ? "bg-[#B88F5E]/20 text-[#B88F5E]" : "bg-[#100D0A]/10"
-                      )}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.2)' : 'rgba(16,13,10,0.1)',
+                        color: isTopCandidate ? '#B88F5E' : '#100D0A',
+                      }}>
                         #{idx + 1}
                       </span>
-                      <h4 className="text-sm font-bold leading-tight">{perf.candidate_name}</h4>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{perf.candidate_name}</span>
                     </div>
-                    <span className={cn(
-                      "text-2xl font-black",
-                      isTopCandidate ? "text-[#B88F5E]" : "text-[#100D0A]"
-                    )}>
+                    <span style={{ 
+                      fontSize: '22px', 
+                      fontWeight: '900',
+                      color: isTopCandidate ? '#B88F5E' : '#100D0A'
+                    }}>
                       {trajectory?.final_score || perf.interview_score}
                     </span>
                   </div>
 
                   {/* Performance Badge */}
                   {perf.application_vs_interview && (
-                    <div className="mb-3">
-                      <span className={cn(
-                        "px-2 py-0.5 text-[10px] font-medium rounded-full",
-                        perf.application_vs_interview.toLowerCase().includes('exceeded') 
-                          ? "bg-green-100 text-green-800"
-                          : perf.application_vs_interview.toLowerCase().includes('below')
-                          ? "bg-red-100 text-red-800"
-                          : "bg-[#93B1FF]/20 text-[#100D0A]"
-                      )}>
+                    <div style={{ marginBottom: '10px' }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        fontSize: '10px',
+                        fontWeight: '500',
+                        borderRadius: '9999px',
+                        backgroundColor: perf.application_vs_interview.toLowerCase().includes('exceeded') 
+                          ? '#dcfce7' : perf.application_vs_interview.toLowerCase().includes('below')
+                          ? '#fecaca' : 'rgba(147,177,255,0.2)',
+                        color: perf.application_vs_interview.toLowerCase().includes('exceeded')
+                          ? '#166534' : perf.application_vs_interview.toLowerCase().includes('below')
+                          ? '#991b1b' : '#100D0A',
+                      }}>
                         {perf.application_vs_interview.includes('Exceeded') ? '↗' : 
                          perf.application_vs_interview.includes('Below') ? '↘' : '−'} {perf.application_vs_interview}
                       </span>
@@ -363,54 +386,60 @@ export function ExecutiveReportContent({
 
                   {/* Score Change Box */}
                   {trajectory && (
-                    <div className="bg-[#FDFAF0] border border-[#100D0A]/10 p-3 mb-3">
-                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1">Score Change</p>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-1 text-sm">
-                          <span className="text-[#605738]">{trajectory.initial_score}</span>
-                          <span className="text-[#605738]">→</span>
-                          <span className="font-bold text-[#93B1FF]">{trajectory.final_score}</span>
-                        </div>
-                        <span className={cn("text-sm font-bold", changeColor)}>
-                          {trajectory.change > 0 ? '↗' : trajectory.change < 0 ? '↘' : '−'} {trajectory.change > 0 ? '+' : ''}{trajectory.change}
+                    <div style={{ 
+                      backgroundColor: '#FDFAF0', 
+                      border: '1px solid rgba(16,13,10,0.1)', 
+                      padding: '10px', 
+                      marginBottom: '10px' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '12px', color: '#605738' }}>
+                          {trajectory.initial_score} → <strong style={{ color: '#93B1FF' }}>{trajectory.final_score}</strong>
+                        </span>
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: 'bold',
+                          color: trajectory.change > 0 ? '#15803d' : trajectory.change < 0 ? '#b91c1c' : '#605738'
+                        }}>
+                          {trajectory.change > 0 ? '↗ +' : trajectory.change < 0 ? '↘ ' : '− '}{trajectory.change}
                         </span>
                       </div>
                       {trajectory.explanation && (
-                        <p className="text-[10px] text-[#605738] leading-tight line-clamp-2">
-                          {trajectory.explanation}
+                        <p style={{ fontSize: '10px', color: '#605738', margin: 0, lineHeight: '1.3' }}>
+                          {trajectory.explanation.length > 80 ? trajectory.explanation.slice(0, 80) + '...' : trajectory.explanation}
                         </p>
                       )}
                     </div>
                   )}
 
-                  {/* Strengths - Max 4 items */}
+                  {/* Strengths - Max 3 items */}
                   {perf.strengths_demonstrated && perf.strengths_demonstrated.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1 flex items-center gap-1">
-                        <span className="text-green-600">✓</span> Strengths
+                    <div style={{ marginBottom: '10px' }}>
+                      <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#605738', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: '#16a34a' }}>✓</span> Strengths
                       </p>
-                      <ul className="space-y-0.5">
-                        {perf.strengths_demonstrated.slice(0, 4).map((str, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-[11px] leading-tight">
-                            <span className="text-green-600 shrink-0">•</span>
-                            <span className="line-clamp-1">{str}</span>
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                        {perf.strengths_demonstrated.slice(0, 3).map((str, i) => (
+                          <li key={i} style={{ fontSize: '11px', marginBottom: '2px', display: 'flex', gap: '6px', lineHeight: '1.3' }}>
+                            <span style={{ color: '#16a34a', flexShrink: 0 }}>•</span>
+                            <span>{str.length > 50 ? str.slice(0, 50) + '...' : str}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
-                  {/* Concerns - Max 3 items */}
+                  {/* Concerns - Max 2 items */}
                   {perf.concerns_raised && perf.concerns_raised.length > 0 && (
-                    <div className="mt-auto">
-                      <p className="text-[10px] uppercase text-[#605738] font-semibold mb-1 flex items-center gap-1">
-                        <span className="text-[#B88F5E]">⚠</span> Concerns
+                    <div style={{ marginTop: 'auto' }}>
+                      <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#605738', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: '#B88F5E' }}>⚠</span> Concerns
                       </p>
-                      <ul className="space-y-0.5">
-                        {perf.concerns_raised.slice(0, 3).map((concern, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-[11px] leading-tight">
-                            <span className="text-[#B88F5E] shrink-0">•</span>
-                            <span className="line-clamp-1">{concern}</span>
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                        {perf.concerns_raised.slice(0, 2).map((concern, i) => (
+                          <li key={i} style={{ fontSize: '11px', marginBottom: '2px', display: 'flex', gap: '6px', lineHeight: '1.3' }}>
+                            <span style={{ color: '#B88F5E', flexShrink: 0 }}>•</span>
+                            <span>{concern.length > 50 ? concern.slice(0, 50) + '...' : concern}</span>
                           </li>
                         ))}
                       </ul>
