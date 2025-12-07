@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
 import { InterviewPerformanceSection } from './InterviewPerformanceSection';
-import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem } from './ExecutiveReportContent';
+import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem, InterviewPerformanceItem } from './ExecutiveReportContent';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
@@ -28,6 +28,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
     allRankings: CandidateRanking[];
     comparisonMatrix: ComparisonMatrixItem[];
     businessCaseAnalysis: BusinessCaseAnalysisItem[];
+    interviewPerformance: InterviewPerformanceItem[];
     confidence: 'high' | 'medium' | 'low';
   } | null>(null);
   const { toast } = useToast();
@@ -104,6 +105,18 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
 
       const confidence = data.confidence || 'medium';
 
+      // Transform interview performance data
+      const transformedInterviewPerformance: InterviewPerformanceItem[] = (result.interview_performance_analysis || []).map((ip: any) => ({
+        application_id: ip.application_id || '',
+        candidate_name: ip.candidate_name || '',
+        has_interview: ip.has_interview ?? (ip.interview_score !== undefined),
+        interview_score: ip.interview_score,
+        application_vs_interview: ip.interview_vs_application || ip.application_vs_interview,
+        score_trajectory: ip.score_trajectory,
+        strengths_demonstrated: ip.strengths_demonstrated || ip.key_observations?.filter((_: any, i: number) => i < 3),
+        concerns_raised: ip.concerns_raised || [],
+      }));
+
       // Store data and open modal for preview
       setReportData({ 
         presentationContent: transformedContent, 
@@ -111,6 +124,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         allRankings: result.rankings,
         comparisonMatrix: result.comparison_matrix,
         businessCaseAnalysis: result.business_case_analysis || [],
+        interviewPerformance: transformedInterviewPerformance,
         confidence 
       });
       setReportModalOpen(true);
@@ -501,6 +515,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         allRankings={reportData?.allRankings || []}
         comparisonMatrix={reportData?.comparisonMatrix || []}
         businessCaseAnalysis={reportData?.businessCaseAnalysis || []}
+        interviewPerformance={reportData?.interviewPerformance || []}
         confidence={reportData?.confidence || 'medium'}
         jobTitle={jobTitle}
       />

@@ -43,6 +43,22 @@ export interface BusinessCaseAnalysisItem {
   best_response: string;
 }
 
+export interface InterviewPerformanceItem {
+  application_id: string;
+  candidate_name: string;
+  has_interview: boolean;
+  interview_score?: number;
+  application_vs_interview?: string;
+  score_trajectory?: {
+    initial_score: number;
+    final_score: number;
+    change: number;
+    explanation: string;
+  };
+  strengths_demonstrated?: string[];
+  concerns_raised?: string[];
+}
+
 export interface PresentationContent {
   executiveSummary: string;
   topRecommendation: {
@@ -63,6 +79,7 @@ interface ExecutiveReportContentProps {
   allRankings: CandidateRanking[];
   comparisonMatrix: ComparisonMatrixItem[];
   businessCaseAnalysis: BusinessCaseAnalysisItem[];
+  interviewPerformance: InterviewPerformanceItem[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -79,6 +96,7 @@ export function ExecutiveReportContent({
   allRankings,
   comparisonMatrix,
   businessCaseAnalysis,
+  interviewPerformance,
   confidence,
   jobTitle,
 }: ExecutiveReportContentProps) {
@@ -100,10 +118,15 @@ export function ExecutiveReportContent({
   const safeRankings = allRankings ?? [];
   const safeMatrix = comparisonMatrix ?? [];
   const safeBusinessCase = businessCaseAnalysis ?? [];
+  const safeInterviewPerformance = interviewPerformance ?? [];
 
-  // Calculate total pages: Cover(1) + Recommendation(2) + Business Case (1 per question) + Matrix + Insights
+  // Check if there's interview data to display
+  const hasInterviewData = safeInterviewPerformance.some(ip => ip.has_interview);
+  const interviewPages = hasInterviewData ? 1 : 0;
+
+  // Calculate total pages: Cover(1) + Recommendation(2) + Interview(optional) + Business Case (1 per question) + Matrix + Insights
   const businessCasePages = safeBusinessCase.length;
-  const totalPages = 2 + businessCasePages + 1 + 1; // = 4 + businessCasePages
+  const totalPages = 2 + interviewPages + businessCasePages + 1 + 1;
 
   const getConfidenceLabel = (conf: string) => {
     switch (conf) {
@@ -280,11 +303,139 @@ export function ExecutiveReportContent({
         </div>
       </div>
 
-      {/* ========== PAGES 3+: Business Case Analysis (1 question per page) ========== */}
+      {/* ========== PAGE 3 (OPTIONAL): Interview Performance Comparison ========== */}
+      {hasInterviewData && (
+        <div className="page-interview min-h-[297mm] max-h-[297mm] p-10 flex flex-col overflow-hidden">
+          {/* Header Bar */}
+          <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-6 flex items-center justify-between">
+            <span className="font-black text-xl">YOUNG.</span>
+            <span className="text-sm">Interview Performance Analysis</span>
+          </div>
+
+          {/* Section Title */}
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-2xl">📊</span>
+            <h3 className="text-2xl font-bold uppercase tracking-wide">Interview Performance</h3>
+          </div>
+
+          {/* Candidates with Interview Data - 3 column grid */}
+          <div className="grid grid-cols-3 gap-4 flex-1">
+            {safeInterviewPerformance.filter(ip => ip.has_interview).slice(0, 3).map((perf, idx) => {
+              const isTopCandidate = perf.candidate_name === topCandidate.name;
+              const trajectory = perf.score_trajectory;
+              const changeColor = trajectory && trajectory.change > 0 ? 'text-green-700' : 
+                                  trajectory && trajectory.change < 0 ? 'text-red-700' : 'text-[#605738]';
+              
+              return (
+                <div 
+                  key={perf.application_id}
+                  className={cn(
+                    "border-2 p-4 flex flex-col",
+                    isTopCandidate ? "border-[#B88F5E] bg-[#B88F5E]/5" : "border-[#100D0A]/20"
+                  )}
+                >
+                  {/* Candidate Name */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className={cn(
+                      "font-bold text-sm",
+                      isTopCandidate && "text-[#B88F5E]"
+                    )}>
+                      {perf.candidate_name}
+                      {isTopCandidate && <span className="ml-1">★</span>}
+                    </h4>
+                  </div>
+
+                  {/* Score Trajectory */}
+                  {trajectory && (
+                    <div className="bg-[#93B1FF]/20 p-3 mb-3">
+                      <p className="text-xs uppercase tracking-wider text-[#605738] mb-1">Score Trajectory</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-medium">{trajectory.initial_score}</span>
+                        <span className="text-[#605738]">→</span>
+                        <span className="text-2xl font-black text-[#93B1FF]">{trajectory.final_score}</span>
+                        <span className={cn("text-sm font-bold", changeColor)}>
+                          ({trajectory.change > 0 ? '+' : ''}{trajectory.change})
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#605738] mt-2 leading-relaxed line-clamp-2">
+                        {trajectory.explanation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Interview Score */}
+                  {perf.interview_score !== undefined && (
+                    <div className="mb-3">
+                      <p className="text-xs uppercase tracking-wider text-[#605738] mb-1">Interview Score</p>
+                      <p className="text-xl font-bold">{perf.interview_score}/100</p>
+                    </div>
+                  )}
+
+                  {/* Application vs Interview */}
+                  {perf.application_vs_interview && (
+                    <div className="mb-3">
+                      <p className="text-xs uppercase tracking-wider text-[#605738] mb-1">Performance Comparison</p>
+                      <p className="text-xs leading-relaxed">{perf.application_vs_interview}</p>
+                    </div>
+                  )}
+
+                  {/* Strengths */}
+                  {perf.strengths_demonstrated && perf.strengths_demonstrated.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs uppercase tracking-wider text-[#605738] mb-1">Strengths Demonstrated</p>
+                      <ul className="space-y-1">
+                        {perf.strengths_demonstrated.slice(0, 3).map((str, i) => (
+                          <li key={i} className="flex items-start gap-1 text-xs">
+                            <span className="text-green-600">✓</span>
+                            <span className="line-clamp-1">{str}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Concerns */}
+                  {perf.concerns_raised && perf.concerns_raised.length > 0 && (
+                    <div className="mt-auto">
+                      <p className="text-xs uppercase tracking-wider text-[#605738] mb-1">Areas to Explore</p>
+                      <ul className="space-y-1">
+                        {perf.concerns_raised.slice(0, 2).map((concern, i) => (
+                          <li key={i} className="flex items-start gap-1 text-xs">
+                            <span className="text-[#B88F5E]">!</span>
+                            <span className="line-clamp-1">{concern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Candidates without interview */}
+          {safeInterviewPerformance.filter(ip => !ip.has_interview).length > 0 && (
+            <div className="mt-4 p-3 bg-[#605738]/10 border border-[#605738]/20">
+              <p className="text-xs text-[#605738]">
+                <strong>Not yet interviewed:</strong>{' '}
+                {safeInterviewPerformance.filter(ip => !ip.has_interview).map(ip => ip.candidate_name).join(', ')}
+              </p>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex justify-between text-xs text-[#605738] mt-4 pt-4 border-t border-[#100D0A]/20">
+            <span>Page 3 of {totalPages}</span>
+            <span className="uppercase tracking-wider">Confidential</span>
+          </div>
+        </div>
+      )}
+
+      {/* ========== BUSINESS CASE PAGES: Analysis (1 question per page) ========== */}
       {safeBusinessCase.length > 0 && (
         <>
           {safeBusinessCase.map((question, questionIdx) => {
-            const currentPageNum = 3 + questionIdx;
+            const currentPageNum = 3 + interviewPages + questionIdx;
             
             return (
               <div 
@@ -388,7 +539,7 @@ export function ExecutiveReportContent({
         </>
       )}
 
-      {/* ========== PAGE X: Detailed Comparison Matrix ========== */}
+      {/* ========== COMPARISON MATRIX PAGE ========== */}
       <div className="page-matrix min-h-[297mm] max-h-[297mm] p-10 flex flex-col overflow-hidden">
         {/* Header Bar */}
         <div className="bg-[#93B1FF] -mx-10 -mt-10 px-10 py-4 mb-6 flex items-center justify-between">
@@ -481,7 +632,7 @@ export function ExecutiveReportContent({
 
         {/* Footer */}
         <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
-          <span>Page {3 + businessCasePages} of {totalPages}</span>
+          <span>Page {3 + interviewPages + businessCasePages} of {totalPages}</span>
           <span className="uppercase tracking-wider">Confidential</span>
         </div>
       </div>
