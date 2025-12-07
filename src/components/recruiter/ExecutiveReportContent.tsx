@@ -59,6 +59,12 @@ export interface InterviewPerformanceItem {
   concerns_raised?: string[];
 }
 
+export interface CandidateRisk {
+  candidate_name: string;
+  application_id: string;
+  risks: string[];
+}
+
 export interface PresentationContent {
   executiveSummary: string;
   topRecommendation: {
@@ -85,6 +91,7 @@ interface ExecutiveReportContentProps {
   comparisonMatrix: ComparisonMatrixItem[];
   businessCaseAnalysis: BusinessCaseAnalysisItem[];
   interviewPerformance: InterviewPerformanceItem[];
+  risks?: CandidateRisk[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -102,6 +109,7 @@ export function ExecutiveReportContent({
   comparisonMatrix,
   businessCaseAnalysis,
   interviewPerformance,
+  risks,
   confidence,
   jobTitle,
 }: ExecutiveReportContentProps) {
@@ -124,6 +132,7 @@ export function ExecutiveReportContent({
   const safeMatrix = comparisonMatrix ?? [];
   const safeBusinessCase = businessCaseAnalysis ?? [];
   const safeInterviewPerformance = interviewPerformance ?? [];
+  const safeRisks = risks ?? [];
 
   // Check if there's comparison matrix data to display (replaces interview page)
   const hasComparisonData = safeMatrix.length > 0;
@@ -372,6 +381,83 @@ export function ExecutiveReportContent({
               );
             })}
           </div>
+
+          {/* Risk Assessment Section */}
+          {safeRisks.length > 0 && (
+            <div style={{ marginTop: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#B88F5E' }}>⚠</span> Risk Assessment
+              </h4>
+              
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {safeRisks.slice(0, 3).map((risk, riskIdx) => {
+                  const candidateRank = safeRankings.find(r => r.candidate_name === risk.candidate_name);
+                  const isTopCandidate = candidateRank?.rank === 1;
+                  
+                  return (
+                    <div 
+                      key={risk.application_id}
+                      style={{
+                        flex: '1 1 0%',
+                        padding: '12px',
+                        border: `1px solid ${isTopCandidate ? '#B88F5E' : 'rgba(16,13,10,0.15)'}`,
+                        backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.05)' : '#FDFAF0',
+                      }}
+                    >
+                      {/* Header: Rank + Name */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          backgroundColor: isTopCandidate ? 'rgba(184,143,94,0.2)' : 'rgba(0,0,0,0.1)',
+                          color: isTopCandidate ? '#B88F5E' : '#100D0A',
+                        }}>
+                          #{candidateRank?.rank || riskIdx + 1}
+                        </span>
+                        <span style={{ fontSize: '12px', fontWeight: '600' }}>
+                          {risk.candidate_name.split(' ')[0]}
+                        </span>
+                      </div>
+                      
+                      {/* Risk Count Badge */}
+                      <p style={{ fontSize: '10px', color: '#605738', marginBottom: '8px' }}>
+                        {risk.risks.length === 0 ? 'Low risk profile' : `${risk.risks.length} risk${risk.risks.length > 1 ? 's' : ''} identified`}
+                      </p>
+                      
+                      {/* Risk Items - MAX 3, truncated at 60 chars */}
+                      {risk.risks.length > 0 ? (
+                        <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                          {risk.risks.slice(0, 3).map((r, i) => (
+                            <li key={i} style={{ 
+                              display: 'flex', 
+                              alignItems: 'flex-start', 
+                              gap: '6px', 
+                              fontSize: '10px',
+                              marginBottom: '4px',
+                            }}>
+                              <span style={{ color: '#B88F5E' }}>⚠</span>
+                              <span style={{ color: '#605738' }}>{r.length > 60 ? r.slice(0, 60) + '...' : r}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px' }}>
+                          <span style={{ color: '#22c55e' }}>✓</span>
+                          <span style={{ color: '#605738' }}>No significant risks</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="bg-[#100D0A] text-[#FDFAF0] -mx-8 -mb-8 px-8 py-3 mt-auto flex justify-between text-xs uppercase tracking-wider">
