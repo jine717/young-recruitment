@@ -203,7 +203,7 @@ export const CandidateAIAssistant = ({ candidateContext }: CandidateAIAssistantP
                 <Sparkles className="w-4 h-4 text-[hsl(var(--young-black))]" />
               </div>
               <div>
-                <SheetTitle className="text-lg font-semibold">AI Assistant</SheetTitle>
+                <SheetTitle className="text-lg font-semibold">Young AI</SheetTitle>
                 <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                   About {candidateContext.name}
                 </p>

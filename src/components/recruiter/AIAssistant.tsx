@@ -200,7 +200,7 @@ export const AIAssistant = () => {
                   <Sparkles className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div>
-                  <SheetTitle className="text-lg font-semibold">AI Assistant</SheetTitle>
+                  <SheetTitle className="text-lg font-semibold">Young AI</SheetTitle>
                   {!isMobile && (
                     <p className="text-xs text-muted-foreground">⌘K to toggle</p>
                   )}
