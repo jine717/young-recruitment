@@ -52,6 +52,25 @@ export interface BusinessCaseAnalysisItem {
   best_response: string;
 }
 
+export interface InterviewScoreTrajectory {
+  initial_score: number;
+  final_score: number;
+  change: number;
+  explanation: string;
+}
+
+export interface InterviewPerformanceAnalysis {
+  application_id: string;
+  candidate_name: string;
+  has_interview: boolean;
+  interview_score?: number;
+  application_vs_interview?: string;
+  key_observations?: string[];
+  score_trajectory?: InterviewScoreTrajectory;
+  strengths_demonstrated?: string[];
+  concerns_raised?: string[];
+}
+
 export interface ComparisonResult {
   executive_summary: string;
   rankings: CandidateRanking[];
@@ -59,6 +78,7 @@ export interface ComparisonResult {
   recommendation: ComparisonRecommendation;
   risks: CandidateRisk[];
   business_case_analysis?: BusinessCaseAnalysisItem[];
+  interview_performance_analysis?: InterviewPerformanceAnalysis[];
 }
 
 export interface JobWithApplicationCount {
