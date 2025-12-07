@@ -100,7 +100,6 @@ interface ExecutiveReportContentProps {
 const MAX_CANDIDATES_OVERVIEW = 3;
 const MAX_CANDIDATES_BUSINESS_CASE = 3;
 const MAX_CANDIDATES_MATRIX = 3;
-const MAX_CANDIDATES_SCORES = 3;
 
 export function ExecutiveReportContent({
   presentationContent,
@@ -138,11 +137,16 @@ export function ExecutiveReportContent({
   const hasComparisonData = safeMatrix.length > 0;
   const detailedComparisonPages = hasComparisonData ? 1 : 0;
 
-  // Calculate total pages: Cover+Recommendation(1) + Detailed Comparison(optional) + Business Case (1 per question) + Matrix Pages + Insights
+  // Calculate pages: 
+  // Page 1: Cover+Recommendation
+  // Pages 2-3: Comparison Matrix (5 criteria per page)
+  // Page 4: Detailed Comparison + Risk Assessment
+  // Pages 5+: Business Case (1 per question)
+  // Last Page: Key Insights
   const businessCasePages = safeBusinessCase.length;
   const CRITERIA_PER_PAGE = 5;
   const matrixPages = Math.max(1, Math.ceil(safeMatrix.length / CRITERIA_PER_PAGE));
-  const totalPages = 1 + detailedComparisonPages + businessCasePages + matrixPages + 1;
+  const totalPages = 1 + matrixPages + detailedComparisonPages + businessCasePages + 1;
 
   const getConfidenceLabel = (conf: string) => {
     switch (conf) {
@@ -308,7 +312,79 @@ export function ExecutiveReportContent({
         </div>
       </div>
 
-      {/* ========== PAGE 2: Detailed Comparison ========== */}
+      {/* ========== PAGES 2-3: COMPARISON MATRIX (5 criteria per page) ========== */}
+      {Array.from({ length: matrixPages }).map((_, pageIdx) => {
+        const startIdx = pageIdx * CRITERIA_PER_PAGE;
+        const endIdx = Math.min(startIdx + CRITERIA_PER_PAGE, safeMatrix.length);
+        const pageCriteria = safeMatrix.slice(startIdx, endIdx);
+        const matrixPageNum = 2 + pageIdx; // Pages 2, 3, etc.
+        
+        return (
+          <div key={`matrix-${pageIdx}`} className="page-matrix min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
+            {/* Header Bar */}
+            <div className="bg-[#93B1FF] -mx-8 -mt-8 px-8 py-4 mb-5 flex items-center justify-between">
+              <span className="font-black text-xl">YOUNG.</span>
+              <span className="text-sm">Detailed Candidate Comparison</span>
+            </div>
+
+            {/* Section Title with Page Indicator */}
+            <h3 className="text-xl font-bold uppercase tracking-wide mb-4">
+              Comparison Matrix {matrixPages > 1 ? `(${pageIdx + 1}/${matrixPages})` : ''}
+            </h3>
+
+            {/* Comparison Matrix Table */}
+            <div className="flex-1 overflow-hidden">
+              {pageCriteria.length > 0 ? (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-[#100D0A] text-[#FDFAF0]">
+                      <th className="p-3 text-left font-bold w-[25%]">Criterion</th>
+                      {safeRankings.slice(0, MAX_CANDIDATES_MATRIX).map(r => (
+                        <th key={r.application_id} className="p-3 text-center font-bold w-[25%]">
+                          {r.candidate_name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageCriteria.map((row, idx) => (
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#FDFAF0]'}>
+                        <td className="p-3 font-semibold border-b border-[#100D0A]/10">
+                          {row.criterion}
+                        </td>
+                        {row.candidates.slice(0, MAX_CANDIDATES_MATRIX).map(c => (
+                          <td key={c.application_id} className="p-3 text-center border-b border-[#100D0A]/10 align-top">
+                            <span className={cn(
+                              "font-bold text-lg",
+                              c.score >= 80 ? "text-green-700" :
+                              c.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
+                            )}>
+                              {c.score}
+                            </span>
+                            {c.notes && (
+                              <p className="text-xs text-[#605738] mt-2 text-left leading-relaxed">{c.notes}</p>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="italic text-[#605738]">No comparison data available</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
+              <span>Page {matrixPageNum} of {totalPages}</span>
+              <span className="uppercase tracking-wider">Confidential</span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* ========== PAGE 4: Detailed Comparison + Risk Assessment ========== */}
       {safeMatrix.length > 0 && (
         <div className="page-comparison min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
           {/* Header Bar */}
@@ -466,7 +542,7 @@ export function ExecutiveReportContent({
 
           {/* Footer */}
           <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
-            <span>Page 2 of {totalPages}</span>
+            <span>Page {1 + matrixPages + 1} of {totalPages}</span>
             <span className="uppercase tracking-wider">Confidential</span>
           </div>
         </div>
@@ -476,7 +552,8 @@ export function ExecutiveReportContent({
       {safeBusinessCase.length > 0 && (
         <>
           {safeBusinessCase.map((question, questionIdx) => {
-            const currentPageNum = 2 + detailedComparisonPages + questionIdx;
+            // Page number: 1 (cover) + matrixPages + detailedComparisonPages + questionIdx + 1
+            const currentPageNum = 1 + matrixPages + detailedComparisonPages + questionIdx + 1;
             
             return (
               <div 
@@ -573,78 +650,6 @@ export function ExecutiveReportContent({
           })}
         </>
       )}
-
-      {/* ========== COMPARISON MATRIX PAGES (5 criteria per page) ========== */}
-      {Array.from({ length: matrixPages }).map((_, pageIdx) => {
-        const startIdx = pageIdx * CRITERIA_PER_PAGE;
-        const endIdx = Math.min(startIdx + CRITERIA_PER_PAGE, safeMatrix.length);
-        const pageCriteria = safeMatrix.slice(startIdx, endIdx);
-        const matrixPageNum = 2 + detailedComparisonPages + businessCasePages + pageIdx + 1;
-        
-        return (
-          <div key={`matrix-${pageIdx}`} className="page-matrix min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
-            {/* Header Bar */}
-            <div className="bg-[#93B1FF] -mx-8 -mt-8 px-8 py-4 mb-5 flex items-center justify-between">
-              <span className="font-black text-xl">YOUNG.</span>
-              <span className="text-sm">Detailed Candidate Comparison</span>
-            </div>
-
-            {/* Section Title with Page Indicator */}
-            <h3 className="text-xl font-bold uppercase tracking-wide mb-4">
-              Comparison Matrix {matrixPages > 1 ? `(${pageIdx + 1}/${matrixPages})` : ''}
-            </h3>
-
-            {/* Comparison Matrix Table */}
-            <div className="flex-1 overflow-hidden">
-              {pageCriteria.length > 0 ? (
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-[#100D0A] text-[#FDFAF0]">
-                      <th className="p-3 text-left font-bold w-[25%]">Criterion</th>
-                      {safeRankings.slice(0, MAX_CANDIDATES_MATRIX).map(r => (
-                        <th key={r.application_id} className="p-3 text-center font-bold w-[25%]">
-                          {r.candidate_name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageCriteria.map((row, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#FDFAF0]'}>
-                        <td className="p-3 font-semibold border-b border-[#100D0A]/10">
-                          {row.criterion}
-                        </td>
-                        {row.candidates.slice(0, MAX_CANDIDATES_MATRIX).map(c => (
-                          <td key={c.application_id} className="p-3 text-center border-b border-[#100D0A]/10 align-top">
-                            <span className={cn(
-                              "font-bold text-lg",
-                              c.score >= 80 ? "text-green-700" :
-                              c.score >= 60 ? "text-[#B88F5E]" : "text-red-700"
-                            )}>
-                              {c.score}
-                            </span>
-                            {c.notes && (
-                              <p className="text-xs text-[#605738] mt-2 text-left leading-relaxed">{c.notes}</p>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="italic text-[#605738]">No comparison data available</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-between text-xs text-[#605738] mt-auto pt-4 border-t border-[#100D0A]/20">
-              <span>Page {matrixPageNum} of {totalPages}</span>
-              <span className="uppercase tracking-wider">Confidential</span>
-            </div>
-          </div>
-        );
-      })}
 
       {/* ========== LAST PAGE: Key Insights + Next Steps ========== */}
       <div className="page-insights min-h-[297mm] max-h-[297mm] p-8 flex flex-col overflow-hidden">
