@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
 import { InterviewPerformanceSection } from './InterviewPerformanceSection';
+import { ComparisonAIAssistant } from './ComparisonAIAssistant';
 import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem, InterviewPerformanceItem, CandidateRisk } from './ExecutiveReportContent';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
   jobTitle?: string;
+  jobId?: string;
 }
 
-export function ComparisonResultCard({ result, jobTitle = 'Position' }: ComparisonResultCardProps) {
+export function ComparisonResultCard({ result, jobTitle = 'Position', jobId }: ComparisonResultCardProps) {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Create comparison context for AI assistant
+  const comparisonContext = useMemo(() => ({
+    jobTitle,
+    jobId,
+    candidateCount: result.rankings.length,
+    result,
+  }), [jobTitle, jobId, result]);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportData, setReportData] = useState<{
     presentationContent: PresentationContent;
@@ -533,6 +543,9 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         confidence={reportData?.confidence || 'medium'}
         jobTitle={jobTitle}
       />
+
+      {/* Young AI Assistant for Comparison Drill-Down */}
+      <ComparisonAIAssistant comparisonContext={comparisonContext} />
     </div>
   );
 }
