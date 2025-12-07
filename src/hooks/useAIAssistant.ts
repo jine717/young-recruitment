@@ -108,13 +108,15 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = line.slice(6);
+            const data = line.slice(6).trim();
             if (data === '[DONE]') continue;
             
             try {
               const parsed = JSON.parse(data);
-              if (parsed.content) {
-                fullContent += parsed.content;
+              // OpenAI-compatible format: choices[0].delta.content
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
                 setMessages(prev => 
                   prev.map(m => 
                     m.id === assistantMessageId
@@ -124,17 +126,7 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
                 );
               }
             } catch {
-              // Non-JSON data, append directly
-              if (data && data !== '[DONE]') {
-                fullContent += data;
-                setMessages(prev => 
-                  prev.map(m => 
-                    m.id === assistantMessageId
-                      ? { ...m, content: fullContent }
-                      : m
-                  )
-                );
-              }
+              // Ignore incomplete JSON chunks
             }
           }
         }
