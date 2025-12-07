@@ -33,6 +33,7 @@ import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft,
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
 
 interface DeleteJobInfo {
   id: string;
@@ -126,6 +127,32 @@ export default function RecruiterJobsList() {
     }
   };
 
+  const getLinkedInStatusBadge = (status: string, postedAt?: string | null) => {
+    switch (status) {
+      case 'posted':
+        return (
+          <Badge className="bg-[#0077B5] text-white hover:bg-[#006097]">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Posted
+          </Badge>
+        );
+      case 'draft':
+        return (
+          <Badge variant="secondary">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Draft
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-muted-foreground">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Not Posted
+          </Badge>
+        );
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -212,6 +239,7 @@ export default function RecruiterJobsList() {
                       <TableHead>Type</TableHead>
                       <TableHead>Candidates</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>LinkedIn</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -233,6 +261,7 @@ export default function RecruiterJobsList() {
                             </div>
                           </TableCell>
                           <TableCell>{getStatusBadge(job.status)}</TableCell>
+                          <TableCell>{getLinkedInStatusBadge(job.linkedin_post_status, job.linkedin_posted_at)}</TableCell>
                           <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
