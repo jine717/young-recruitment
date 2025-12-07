@@ -9,6 +9,13 @@ import { useAIEvaluation, useTriggerAIAnalysis } from '@/hooks/useAIEvaluations'
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
 import { useInterviews } from '@/hooks/useInterviews';
 import { useDocumentAnalyses } from '@/hooks/useDocumentAnalysis';
+import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
+import { useInterviewQuestions } from '@/hooks/useInterviewQuestions';
+import { useJobFixedQuestions } from '@/hooks/useJobFixedQuestions';
+import { useFixedQuestionNotes } from '@/hooks/useFixedQuestionNotes';
+import { useRecruiterNotes } from '@/hooks/useRecruiterNotes';
+import { useInterviewEvaluations } from '@/hooks/useInterviewEvaluations';
+import { useHiringDecisions } from '@/hooks/useHiringDecisions';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { DocumentsTab } from '@/components/candidate-profile/DocumentsTab';
@@ -60,6 +67,7 @@ export default function CandidateProfile() {
   const triggerAI = useTriggerAIAnalysis();
   const sendNotification = useSendNotification();
 
+  // Core application data
   const { data: application, isLoading } = useQuery({
     queryKey: ['application-detail', applicationId],
     queryFn: async () => {
@@ -94,36 +102,206 @@ export default function CandidateProfile() {
     enabled: !!applicationId && !!user,
   });
 
+  // AI Evaluation
   const { data: aiEvaluation, isLoading: aiLoading } = useAIEvaluation(applicationId);
+  
+  // Interviews
   const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(applicationId);
+  
+  // Document Analyses (CV and DISC)
   const { data: documentAnalyses } = useDocumentAnalyses(applicationId);
+  
+  // Business Cases and Responses
+  const { data: businessCases = [] } = useBusinessCases(application?.job_id);
+  const { data: businessCaseResponses = [] } = useBusinessCaseResponses(applicationId);
+  
+  // Interview Questions (AI-generated)
+  const { data: interviewQuestions = [] } = useInterviewQuestions(applicationId);
+  
+  // Fixed Interview Questions
+  const { data: fixedQuestions = [] } = useJobFixedQuestions(application?.job_id);
+  const { data: fixedQuestionNotes = [] } = useFixedQuestionNotes(applicationId);
+  
+  // Recruiter Notes
+  const { data: recruiterNotes = [] } = useRecruiterNotes(applicationId);
+  
+  // Interview Evaluations
+  const { data: interviewEvaluations = [] } = useInterviewEvaluations(applicationId);
+  
+  // Hiring Decisions
+  const { data: hiringDecisions = [] } = useHiringDecisions(applicationId);
+
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Build candidate context for AI Assistant
+  // Build comprehensive candidate context for AI Assistant
   const candidateContext: CandidateContext | null = useMemo(() => {
     if (!application) return null;
     
-    const cvAnalysis = documentAnalyses?.find(d => d.document_type === 'cv');
-    const discAnalysis = documentAnalyses?.find(d => d.document_type === 'disc');
+    const cvAnalysisDoc = documentAnalyses?.find(d => d.document_type === 'cv');
+    const discAnalysisDoc = documentAnalyses?.find(d => d.document_type === 'disc');
+    // Interview analysis is stored with document_type as string, cast to check
+    const interviewAnalysisDoc = documentAnalyses?.find(d => (d.document_type as string) === 'interview');
+    
+    // Parse CV analysis
+    const cvAnalysisData = cvAnalysisDoc?.analysis as any;
+    const cvAnalysis = cvAnalysisDoc?.status === 'completed' ? {
+      summary: cvAnalysisDoc.summary || undefined,
+      experienceYears: cvAnalysisData?.experience_years || cvAnalysisData?.years_of_experience,
+      keySkills: cvAnalysisData?.skills || cvAnalysisData?.key_skills,
+      education: cvAnalysisData?.education,
+      workHistory: cvAnalysisData?.work_history || cvAnalysisData?.experience,
+      strengths: cvAnalysisData?.strengths,
+      redFlags: cvAnalysisData?.red_flags || cvAnalysisData?.concerns,
+      overallImpression: cvAnalysisData?.overall_impression,
+    } : undefined;
+    
+    // Parse DISC analysis
+    const discAnalysisData = discAnalysisDoc?.analysis as any;
+    const discAnalysis = discAnalysisDoc?.status === 'completed' ? {
+      profileType: discAnalysisData?.profile_type,
+      profileDescription: discAnalysisData?.profile_description,
+      dominantTraits: discAnalysisData?.dominant_traits,
+      communicationStyle: discAnalysisData?.communication_style,
+      workStyle: discAnalysisData?.work_style,
+      managementTips: discAnalysisData?.management_tips,
+      potentialChallenges: discAnalysisData?.potential_challenges,
+      teamFitConsiderations: discAnalysisData?.team_fit_considerations || discAnalysisData?.team_fit,
+    } : undefined;
+    
+    // Parse interview analysis
+    const interviewAnalysisData = interviewAnalysisDoc?.analysis as any;
+    const interviewAnalysis = interviewAnalysisDoc?.status === 'completed' ? {
+      summary: interviewAnalysisData?.summary || interviewAnalysisDoc?.summary,
+      performanceAssessment: interviewAnalysisData?.performance_assessment,
+      strengthsIdentified: interviewAnalysisData?.strengths_identified,
+      concernsIdentified: interviewAnalysisData?.concerns_identified,
+      scoreChangeExplanation: interviewAnalysisData?.score_change_explanation,
+    } : undefined;
+    
+    // Build business case responses
+    const bcResponses = businessCases.map(bc => {
+      const response = businessCaseResponses.find(r => r.business_case_id === bc.id);
+      return {
+        questionTitle: bc.question_title,
+        questionDescription: bc.question_description,
+        response: response?.text_response || 'No response submitted',
+      };
+    }).filter(r => r.response !== 'No response submitted');
+    
+    // Build interview questions with notes
+    const interviewQs = interviewQuestions.map(q => ({
+      question: q.question_text,
+      category: q.category,
+      reasoning: q.reasoning || undefined,
+      recruiterNote: q.recruiter_note || undefined,
+    }));
+    
+    // Build fixed questions with notes
+    const fixedQs = fixedQuestions.map(fq => {
+      const note = fixedQuestionNotes.find(n => n.fixed_question_id === fq.id);
+      return {
+        question: fq.question_text,
+        category: fq.category,
+        note: note?.note_text || undefined,
+      };
+    });
+    
+    // Get latest interview evaluation
+    const latestEvaluation = interviewEvaluations[0];
+    const interviewEvaluation = latestEvaluation ? {
+      overallImpression: latestEvaluation.overall_impression || undefined,
+      strengths: latestEvaluation.strengths || undefined,
+      areasForImprovement: latestEvaluation.areas_for_improvement || undefined,
+      technicalScore: latestEvaluation.technical_score || undefined,
+      communicationScore: latestEvaluation.communication_score || undefined,
+      culturalFitScore: latestEvaluation.cultural_fit_score || undefined,
+      problemSolvingScore: latestEvaluation.problem_solving_score || undefined,
+      recommendation: latestEvaluation.recommendation || undefined,
+    } : undefined;
+    
+    // Build recruiter notes
+    const notes = recruiterNotes.map(n => ({
+      note: n.note_text,
+      createdAt: n.created_at,
+    }));
+    
+    // Build scheduled interviews
+    const scheduledInterviews = interviews.map(i => ({
+      date: i.interview_date,
+      type: i.interview_type,
+      status: i.status,
+    }));
+    
+    // Build hiring decisions
+    const decisions = hiringDecisions.map(d => ({
+      decision: d.decision,
+      reasoning: d.reasoning,
+      createdAt: d.created_at,
+    }));
     
     return {
+      // Basic info
       id: application.id,
       name: application.candidate_name || application.profile.full_name || 'Unknown',
       email: application.candidate_email || application.profile.email || undefined,
       jobTitle: application.job.title,
       jobId: application.job_id,
+      status: application.status,
+      appliedAt: application.created_at,
+      
+      // AI Evaluation
       aiScore: aiEvaluation?.overall_score ?? null,
       recommendation: aiEvaluation?.recommendation ?? null,
-      status: application.status,
-      cvSummary: cvAnalysis?.summary || undefined,
-      discProfile: (discAnalysis?.analysis as any)?.profile_type || undefined,
       strengths: aiEvaluation?.strengths || undefined,
       concerns: aiEvaluation?.concerns || undefined,
+      evaluationSummary: aiEvaluation?.summary || undefined,
+      skillsMatchScore: aiEvaluation?.skills_match_score ?? undefined,
+      communicationScore: aiEvaluation?.communication_score ?? undefined,
+      culturalFitScore: aiEvaluation?.cultural_fit_score ?? undefined,
+      evaluationStage: aiEvaluation?.evaluation_stage || undefined,
+      initialScore: aiEvaluation?.initial_overall_score ?? undefined,
+      
+      // Full analyses
+      cvAnalysis,
+      discAnalysis,
+      
+      // Business case responses
+      businessCaseResponses: bcResponses.length > 0 ? bcResponses : undefined,
+      
+      // Interview questions
+      interviewQuestions: interviewQs.length > 0 ? interviewQs : undefined,
+      fixedQuestionNotes: fixedQs.length > 0 ? fixedQs : undefined,
+      
+      // Interview evaluation and analysis
+      interviewEvaluation,
+      interviewAnalysis,
+      
+      // Recruiter notes
+      recruiterNotes: notes.length > 0 ? notes : undefined,
+      
+      // Scheduled interviews
+      scheduledInterviews: scheduledInterviews.length > 0 ? scheduledInterviews : undefined,
+      
+      // Hiring decisions
+      hiringDecisions: decisions.length > 0 ? decisions : undefined,
     };
-  }, [application, aiEvaluation, documentAnalyses]);
+  }, [
+    application, 
+    aiEvaluation, 
+    documentAnalyses, 
+    businessCases, 
+    businessCaseResponses,
+    interviewQuestions,
+    fixedQuestions,
+    fixedQuestionNotes,
+    interviewEvaluations,
+    recruiterNotes,
+    interviews,
+    hiringDecisions,
+  ]);
 
   if (authLoading || isLoading) {
     return (
