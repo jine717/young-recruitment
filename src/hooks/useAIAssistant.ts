@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Message {
@@ -17,11 +17,45 @@ interface UseAIAssistantReturn {
   clearConversation: () => void;
 }
 
+const SESSION_STORAGE_KEY = 'ai-assistant-messages';
+
+// Helper to serialize/deserialize messages with Date objects
+const serializeMessages = (messages: Message[]): string => {
+  return JSON.stringify(messages.map(m => ({
+    ...m,
+    timestamp: m.timestamp.toISOString(),
+  })));
+};
+
+const deserializeMessages = (data: string): Message[] => {
+  try {
+    const parsed = JSON.parse(data);
+    return parsed.map((m: any) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+      isStreaming: false, // Never restore streaming state
+    }));
+  } catch {
+    return [];
+  }
+};
+
 export const useAIAssistant = (): UseAIAssistantReturn => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Restore messages from session storage on init
+    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    return stored ? deserializeMessages(stored) : [];
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Persist messages to session storage
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, serializeMessages(messages));
+    }
+  }, [messages]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
@@ -165,6 +199,7 @@ export const useAIAssistant = (): UseAIAssistantReturn => {
   const clearConversation = useCallback(() => {
     setMessages([]);
     setError(null);
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
