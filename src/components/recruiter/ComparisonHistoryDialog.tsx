@@ -66,7 +66,7 @@ export function ComparisonHistoryDialog({
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[70vh]">
-            <ComparisonResultCard result={selectedComparison.comparison_result} jobTitle={jobTitle} />
+            <ComparisonResultCard result={selectedComparison.comparison_result} jobTitle={jobTitle} jobId={selectedComparison.job_id} />
           </ScrollArea>
         </DialogContent>
       </Dialog>

@@ -134,10 +134,78 @@ interface CandidateContext {
   }[];
 }
 
+// Comparison context for candidates evaluation drill-down
+interface ComparisonContext {
+  jobTitle: string;
+  jobId?: string;
+  candidateCount: number;
+  result: {
+    executive_summary: string;
+    rankings: {
+      rank: number;
+      candidate_name: string;
+      application_id: string;
+      score: number;
+      key_differentiator: string;
+    }[];
+    comparison_matrix: {
+      criterion: string;
+      candidates: {
+        application_id: string;
+        score: number;
+        notes: string;
+      }[];
+    }[];
+    recommendation: {
+      top_choice: string;
+      application_id: string;
+      confidence: 'high' | 'medium' | 'low';
+      justification: string;
+      alternative?: string;
+      alternative_justification?: string;
+    };
+    risks: {
+      candidate_name: string;
+      application_id: string;
+      risks: string[];
+    }[];
+    business_case_analysis?: {
+      question_title: string;
+      question_description?: string;
+      candidate_responses: {
+        application_id: string;
+        candidate_name: string;
+        response_summary: string;
+        score: number;
+        assessment: string;
+      }[];
+      comparative_analysis: string;
+      best_response: string;
+    }[];
+    interview_performance_analysis?: {
+      application_id: string;
+      candidate_name: string;
+      has_interview: boolean;
+      interview_score?: number;
+      application_vs_interview?: string;
+      key_observations?: string[];
+      score_trajectory?: {
+        initial_score: number;
+        final_score: number;
+        change: number;
+        explanation: string;
+      };
+      strengths_demonstrated?: string[];
+      concerns_raised?: string[];
+    }[];
+  };
+}
+
 interface AIAssistantRequest {
   question: string;
   conversationHistory?: Message[];
   candidateContext?: CandidateContext;
+  comparisonContext?: ComparisonContext;
 }
 
 // Detect intent from user question
@@ -205,7 +273,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question, conversationHistory = [], candidateContext } = await req.json() as AIAssistantRequest;
+    const { question, conversationHistory = [], candidateContext, comparisonContext } = await req.json() as AIAssistantRequest;
 
     if (!question || typeof question !== 'string') {
       return new Response(
@@ -217,6 +285,7 @@ serve(async (req) => {
     console.log('[AI Assistant] Processing question:', question);
     console.log('[AI Assistant] Conversation history length:', conversationHistory.length);
     console.log('[AI Assistant] Candidate context:', candidateContext?.name || 'None');
+    console.log('[AI Assistant] Comparison context:', comparisonContext?.jobTitle || 'None');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -231,8 +300,8 @@ serve(async (req) => {
     const context = await fetchContextData(supabase, intents);
     console.log('[AI Assistant] Context fetched successfully');
 
-    // Build system prompt with context (and candidate context if provided)
-    const systemPrompt = buildSystemPrompt(context, candidateContext);
+    // Build system prompt with context (and candidate context or comparison context if provided)
+    const systemPrompt = buildSystemPrompt(context, candidateContext, comparisonContext);
 
     // Build messages array
     const messages = [
@@ -615,8 +684,8 @@ async function fetchRecentActivity(supabase: any) {
   };
 }
 
-// Build system prompt with comprehensive candidate context
-function buildSystemPrompt(context: any, candidateContext?: CandidateContext) {
+// Build system prompt with comprehensive candidate or comparison context
+function buildSystemPrompt(context: any, candidateContext?: CandidateContext, comparisonContext?: ComparisonContext) {
   const { overview, candidates, jobs, interviews, analytics, recentActivity } = context;
 
   let prompt = `You are an AI assistant for the Young recruitment platform. You help recruiters make data-driven decisions by answering questions about candidates, job openings, and recruitment analytics.
@@ -635,6 +704,121 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext) {
 - If you don't have enough information, say so clearly
 - Format responses with clear sections when presenting multiple items
 `;
+
+  // Add comparison context if provided (for Candidates Evaluation drill-down)
+  if (comparisonContext) {
+    const result = comparisonContext.result;
+    prompt += `
+## CURRENT CONTEXT: CANDIDATE COMPARISON ANALYSIS
+You are helping the recruiter understand and drill down into a comparison of ${comparisonContext.candidateCount} candidates for the position: **${comparisonContext.jobTitle}**
+
+### AI Recommendation
+- **Top Choice:** ${result.recommendation.top_choice}
+- **Confidence Level:** ${result.recommendation.confidence}
+- **Justification:** ${result.recommendation.justification}
+`;
+
+    if (result.recommendation.alternative && result.recommendation.alternative !== 'None') {
+      prompt += `- **Alternative Candidate:** ${result.recommendation.alternative}
+- **Alternative Justification:** ${result.recommendation.alternative_justification || 'N/A'}
+`;
+    }
+
+    prompt += `
+### Executive Summary
+${result.executive_summary}
+
+### Candidate Rankings
+`;
+    result.rankings.forEach(ranking => {
+      prompt += `**#${ranking.rank} - ${ranking.candidate_name}** (Score: ${ranking.score}/100)
+  - Key Differentiator: ${ranking.key_differentiator}
+`;
+    });
+
+    prompt += `
+### Detailed Comparison Matrix
+`;
+    result.comparison_matrix.forEach(item => {
+      prompt += `**${item.criterion}:**\n`;
+      item.candidates.forEach(c => {
+        const candidateName = result.rankings.find(r => r.application_id === c.application_id)?.candidate_name || 'Unknown';
+        prompt += `  - ${candidateName}: ${c.score}/100 - ${c.notes}\n`;
+      });
+    });
+
+    prompt += `
+### Risk Assessment
+`;
+    result.risks.forEach(risk => {
+      if (risk.risks.length > 0) {
+        prompt += `**${risk.candidate_name}:**\n`;
+        risk.risks.forEach(r => {
+          prompt += `  - ⚠️ ${r}\n`;
+        });
+      } else {
+        prompt += `**${risk.candidate_name}:** Low risk profile\n`;
+      }
+    });
+
+    // Add business case analysis if available
+    if (result.business_case_analysis?.length) {
+      prompt += `
+### Business Case Response Analysis
+`;
+      result.business_case_analysis.forEach(bc => {
+        prompt += `**Question: ${bc.question_title}**
+${bc.question_description ? `_${bc.question_description}_\n` : ''}
+Best Response: ${bc.best_response}
+Comparative Analysis: ${bc.comparative_analysis}
+
+Candidate Responses:
+`;
+        bc.candidate_responses.forEach(cr => {
+          prompt += `  - ${cr.candidate_name} (${cr.score}/100): ${cr.assessment}
+    Response Summary: ${cr.response_summary}
+`;
+        });
+      });
+    }
+
+    // Add interview performance analysis if available
+    if (result.interview_performance_analysis?.length) {
+      prompt += `
+### Interview Performance Analysis
+`;
+      result.interview_performance_analysis.forEach(ip => {
+        if (ip.has_interview) {
+          prompt += `**${ip.candidate_name}:**
+  - Interview Score: ${ip.interview_score}/100
+  - Application vs Interview: ${ip.application_vs_interview || 'N/A'}
+`;
+          if (ip.score_trajectory) {
+            prompt += `  - Score Trajectory: ${ip.score_trajectory.initial_score} → ${ip.score_trajectory.final_score} (${ip.score_trajectory.change >= 0 ? '+' : ''}${ip.score_trajectory.change})
+    Explanation: ${ip.score_trajectory.explanation}
+`;
+          }
+          if (ip.strengths_demonstrated?.length) {
+            prompt += `  - Strengths Demonstrated: ${ip.strengths_demonstrated.join(', ')}\n`;
+          }
+          if (ip.concerns_raised?.length) {
+            prompt += `  - Concerns Raised: ${ip.concerns_raised.join(', ')}\n`;
+          }
+        } else {
+          prompt += `**${ip.candidate_name}:** No interview data available\n`;
+        }
+      });
+    }
+
+    prompt += `
+### Instructions for Answering Comparison Questions
+1. Reference specific data from the comparison when answering
+2. Explain the reasoning behind rankings and scores
+3. When asked "why", provide concrete evidence from scores, business case responses, or interview performance
+4. Acknowledge trade-offs between candidates when relevant
+5. Suggest follow-up questions or next steps when appropriate
+`;
+  }
 
   // Add comprehensive candidate-specific context if provided
   if (candidateContext) {

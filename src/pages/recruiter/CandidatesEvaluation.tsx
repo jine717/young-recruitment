@@ -313,7 +313,7 @@ Example:
                 </CardContent>
               </Card>
             ) : result?.comparison ? (
-              <ComparisonResultCard result={result.comparison} jobTitle={selectedJob?.title} />
+              <ComparisonResultCard result={result.comparison} jobTitle={selectedJob?.title} jobId={selectedJob?.id} />
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
