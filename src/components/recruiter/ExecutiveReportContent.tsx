@@ -384,7 +384,7 @@ export function ExecutiveReportContent({
 
           {/* Risk Assessment Section */}
           {safeRisks.length > 0 && (
-            <div style={{ marginTop: '32px', flex: '1', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginTop: '16px', flex: '1', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#B88F5E' }}>⚠</span> Risk Assessment
               </h4>
@@ -432,10 +432,10 @@ export function ExecutiveReportContent({
                         {risk.risks.length === 0 ? 'Low risk profile' : `${risk.risks.length} risk${risk.risks.length > 1 ? 's' : ''} identified`}
                       </p>
                       
-                      {/* Risk Items - MAX 3, truncated at 80 chars */}
+                      {/* Risk Items - Show ALL risks without truncation */}
                       {risk.risks.length > 0 ? (
                         <ul style={{ margin: 0, padding: 0, listStyle: 'none', flex: '1' }}>
-                          {risk.risks.slice(0, 3).map((r, i) => (
+                          {risk.risks.map((r, i) => (
                             <li key={i} style={{ 
                               display: 'flex', 
                               alignItems: 'flex-start', 
@@ -445,7 +445,7 @@ export function ExecutiveReportContent({
                               lineHeight: '1.4',
                             }}>
                               <span style={{ color: '#B88F5E', flexShrink: 0 }}>⚠</span>
-                              <span style={{ color: '#605738' }}>{r.length > 80 ? r.slice(0, 80) + '...' : r}</span>
+                              <span style={{ color: '#605738' }}>{r}</span>
                             </li>
                           ))}
                         </ul>
