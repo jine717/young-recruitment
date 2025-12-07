@@ -15,7 +15,8 @@ import {
   type CandidateRanking,
   type ComparisonMatrixItem,
   type BusinessCaseAnalysisItem,
-  type InterviewPerformanceItem
+  type InterviewPerformanceItem,
+  type CandidateRisk
 } from './ExecutiveReportContent';
 import { EmailShareDialog } from './EmailShareDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ interface ExecutiveReportModalProps {
   comparisonMatrix: ComparisonMatrixItem[];
   businessCaseAnalysis: BusinessCaseAnalysisItem[];
   interviewPerformance: InterviewPerformanceItem[];
+  risks?: CandidateRisk[];
   confidence: 'high' | 'medium' | 'low';
   jobTitle: string;
 }
@@ -43,6 +45,7 @@ export function ExecutiveReportModal({
   comparisonMatrix,
   businessCaseAnalysis,
   interviewPerformance,
+  risks,
   confidence,
   jobTitle,
 }: ExecutiveReportModalProps) {
@@ -191,6 +194,7 @@ export function ExecutiveReportModal({
                 comparisonMatrix={comparisonMatrix}
                 businessCaseAnalysis={businessCaseAnalysis}
                 interviewPerformance={interviewPerformance}
+                risks={risks}
                 confidence={confidence}
                 jobTitle={jobTitle}
               />
@@ -209,6 +213,7 @@ export function ExecutiveReportModal({
             comparisonMatrix={comparisonMatrix}
             businessCaseAnalysis={businessCaseAnalysis}
             interviewPerformance={interviewPerformance}
+            risks={risks}
             confidence={confidence}
             jobTitle={jobTitle}
           />

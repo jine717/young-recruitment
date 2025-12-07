@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
 import { InterviewPerformanceSection } from './InterviewPerformanceSection';
-import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem, InterviewPerformanceItem } from './ExecutiveReportContent';
+import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem, InterviewPerformanceItem, CandidateRisk } from './ExecutiveReportContent';
 
 interface ComparisonResultCardProps {
   result: ComparisonResult;
@@ -29,6 +29,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
     comparisonMatrix: ComparisonMatrixItem[];
     businessCaseAnalysis: BusinessCaseAnalysisItem[];
     interviewPerformance: InterviewPerformanceItem[];
+    risks: CandidateRisk[];
     confidence: 'high' | 'medium' | 'low';
   } | null>(null);
   const { toast } = useToast();
@@ -136,6 +137,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         comparisonMatrix: result.comparison_matrix,
         businessCaseAnalysis: result.business_case_analysis || [],
         interviewPerformance: transformedInterviewPerformance,
+        risks: result.risks || [],
         confidence 
       });
       setReportModalOpen(true);
@@ -527,6 +529,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
         comparisonMatrix={reportData?.comparisonMatrix || []}
         businessCaseAnalysis={reportData?.businessCaseAnalysis || []}
         interviewPerformance={reportData?.interviewPerformance || []}
+        risks={reportData?.risks || []}
         confidence={reportData?.confidence || 'medium'}
         jobTitle={jobTitle}
       />
