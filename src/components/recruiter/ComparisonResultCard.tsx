@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain, ChevronDown, ChevronUp, Expand } from 'lucide-react';
+import { Trophy, Medal, Award, AlertTriangle, CheckCircle, Target, FileText, Loader2, FileQuestion, Brain, ChevronDown, ChevronUp, Expand, Sparkles } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { ComparisonResult } from '@/hooks/useCandidateComparison';
@@ -23,7 +23,7 @@ interface ComparisonResultCardProps {
 
 export function ComparisonResultCard({ result, jobTitle = 'Position', jobId }: ComparisonResultCardProps) {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-
+  const [isAIOpen, setIsAIOpen] = useState(false);
   // Create comparison context for AI assistant
   const comparisonContext = useMemo(() => ({
     jobTitle,
@@ -171,7 +171,14 @@ export function ComparisonResultCard({ result, jobTitle = 'Position', jobId }: C
   return (
     <div className="space-y-6">
       {/* Export Button */}
-      <div className="flex justify-end items-center pr-4 py-2 border-b border-muted/30 mb-4">
+      <div className="flex justify-end items-center gap-3 pr-4 py-2 border-b border-muted/30 mb-4">
+        <Button 
+          onClick={() => setIsAIOpen(true)}
+          className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          Ask AI
+        </Button>
         <Button 
           onClick={handleExportExecutiveReport} 
           disabled={isGeneratingReport}
@@ -545,7 +552,7 @@ export function ComparisonResultCard({ result, jobTitle = 'Position', jobId }: C
       />
 
       {/* Young AI Assistant for Comparison Drill-Down */}
-      <ComparisonAIAssistant comparisonContext={comparisonContext} />
+      <ComparisonAIAssistant comparisonContext={comparisonContext} isOpen={isAIOpen} onOpenChange={setIsAIOpen} />
     </div>
   );
 }

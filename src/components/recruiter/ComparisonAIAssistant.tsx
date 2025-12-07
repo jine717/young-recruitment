@@ -12,10 +12,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ComparisonAIAssistantProps {
   comparisonContext: ComparisonContext;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const ComparisonAIAssistant = ({ comparisonContext }: ComparisonAIAssistantProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const ComparisonAIAssistant = ({ comparisonContext, isOpen, onOpenChange }: ComparisonAIAssistantProps) => {
   const [input, setInput] = useState('');
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
@@ -294,21 +295,7 @@ export const ComparisonAIAssistant = ({ comparisonContext }: ComparisonAIAssista
 
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <Button
-            size="lg"
-            className={cn(
-              "fixed bottom-6 right-6 z-50 rounded-full shadow-lg",
-              "bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-black))]",
-              "transition-transform hover:scale-105",
-              "h-16 w-16"
-            )}
-          >
-            <Sparkles className="h-7 w-7" />
-          </Button>
-        </SheetTrigger>
-
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetContent 
           side="right" 
           className="p-0 flex flex-col bg-background w-full sm:w-full"
@@ -336,32 +323,16 @@ export const ComparisonAIAssistant = ({ comparisonContext }: ComparisonAIAssista
   }
 
   return (
-    <>
-      <Button
-        size="lg"
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed bottom-6 right-6 z-50 rounded-full shadow-lg",
-          "bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-black))]",
-          "transition-transform hover:scale-105",
-          isOpen ? "hidden" : ""
-        )}
-      >
-        <Sparkles className="h-5 w-5 mr-2" />
-        Ask AI
-      </Button>
-
-      <FloatingPanel
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
-        title="Young AI"
-        subtitle="Comparison Analysis"
-        headerIcon={headerIcon}
-        headerActions={headerActions}
-        storageKey="comparison-ai-panel"
-      >
-        {panelContent}
-      </FloatingPanel>
-    </>
+    <FloatingPanel
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      title="Young AI"
+      subtitle="Comparison Analysis"
+      headerIcon={headerIcon}
+      headerActions={headerActions}
+      storageKey="comparison-ai-panel"
+    >
+      {panelContent}
+    </FloatingPanel>
   );
 };
