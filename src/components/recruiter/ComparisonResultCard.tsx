@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
+import { InterviewPerformanceSection } from './InterviewPerformanceSection';
 import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem } from './ExecutiveReportContent';
 
 interface ComparisonResultCardProps {
@@ -380,6 +381,14 @@ export function ComparisonResultCard({ result, jobTitle = 'Position' }: Comparis
           </div>
         </CardContent>
       </Card>
+
+      {/* Interview Performance Analysis */}
+      {result.interview_performance_analysis && result.interview_performance_analysis.length > 0 && (
+        <InterviewPerformanceSection 
+          interviewAnalysis={result.interview_performance_analysis}
+          rankings={result.rankings}
+        />
+      )}
 
       {/* Business Case Analysis */}
       {result.business_case_analysis && result.business_case_analysis.length > 0 && (

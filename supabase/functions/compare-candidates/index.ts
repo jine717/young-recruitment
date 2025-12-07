@@ -7,11 +7,53 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface InterviewEvaluation {
+  technical_score: number | null;
+  communication_score: number | null;
+  cultural_fit_score: number | null;
+  problem_solving_score: number | null;
+  overall_impression: string | null;
+  strengths: string[];
+  areas_for_improvement: string[];
+  recommendation: string | null;
+  interview_date: string | null;
+}
+
+interface InterviewAnalysis {
+  interview_summary: string | null;
+  performance_assessment: string | null;
+  strengths_demonstrated: string[];
+  concerns_identified: string[];
+  score_change_explanation: string | null;
+}
+
+interface RecruiterNote {
+  note_text: string;
+  created_at: string;
+}
+
+interface CVAnalysis {
+  experience_years: number | null;
+  key_skills: string[];
+  education: string | null;
+  strengths: string[];
+  red_flags: string[];
+}
+
+interface DISCAnalysis {
+  profile_type: string | null;
+  traits: string[];
+  communication_style: string | null;
+  work_style: string | null;
+}
+
 interface CandidateData {
   application_id: string;
   candidate_name: string;
   candidate_email: string;
   ai_score: number | null;
+  initial_ai_score: number | null;
+  evaluation_stage: string | null;
   ai_evaluation: {
     overall_score: number | null;
     skills_match_score: number | null;
@@ -21,6 +63,7 @@ interface CandidateData {
     strengths: string[] | null;
     concerns: string[] | null;
     recommendation: string | null;
+    initial_overall_score: number | null;
   } | null;
   business_case_responses: {
     question_id: string;
@@ -28,6 +71,12 @@ interface CandidateData {
     question_description: string;
     text_response: string | null;
   }[];
+  // NEW: Interview data
+  interview_evaluation: InterviewEvaluation | null;
+  interview_analysis: InterviewAnalysis | null;
+  recruiter_notes: RecruiterNote[];
+  cv_analysis: CVAnalysis | null;
+  disc_analysis: DISCAnalysis | null;
 }
 
 interface BusinessCaseQuestion {
@@ -79,7 +128,7 @@ serve(async (req) => {
 
     const businessCaseQuestions: BusinessCaseQuestion[] = businessCases || [];
 
-    // Fetch candidates data
+    // Fetch candidates data with all enriched information
     const candidatesData: CandidateData[] = [];
 
     for (const appId of applicationIds) {
@@ -92,7 +141,7 @@ serve(async (req) => {
 
       if (appError) continue;
 
-      // Get AI evaluation
+      // Get AI evaluation with initial scores
       const { data: aiEval } = await supabase
         .from('ai_evaluations')
         .select('*')
@@ -110,11 +159,94 @@ serve(async (req) => {
         .eq('application_id', appId)
         .order('business_cases(question_number)', { ascending: true });
 
+      // NEW: Get interview evaluation (recruiter's manual evaluation)
+      const { data: interviewEval } = await supabase
+        .from('interview_evaluations')
+        .select('*')
+        .eq('application_id', appId)
+        .order('interview_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // NEW: Get interview analysis (AI analysis from analyze-interview function)
+      const { data: interviewAnalysisDoc } = await supabase
+        .from('document_analyses')
+        .select('analysis')
+        .eq('application_id', appId)
+        .eq('document_type', 'interview')
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      // NEW: Get CV analysis
+      const { data: cvAnalysisDoc } = await supabase
+        .from('document_analyses')
+        .select('analysis')
+        .eq('application_id', appId)
+        .eq('document_type', 'cv')
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      // NEW: Get DISC analysis
+      const { data: discAnalysisDoc } = await supabase
+        .from('document_analyses')
+        .select('analysis')
+        .eq('application_id', appId)
+        .eq('document_type', 'disc')
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      // NEW: Get recruiter notes
+      const { data: notes } = await supabase
+        .from('recruiter_notes')
+        .select('note_text, created_at')
+        .eq('application_id', appId)
+        .order('created_at', { ascending: false });
+
+      // Parse interview analysis from document
+      let interviewAnalysis: InterviewAnalysis | null = null;
+      if (interviewAnalysisDoc?.analysis) {
+        const analysis = interviewAnalysisDoc.analysis as any;
+        interviewAnalysis = {
+          interview_summary: analysis.interview_summary || null,
+          performance_assessment: analysis.performance_assessment || null,
+          strengths_demonstrated: analysis.strengths_demonstrated || [],
+          concerns_identified: analysis.concerns_identified || [],
+          score_change_explanation: analysis.score_change_explanation || null,
+        };
+      }
+
+      // Parse CV analysis
+      let cvAnalysis: CVAnalysis | null = null;
+      if (cvAnalysisDoc?.analysis) {
+        const analysis = cvAnalysisDoc.analysis as any;
+        cvAnalysis = {
+          experience_years: analysis.experience_years || null,
+          key_skills: analysis.key_skills || [],
+          education: analysis.education || null,
+          strengths: analysis.strengths || [],
+          red_flags: analysis.red_flags || [],
+        };
+      }
+
+      // Parse DISC analysis
+      let discAnalysis: DISCAnalysis | null = null;
+      if (discAnalysisDoc?.analysis) {
+        const analysis = discAnalysisDoc.analysis as any;
+        discAnalysis = {
+          profile_type: analysis.profile_type || null,
+          traits: analysis.traits || [],
+          communication_style: analysis.communication_style || null,
+          work_style: analysis.work_style || null,
+        };
+      }
+
       candidatesData.push({
         application_id: app.id,
         candidate_name: app.candidate_name,
         candidate_email: app.candidate_email,
         ai_score: app.ai_score,
+        initial_ai_score: aiEval?.initial_overall_score || null,
+        evaluation_stage: aiEval?.evaluation_stage || 'initial',
         ai_evaluation: aiEval ? {
           overall_score: aiEval.overall_score,
           skills_match_score: aiEval.skills_match_score,
@@ -124,6 +256,7 @@ serve(async (req) => {
           strengths: aiEval.strengths,
           concerns: aiEval.concerns,
           recommendation: aiEval.recommendation,
+          initial_overall_score: aiEval.initial_overall_score,
         } : null,
         business_case_responses: responses?.map(r => ({
           question_id: (r.business_cases as any).id,
@@ -131,6 +264,25 @@ serve(async (req) => {
           question_description: (r.business_cases as any).question_description || '',
           text_response: r.text_response,
         })) || [],
+        // NEW: Interview and document data
+        interview_evaluation: interviewEval ? {
+          technical_score: interviewEval.technical_score,
+          communication_score: interviewEval.communication_score,
+          cultural_fit_score: interviewEval.cultural_fit_score,
+          problem_solving_score: interviewEval.problem_solving_score,
+          overall_impression: interviewEval.overall_impression,
+          strengths: interviewEval.strengths || [],
+          areas_for_improvement: interviewEval.areas_for_improvement || [],
+          recommendation: interviewEval.recommendation,
+          interview_date: interviewEval.interview_date,
+        } : null,
+        interview_analysis: interviewAnalysis,
+        recruiter_notes: notes?.map(n => ({
+          note_text: n.note_text,
+          created_at: n.created_at,
+        })) || [],
+        cv_analysis: cvAnalysis,
+        disc_analysis: discAnalysis,
       });
     }
 
@@ -138,10 +290,22 @@ serve(async (req) => {
       throw new Error('Could not fetch enough candidate data for comparison');
     }
 
-    // Build comparison prompt with detailed business case info
-    const candidatesInfo = candidatesData.map((c, i) => `
+    // Build comprehensive comparison prompt with all candidate data
+    const candidatesInfo = candidatesData.map((c, i) => {
+      // Calculate score trajectory if post-interview
+      const scoreChange = c.initial_ai_score && c.ai_score 
+        ? c.ai_score - c.initial_ai_score 
+        : null;
+      const scoreTrajectory = scoreChange !== null 
+        ? `${c.initial_ai_score} → ${c.ai_score} (${scoreChange > 0 ? '+' : ''}${scoreChange})` 
+        : 'N/A';
+
+      return `
 ### Candidate ${i + 1}: ${c.candidate_name}
-- AI Overall Score: ${c.ai_evaluation?.overall_score ?? 'N/A'}/100
+**Evaluation Stage:** ${c.evaluation_stage === 'post_interview' ? 'POST-INTERVIEW (has been interviewed)' : 'INITIAL (application stage only)'}
+
+## AI Evaluation Scores
+- Current AI Score: ${c.ai_evaluation?.overall_score ?? 'N/A'}/100
 - Skills Match: ${c.ai_evaluation?.skills_match_score ?? 'N/A'}/100
 - Communication: ${c.ai_evaluation?.communication_score ?? 'N/A'}/100
 - Cultural Fit: ${c.ai_evaluation?.cultural_fit_score ?? 'N/A'}/100
@@ -149,14 +313,60 @@ serve(async (req) => {
 - Summary: ${c.ai_evaluation?.summary ?? 'No summary available'}
 - Strengths: ${c.ai_evaluation?.strengths?.join(', ') ?? 'None identified'}
 - Concerns: ${c.ai_evaluation?.concerns?.join(', ') ?? 'None identified'}
+${c.evaluation_stage === 'post_interview' ? `- Score Trajectory: ${scoreTrajectory}` : ''}
 
-Business Case Responses:
+## CV Analysis
+${c.cv_analysis ? `
+- Experience: ${c.cv_analysis.experience_years ? `${c.cv_analysis.experience_years} years` : 'Unknown'}
+- Key Skills: ${c.cv_analysis.key_skills?.join(', ') || 'Not analyzed'}
+- Education: ${c.cv_analysis.education || 'Not specified'}
+- CV Strengths: ${c.cv_analysis.strengths?.join(', ') || 'None identified'}
+- CV Red Flags: ${c.cv_analysis.red_flags?.join(', ') || 'None identified'}
+` : 'No CV analysis available'}
+
+## DISC Personality Profile
+${c.disc_analysis ? `
+- Profile Type: ${c.disc_analysis.profile_type || 'Unknown'}
+- Key Traits: ${c.disc_analysis.traits?.join(', ') || 'Not analyzed'}
+- Communication Style: ${c.disc_analysis.communication_style || 'Not specified'}
+- Work Style: ${c.disc_analysis.work_style || 'Not specified'}
+` : 'No DISC analysis available'}
+
+## Interview Performance
+${c.interview_evaluation ? `
+**Recruiter Evaluation:**
+- Technical Score: ${c.interview_evaluation.technical_score ?? 'N/A'}/5
+- Communication Score: ${c.interview_evaluation.communication_score ?? 'N/A'}/5
+- Cultural Fit Score: ${c.interview_evaluation.cultural_fit_score ?? 'N/A'}/5
+- Problem Solving Score: ${c.interview_evaluation.problem_solving_score ?? 'N/A'}/5
+- Recruiter Recommendation: ${c.interview_evaluation.recommendation || 'N/A'}
+- Overall Impression: ${c.interview_evaluation.overall_impression || 'Not provided'}
+- Interview Strengths: ${c.interview_evaluation.strengths?.join(', ') || 'None noted'}
+- Areas for Improvement: ${c.interview_evaluation.areas_for_improvement?.join(', ') || 'None noted'}
+` : 'No interview evaluation available'}
+
+${c.interview_analysis ? `
+**AI Interview Analysis:**
+- Interview Summary: ${c.interview_analysis.interview_summary || 'Not available'}
+- Performance Assessment: ${c.interview_analysis.performance_assessment || 'Not available'}
+- Demonstrated Strengths: ${c.interview_analysis.strengths_demonstrated?.join(', ') || 'None identified'}
+- Identified Concerns: ${c.interview_analysis.concerns_identified?.join(', ') || 'None identified'}
+${c.interview_analysis.score_change_explanation ? `- Score Change Explanation: ${c.interview_analysis.score_change_explanation}` : ''}
+` : ''}
+
+${c.recruiter_notes.length > 0 ? `
+**Recruiter Notes from Interview:**
+${c.recruiter_notes.map(n => `- ${n.note_text}`).join('\n')}
+` : ''}
+
+## Business Case Responses
 ${c.business_case_responses.map(r => `
 **Question:** ${r.question_title}
 **Description:** ${r.question_description}
 **${c.candidate_name}'s Response:** ${r.text_response || 'No response provided'}
 `).join('\n')}
-`).join('\n---\n');
+`;
+    }).join('\n---\n');
 
     // List of business case questions for the AI to analyze
     const businessCaseInfo = businessCaseQuestions.length > 0 
@@ -175,22 +385,43 @@ Requirements: ${job.requirements?.join(', ') || 'Not specified'}
 ${businessCaseInfo}
 ${customPrompt ? `\n### Custom Evaluation Instructions from Recruiter:\n${customPrompt}\n` : ''}
 
-Analyze the candidates objectively considering:
-1. Skills match with job requirements
-2. Communication quality from their responses
-3. Cultural fit with Young's values
-4. Growth potential and learning agility
-5. Risk factors and concerns
-6. Quality and depth of business case responses - analyze each question separately
+CRITICAL: Analyze candidates considering BOTH application AND interview performance:
 
-Be direct and decisive in your recommendation. For business case analysis, evaluate how well each candidate answered each specific question.`;
+## 1. Application Stage Assessment
+- CV/Resume analysis (experience, skills, education, identified strengths and red flags)
+- DISC personality profile (communication style, work style, team fit)
+- Business Case responses (problem-solving approach, communication quality)
+
+## 2. Interview Stage Assessment (if available)
+- Recruiter's evaluation scores (technical, communication, cultural fit, problem-solving)
+- Recruiter's observations, notes, and overall impression
+- AI interview analysis results
+- Demonstrated strengths vs. identified concerns during interview
+
+## 3. Performance Trajectory Analysis
+- Initial AI Score vs Post-Interview Score (improvement or decline)
+- Gap between written responses (Business Case) and verbal performance (Interview)
+- Consistency between CV claims and interview performance
+
+IMPORTANT CONSIDERATIONS:
+- A candidate may excel in Business Case but struggle in interview, or vice versa
+- Weight both application AND interview performance equally when both are available
+- Highlight any discrepancies between written and verbal performance
+- Consider personality insights from DISC when evaluating cultural fit
+- Use recruiter notes as valuable firsthand observations
+
+Be direct and decisive in your recommendation. For candidates with interviews, the interview performance should significantly influence your assessment.`;
 
     const userPrompt = `Compare these ${candidatesData.length} candidates and provide your analysis:
 
 ${candidatesInfo}
 
 Provide a comprehensive comparison with a clear winner recommendation. 
-IMPORTANT: For the business_case_analysis section, you MUST analyze each business case question separately, comparing how all candidates responded to that specific question.`;
+
+IMPORTANT: 
+1. For the business_case_analysis section, analyze each business case question separately
+2. For the interview_performance_analysis section, compare interview performance across all candidates who have been interviewed
+3. Highlight any differences between application-stage performance and interview performance`;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
@@ -211,13 +442,13 @@ IMPORTANT: For the business_case_analysis section, you MUST analyze each busines
           type: 'function',
           function: {
             name: 'provide_comparison_result',
-            description: 'Provide structured comparison of candidates including business case analysis',
+            description: 'Provide structured comparison of candidates including business case and interview analysis',
             parameters: {
               type: 'object',
               properties: {
                 executive_summary: {
                   type: 'string',
-                  description: 'Brief 2-3 sentence summary of the comparison outcome'
+                  description: 'Brief 2-3 sentence summary of the comparison outcome, highlighting if interview performance changed the assessment'
                 },
                 rankings: {
                   type: 'array',
@@ -261,7 +492,7 @@ IMPORTANT: For the business_case_analysis section, you MUST analyze each busines
                     top_choice: { type: 'string', description: 'Name of recommended candidate' },
                     application_id: { type: 'string' },
                     confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-                    justification: { type: 'string', description: 'Detailed reason for recommendation' },
+                    justification: { type: 'string', description: 'Detailed reason for recommendation, including interview performance if applicable' },
                     alternative: { type: 'string', description: 'Second choice candidate name or null' },
                     alternative_justification: { type: 'string', description: 'Why this is a good alternative' }
                   },
@@ -301,14 +532,48 @@ IMPORTANT: For the business_case_analysis section, you MUST analyze each busines
                           required: ['application_id', 'candidate_name', 'response_summary', 'score', 'assessment']
                         }
                       },
-                      comparative_analysis: { type: 'string', description: 'AI analysis comparing all responses to this specific question, highlighting strengths and weaknesses' },
-                      best_response: { type: 'string', description: 'Name of candidate with the best response to this question' }
+                      comparative_analysis: { type: 'string', description: 'AI analysis comparing all responses to this specific question' },
+                      best_response: { type: 'string', description: 'Name of candidate with the best response' }
                     },
                     required: ['question_title', 'question_description', 'candidate_responses', 'comparative_analysis', 'best_response']
                   }
+                },
+                interview_performance_analysis: {
+                  type: 'array',
+                  description: 'Analysis of interview performance for candidates who have been interviewed',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      application_id: { type: 'string' },
+                      candidate_name: { type: 'string' },
+                      has_interview: { type: 'boolean', description: 'Whether this candidate has interview data' },
+                      interview_score: { type: 'number', description: 'Overall interview performance score 0-100' },
+                      application_vs_interview: { 
+                        type: 'string', 
+                        description: 'How interview performance compared to application materials (e.g., "Exceeded expectations", "Met expectations", "Below expectations")' 
+                      },
+                      key_observations: { 
+                        type: 'array', 
+                        items: { type: 'string' },
+                        description: 'Key observations from the interview'
+                      },
+                      score_trajectory: {
+                        type: 'object',
+                        properties: {
+                          initial_score: { type: 'number' },
+                          final_score: { type: 'number' },
+                          change: { type: 'number' },
+                          explanation: { type: 'string' }
+                        }
+                      },
+                      strengths_demonstrated: { type: 'array', items: { type: 'string' } },
+                      concerns_raised: { type: 'array', items: { type: 'string' } }
+                    },
+                    required: ['application_id', 'candidate_name', 'has_interview']
+                  }
                 }
               },
-              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks', 'business_case_analysis']
+              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks', 'business_case_analysis', 'interview_performance_analysis']
             }
           }
         }],
