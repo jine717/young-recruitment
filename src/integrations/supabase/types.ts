@@ -679,6 +679,10 @@ export type Database = {
           department_id: string | null
           description: string
           id: string
+          linkedin_post_content: string | null
+          linkedin_post_status: string
+          linkedin_posted_at: string | null
+          linkedin_posted_by: string | null
           location: string
           requirements: string[] | null
           responsibilities: string[] | null
@@ -696,6 +700,10 @@ export type Database = {
           department_id?: string | null
           description: string
           id?: string
+          linkedin_post_content?: string | null
+          linkedin_post_status?: string
+          linkedin_posted_at?: string | null
+          linkedin_posted_by?: string | null
           location: string
           requirements?: string[] | null
           responsibilities?: string[] | null
@@ -713,6 +721,10 @@ export type Database = {
           department_id?: string | null
           description?: string
           id?: string
+          linkedin_post_content?: string | null
+          linkedin_post_status?: string
+          linkedin_posted_at?: string | null
+          linkedin_posted_by?: string | null
           location?: string
           requirements?: string[] | null
           responsibilities?: string[] | null
