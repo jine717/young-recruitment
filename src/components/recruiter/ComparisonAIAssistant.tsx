@@ -341,7 +341,7 @@ export const ComparisonAIAssistant = ({ comparisonContext }: ComparisonAIAssista
         size="lg"
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-40 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 z-50 rounded-full shadow-lg",
           "bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-black))]",
           "transition-transform hover:scale-105",
           isOpen ? "hidden" : ""
