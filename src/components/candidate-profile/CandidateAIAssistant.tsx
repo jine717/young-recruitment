@@ -38,20 +38,55 @@ export const CandidateAIAssistant = ({ candidateContext }: CandidateAIAssistantP
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Generate candidate-specific suggested questions
+  // Generate candidate-specific suggested questions based on available data
   const suggestedQuestions = useMemo(() => {
     const name = candidateContext.name;
-    const questions = [
-      `What are ${name}'s key strengths for this role?`,
-      `How does ${name}'s experience align with the job requirements?`,
-      `What interview questions should I ask ${name}?`,
-      `Summarize ${name}'s profile and qualifications`,
-      `What concerns should I explore with ${name}?`,
-    ];
+    const questions: string[] = [];
     
-    // Add DISC-specific question if available
-    if (candidateContext.discProfile) {
-      questions.splice(3, 0, `How does ${name}'s ${candidateContext.discProfile} DISC profile affect team fit?`);
+    // Experience-based questions (if CV analysis available)
+    if (candidateContext.cvAnalysis) {
+      if (candidateContext.cvAnalysis.experienceYears) {
+        questions.push(`How many years of experience does ${name} have and in which areas?`);
+      }
+      if (candidateContext.cvAnalysis.keySkills?.length) {
+        questions.push(`What are ${name}'s key technical skills based on their CV?`);
+      }
+    } else {
+      questions.push(`What experience does ${name} have for this role?`);
+    }
+    
+    // DISC-based questions
+    if (candidateContext.discAnalysis?.profileType) {
+      questions.push(`Describe ${name}'s personality and work style based on their DISC profile`);
+      questions.push(`How should I communicate with ${name} based on their personality?`);
+    }
+    
+    // Business case questions
+    if (candidateContext.businessCaseResponses?.length) {
+      questions.push(`How did ${name} respond to the business case questions?`);
+    }
+    
+    // Interview-related questions
+    if (candidateContext.interviewQuestions?.length) {
+      questions.push(`What interview questions were generated for ${name}?`);
+    }
+    if (candidateContext.recruiterNotes?.length) {
+      questions.push(`What did recruiters note about ${name} during interviews?`);
+    }
+    if (candidateContext.interviewEvaluation) {
+      questions.push(`How did ${name} perform in their interview?`);
+    }
+    
+    // Default questions if not enough specific ones
+    if (questions.length < 3) {
+      questions.push(`What are ${name}'s key strengths for this role?`);
+      questions.push(`What concerns should I explore with ${name}?`);
+      questions.push(`Summarize ${name}'s profile and qualifications`);
+    }
+    
+    // Always include these useful questions
+    if (!questions.some(q => q.includes('interview questions'))) {
+      questions.push(`What interview questions should I prioritize for ${name}?`);
     }
     
     return questions.slice(0, 5);

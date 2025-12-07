@@ -11,18 +11,113 @@ export interface Message {
 }
 
 export interface CandidateContext {
+  // Basic info
   id: string;
   name: string;
   email?: string;
   jobTitle: string;
   jobId: string;
+  status: string;
+  appliedAt?: string;
+  
+  // AI Evaluation
   aiScore?: number | null;
   recommendation?: string | null;
-  status: string;
-  cvSummary?: string;
-  discProfile?: string;
   strengths?: string[];
   concerns?: string[];
+  evaluationSummary?: string;
+  skillsMatchScore?: number | null;
+  communicationScore?: number | null;
+  culturalFitScore?: number | null;
+  evaluationStage?: string;
+  initialScore?: number | null;
+  
+  // Full CV Analysis
+  cvAnalysis?: {
+    summary?: string;
+    experienceYears?: number;
+    keySkills?: string[];
+    education?: { degree: string; institution: string; year?: string }[];
+    workHistory?: { company: string; role: string; duration?: string }[];
+    strengths?: string[];
+    redFlags?: string[];
+    overallImpression?: string;
+  };
+  
+  // Full DISC Analysis
+  discAnalysis?: {
+    profileType?: string;
+    profileDescription?: string;
+    dominantTraits?: string[];
+    communicationStyle?: string;
+    workStyle?: string;
+    managementTips?: string;
+    potentialChallenges?: string[];
+    teamFitConsiderations?: string;
+  };
+  
+  // Business Case Responses
+  businessCaseResponses?: {
+    questionTitle: string;
+    questionDescription: string;
+    response: string;
+  }[];
+  
+  // Interview Questions (AI-generated)
+  interviewQuestions?: {
+    question: string;
+    category: string;
+    reasoning?: string;
+    recruiterNote?: string;
+  }[];
+  
+  // Fixed Interview Questions with Notes
+  fixedQuestionNotes?: {
+    question: string;
+    category: string;
+    note?: string;
+  }[];
+  
+  // Interview Evaluation
+  interviewEvaluation?: {
+    overallImpression?: string;
+    strengths?: string[];
+    areasForImprovement?: string[];
+    technicalScore?: number;
+    communicationScore?: number;
+    culturalFitScore?: number;
+    problemSolvingScore?: number;
+    recommendation?: string;
+  };
+  
+  // Interview Analysis (post-interview AI analysis)
+  interviewAnalysis?: {
+    summary?: string;
+    performanceAssessment?: string;
+    strengthsIdentified?: string[];
+    concernsIdentified?: string[];
+    scoreChangeExplanation?: string;
+  };
+  
+  // Recruiter Notes
+  recruiterNotes?: {
+    note: string;
+    createdAt: string;
+  }[];
+  
+  // Scheduled Interviews
+  scheduledInterviews?: {
+    date: string;
+    type: string;
+    status: string;
+  }[];
+  
+  // Hiring Decisions
+  hiringDecisions?: {
+    decision: string;
+    reasoning: string;
+    createdAt: string;
+  }[];
 }
 
 interface UseAIAssistantOptions {

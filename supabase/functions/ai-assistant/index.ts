@@ -23,19 +23,115 @@ interface Message {
   content: string;
 }
 
+// Comprehensive CandidateContext matching frontend interface
 interface CandidateContext {
+  // Basic info
   id: string;
   name: string;
   email?: string;
   jobTitle: string;
   jobId: string;
+  status: string;
+  appliedAt?: string;
+  
+  // AI Evaluation
   aiScore?: number | null;
   recommendation?: string | null;
-  status: string;
-  cvSummary?: string;
-  discProfile?: string;
   strengths?: string[];
   concerns?: string[];
+  evaluationSummary?: string;
+  skillsMatchScore?: number | null;
+  communicationScore?: number | null;
+  culturalFitScore?: number | null;
+  evaluationStage?: string;
+  initialScore?: number | null;
+  
+  // Full CV Analysis
+  cvAnalysis?: {
+    summary?: string;
+    experienceYears?: number;
+    keySkills?: string[];
+    education?: { degree: string; institution: string; year?: string }[];
+    workHistory?: { company: string; role: string; duration?: string }[];
+    strengths?: string[];
+    redFlags?: string[];
+    overallImpression?: string;
+  };
+  
+  // Full DISC Analysis
+  discAnalysis?: {
+    profileType?: string;
+    profileDescription?: string;
+    dominantTraits?: string[];
+    communicationStyle?: string;
+    workStyle?: string;
+    managementTips?: string;
+    potentialChallenges?: string[];
+    teamFitConsiderations?: string;
+  };
+  
+  // Business Case Responses
+  businessCaseResponses?: {
+    questionTitle: string;
+    questionDescription: string;
+    response: string;
+  }[];
+  
+  // Interview Questions (AI-generated)
+  interviewQuestions?: {
+    question: string;
+    category: string;
+    reasoning?: string;
+    recruiterNote?: string;
+  }[];
+  
+  // Fixed Interview Questions with Notes
+  fixedQuestionNotes?: {
+    question: string;
+    category: string;
+    note?: string;
+  }[];
+  
+  // Interview Evaluation
+  interviewEvaluation?: {
+    overallImpression?: string;
+    strengths?: string[];
+    areasForImprovement?: string[];
+    technicalScore?: number;
+    communicationScore?: number;
+    culturalFitScore?: number;
+    problemSolvingScore?: number;
+    recommendation?: string;
+  };
+  
+  // Interview Analysis
+  interviewAnalysis?: {
+    summary?: string;
+    performanceAssessment?: string;
+    strengthsIdentified?: string[];
+    concernsIdentified?: string[];
+    scoreChangeExplanation?: string;
+  };
+  
+  // Recruiter Notes
+  recruiterNotes?: {
+    note: string;
+    createdAt: string;
+  }[];
+  
+  // Scheduled Interviews
+  scheduledInterviews?: {
+    date: string;
+    type: string;
+    status: string;
+  }[];
+  
+  // Hiring Decisions
+  hiringDecisions?: {
+    decision: string;
+    reasoning: string;
+    createdAt: string;
+  }[];
 }
 
 interface AIAssistantRequest {
@@ -519,7 +615,7 @@ async function fetchRecentActivity(supabase: any) {
   };
 }
 
-// Build system prompt with context
+// Build system prompt with comprehensive candidate context
 function buildSystemPrompt(context: any, candidateContext?: CandidateContext) {
   const { overview, candidates, jobs, interviews, analytics, recentActivity } = context;
 
@@ -540,40 +636,211 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext) {
 - Format responses with clear sections when presenting multiple items
 `;
 
-  // Add candidate-specific context if provided
+  // Add comprehensive candidate-specific context if provided
   if (candidateContext) {
     prompt += `
-## CURRENT CANDIDATE FOCUS
-You are currently helping the recruiter evaluate a specific candidate. Focus your answers on this candidate unless asked about others.
+## CURRENT CANDIDATE FOCUS: ${candidateContext.name}
+You are helping the recruiter evaluate this specific candidate. Focus your answers on this candidate unless asked about others.
 
-**Candidate Profile:**
-- Name: ${candidateContext.name}
-- Email: ${candidateContext.email || 'Not provided'}
-- Applied For: ${candidateContext.jobTitle}
-- Current Status: ${candidateContext.status}
-- AI Score: ${candidateContext.aiScore || 'Not evaluated yet'}
-- AI Recommendation: ${candidateContext.recommendation || 'Pending'}
+### Basic Information
+- **Name:** ${candidateContext.name}
+- **Email:** ${candidateContext.email || 'Not provided'}
+- **Applied For:** ${candidateContext.jobTitle}
+- **Current Status:** ${candidateContext.status}
+- **Applied On:** ${candidateContext.appliedAt ? new Date(candidateContext.appliedAt).toLocaleDateString() : 'Unknown'}
 `;
 
-    if (candidateContext.cvSummary) {
-      prompt += `- CV Summary: ${candidateContext.cvSummary}\n`;
+    // AI Evaluation section
+    prompt += `
+### AI Evaluation
+- **Overall AI Score:** ${candidateContext.aiScore ?? 'Not evaluated yet'}
+- **Recommendation:** ${candidateContext.recommendation || 'Pending'}
+- **Evaluation Stage:** ${candidateContext.evaluationStage || 'Initial'}
+`;
+
+    if (candidateContext.initialScore && candidateContext.evaluationStage === 'post_interview') {
+      prompt += `- **Initial Score (Pre-Interview):** ${candidateContext.initialScore}
+- **Score Change:** ${(candidateContext.aiScore || 0) - candidateContext.initialScore} points
+`;
     }
-    if (candidateContext.discProfile) {
-      prompt += `- DISC Profile: ${candidateContext.discProfile}\n`;
+
+    if (candidateContext.skillsMatchScore || candidateContext.communicationScore || candidateContext.culturalFitScore) {
+      prompt += `- **Skills Match Score:** ${candidateContext.skillsMatchScore ?? 'N/A'}/100
+- **Communication Score:** ${candidateContext.communicationScore ?? 'N/A'}/100
+- **Cultural Fit Score:** ${candidateContext.culturalFitScore ?? 'N/A'}/100
+`;
     }
-    if (candidateContext.strengths && candidateContext.strengths.length > 0) {
-      prompt += `- Key Strengths: ${candidateContext.strengths.join(', ')}\n`;
+
+    if (candidateContext.strengths?.length) {
+      prompt += `- **Key Strengths:** ${candidateContext.strengths.join(', ')}
+`;
     }
-    if (candidateContext.concerns && candidateContext.concerns.length > 0) {
-      prompt += `- Areas of Concern: ${candidateContext.concerns.join(', ')}\n`;
+
+    if (candidateContext.concerns?.length) {
+      prompt += `- **Areas of Concern:** ${candidateContext.concerns.join(', ')}
+`;
+    }
+
+    if (candidateContext.evaluationSummary) {
+      prompt += `- **Evaluation Summary:** ${candidateContext.evaluationSummary}
+`;
+    }
+
+    // CV Analysis section
+    if (candidateContext.cvAnalysis) {
+      const cv = candidateContext.cvAnalysis;
+      prompt += `
+### CV/Resume Analysis
+`;
+      if (cv.summary) prompt += `- **Summary:** ${cv.summary}\n`;
+      if (cv.experienceYears) prompt += `- **Years of Experience:** ${cv.experienceYears}\n`;
+      if (cv.keySkills?.length) prompt += `- **Key Skills:** ${cv.keySkills.join(', ')}\n`;
+      
+      if (cv.education?.length) {
+        prompt += `- **Education:**\n`;
+        cv.education.forEach(edu => {
+          prompt += `  - ${edu.degree} from ${edu.institution}${edu.year ? ` (${edu.year})` : ''}\n`;
+        });
+      }
+      
+      if (cv.workHistory?.length) {
+        prompt += `- **Work History:**\n`;
+        cv.workHistory.forEach(work => {
+          prompt += `  - ${work.role} at ${work.company}${work.duration ? ` (${work.duration})` : ''}\n`;
+        });
+      }
+      
+      if (cv.strengths?.length) prompt += `- **CV Strengths:** ${cv.strengths.join(', ')}\n`;
+      if (cv.redFlags?.length) prompt += `- **Red Flags/Concerns:** ${cv.redFlags.join(', ')}\n`;
+      if (cv.overallImpression) prompt += `- **Overall Impression:** ${cv.overallImpression}\n`;
+    }
+
+    // DISC Analysis section
+    if (candidateContext.discAnalysis) {
+      const disc = candidateContext.discAnalysis;
+      prompt += `
+### DISC Personality Profile
+`;
+      if (disc.profileType) prompt += `- **Profile Type:** ${disc.profileType}\n`;
+      if (disc.profileDescription) prompt += `- **Description:** ${disc.profileDescription}\n`;
+      if (disc.dominantTraits?.length) prompt += `- **Dominant Traits:** ${disc.dominantTraits.join(', ')}\n`;
+      if (disc.communicationStyle) prompt += `- **Communication Style:** ${disc.communicationStyle}\n`;
+      if (disc.workStyle) prompt += `- **Work Style:** ${disc.workStyle}\n`;
+      if (disc.managementTips) prompt += `- **Management Tips:** ${disc.managementTips}\n`;
+      if (disc.potentialChallenges?.length) prompt += `- **Potential Challenges:** ${disc.potentialChallenges.join(', ')}\n`;
+      if (disc.teamFitConsiderations) prompt += `- **Team Fit Considerations:** ${disc.teamFitConsiderations}\n`;
+    }
+
+    // Business Case Responses section
+    if (candidateContext.businessCaseResponses?.length) {
+      prompt += `
+### Business Case Responses
+`;
+      candidateContext.businessCaseResponses.forEach((bc, idx) => {
+        prompt += `
+**Question ${idx + 1}: ${bc.questionTitle}**
+${bc.questionDescription}
+
+**Candidate's Response:**
+${bc.response}
+`;
+      });
+    }
+
+    // Interview Questions section
+    if (candidateContext.interviewQuestions?.length) {
+      prompt += `
+### AI-Generated Interview Questions
+`;
+      candidateContext.interviewQuestions.forEach((q, idx) => {
+        prompt += `${idx + 1}. **${q.question}** (${q.category})`;
+        if (q.reasoning) prompt += `\n   - Reasoning: ${q.reasoning}`;
+        if (q.recruiterNote) prompt += `\n   - Recruiter Note: ${q.recruiterNote}`;
+        prompt += '\n';
+      });
+    }
+
+    // Fixed Interview Questions with Notes
+    if (candidateContext.fixedQuestionNotes?.length) {
+      prompt += `
+### Fixed Interview Questions & Notes
+`;
+      candidateContext.fixedQuestionNotes.forEach((q, idx) => {
+        prompt += `${idx + 1}. **${q.question}** (${q.category})`;
+        if (q.note) prompt += `\n   - Recruiter Note: ${q.note}`;
+        prompt += '\n';
+      });
+    }
+
+    // Interview Evaluation section
+    if (candidateContext.interviewEvaluation) {
+      const eval_ = candidateContext.interviewEvaluation;
+      prompt += `
+### Interview Evaluation (Recruiter Assessment)
+`;
+      if (eval_.technicalScore) prompt += `- **Technical Score:** ${eval_.technicalScore}/10\n`;
+      if (eval_.communicationScore) prompt += `- **Communication Score:** ${eval_.communicationScore}/10\n`;
+      if (eval_.culturalFitScore) prompt += `- **Cultural Fit Score:** ${eval_.culturalFitScore}/10\n`;
+      if (eval_.problemSolvingScore) prompt += `- **Problem Solving Score:** ${eval_.problemSolvingScore}/10\n`;
+      if (eval_.recommendation) prompt += `- **Recruiter Recommendation:** ${eval_.recommendation}\n`;
+      if (eval_.overallImpression) prompt += `- **Overall Impression:** ${eval_.overallImpression}\n`;
+      if (eval_.strengths?.length) prompt += `- **Strengths Observed:** ${eval_.strengths.join(', ')}\n`;
+      if (eval_.areasForImprovement?.length) prompt += `- **Areas for Improvement:** ${eval_.areasForImprovement.join(', ')}\n`;
+    }
+
+    // Interview Analysis section
+    if (candidateContext.interviewAnalysis) {
+      const analysis = candidateContext.interviewAnalysis;
+      prompt += `
+### Post-Interview AI Analysis
+`;
+      if (analysis.summary) prompt += `- **Summary:** ${analysis.summary}\n`;
+      if (analysis.performanceAssessment) prompt += `- **Performance Assessment:** ${analysis.performanceAssessment}\n`;
+      if (analysis.strengthsIdentified?.length) prompt += `- **Strengths Identified:** ${analysis.strengthsIdentified.join(', ')}\n`;
+      if (analysis.concernsIdentified?.length) prompt += `- **Concerns Identified:** ${analysis.concernsIdentified.join(', ')}\n`;
+      if (analysis.scoreChangeExplanation) prompt += `- **Score Change Explanation:** ${analysis.scoreChangeExplanation}\n`;
+    }
+
+    // Recruiter Notes section
+    if (candidateContext.recruiterNotes?.length) {
+      prompt += `
+### Recruiter Notes (Chronological)
+`;
+      candidateContext.recruiterNotes.forEach(note => {
+        const date = new Date(note.createdAt).toLocaleDateString();
+        prompt += `- [${date}] ${note.note}\n`;
+      });
+    }
+
+    // Scheduled Interviews section
+    if (candidateContext.scheduledInterviews?.length) {
+      prompt += `
+### Scheduled Interviews
+`;
+      candidateContext.scheduledInterviews.forEach(interview => {
+        const date = new Date(interview.date).toLocaleString();
+        prompt += `- ${date} | ${interview.type} | Status: ${interview.status}\n`;
+      });
+    }
+
+    // Hiring Decisions section
+    if (candidateContext.hiringDecisions?.length) {
+      prompt += `
+### Hiring Decision History
+`;
+      candidateContext.hiringDecisions.forEach(decision => {
+        const date = new Date(decision.createdAt).toLocaleDateString();
+        prompt += `- [${date}] **${decision.decision}**: ${decision.reasoning}\n`;
+      });
     }
 
     prompt += `
-When answering questions:
-1. Prioritize information about ${candidateContext.name}
-2. Reference their specific scores, strengths, and concerns
-3. Provide actionable recommendations for interviewing or decision-making
-4. Compare to other candidates only when explicitly asked
+### Instructions for Answering
+1. Prioritize information about ${candidateContext.name} when answering
+2. Reference their specific scores, experience, skills, and personality traits
+3. Use data from CV analysis, DISC profile, and business case responses when relevant
+4. Provide actionable recommendations for interviewing or decision-making
+5. Compare to other candidates only when explicitly asked
 `;
   }
 
