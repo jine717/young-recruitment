@@ -23,9 +23,25 @@ interface Message {
   content: string;
 }
 
+interface CandidateContext {
+  id: string;
+  name: string;
+  email?: string;
+  jobTitle: string;
+  jobId: string;
+  aiScore?: number | null;
+  recommendation?: string | null;
+  status: string;
+  cvSummary?: string;
+  discProfile?: string;
+  strengths?: string[];
+  concerns?: string[];
+}
+
 interface AIAssistantRequest {
   question: string;
   conversationHistory?: Message[];
+  candidateContext?: CandidateContext;
 }
 
 // Detect intent from user question
@@ -93,7 +109,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question, conversationHistory = [] } = await req.json() as AIAssistantRequest;
+    const { question, conversationHistory = [], candidateContext } = await req.json() as AIAssistantRequest;
 
     if (!question || typeof question !== 'string') {
       return new Response(
@@ -104,6 +120,7 @@ serve(async (req) => {
 
     console.log('[AI Assistant] Processing question:', question);
     console.log('[AI Assistant] Conversation history length:', conversationHistory.length);
+    console.log('[AI Assistant] Candidate context:', candidateContext?.name || 'None');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -118,8 +135,8 @@ serve(async (req) => {
     const context = await fetchContextData(supabase, intents);
     console.log('[AI Assistant] Context fetched successfully');
 
-    // Build system prompt with context
-    const systemPrompt = buildSystemPrompt(context);
+    // Build system prompt with context (and candidate context if provided)
+    const systemPrompt = buildSystemPrompt(context, candidateContext);
 
     // Build messages array
     const messages = [
@@ -503,7 +520,7 @@ async function fetchRecentActivity(supabase: any) {
 }
 
 // Build system prompt with context
-function buildSystemPrompt(context: any) {
+function buildSystemPrompt(context: any, candidateContext?: CandidateContext) {
   const { overview, candidates, jobs, interviews, analytics, recentActivity } = context;
 
   let prompt = `You are an AI assistant for the Young recruitment platform. You help recruiters make data-driven decisions by answering questions about candidates, job openings, and recruitment analytics.
@@ -521,7 +538,46 @@ function buildSystemPrompt(context: any) {
 - Always cite specific data points when making recommendations
 - If you don't have enough information, say so clearly
 - Format responses with clear sections when presenting multiple items
+`;
 
+  // Add candidate-specific context if provided
+  if (candidateContext) {
+    prompt += `
+## CURRENT CANDIDATE FOCUS
+You are currently helping the recruiter evaluate a specific candidate. Focus your answers on this candidate unless asked about others.
+
+**Candidate Profile:**
+- Name: ${candidateContext.name}
+- Email: ${candidateContext.email || 'Not provided'}
+- Applied For: ${candidateContext.jobTitle}
+- Current Status: ${candidateContext.status}
+- AI Score: ${candidateContext.aiScore || 'Not evaluated yet'}
+- AI Recommendation: ${candidateContext.recommendation || 'Pending'}
+`;
+
+    if (candidateContext.cvSummary) {
+      prompt += `- CV Summary: ${candidateContext.cvSummary}\n`;
+    }
+    if (candidateContext.discProfile) {
+      prompt += `- DISC Profile: ${candidateContext.discProfile}\n`;
+    }
+    if (candidateContext.strengths && candidateContext.strengths.length > 0) {
+      prompt += `- Key Strengths: ${candidateContext.strengths.join(', ')}\n`;
+    }
+    if (candidateContext.concerns && candidateContext.concerns.length > 0) {
+      prompt += `- Areas of Concern: ${candidateContext.concerns.join(', ')}\n`;
+    }
+
+    prompt += `
+When answering questions:
+1. Prioritize information about ${candidateContext.name}
+2. Reference their specific scores, strengths, and concerns
+3. Provide actionable recommendations for interviewing or decision-making
+4. Compare to other candidates only when explicitly asked
+`;
+  }
+
+  prompt += `
 ## Current Recruitment Overview
 `;
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,16 +8,19 @@ import { useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/useApp
 import { useAIEvaluation, useTriggerAIAnalysis } from '@/hooks/useAIEvaluations';
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
 import { useInterviews } from '@/hooks/useInterviews';
+import { useDocumentAnalyses } from '@/hooks/useDocumentAnalysis';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { DocumentsTab } from '@/components/candidate-profile/DocumentsTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
+import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAIAssistant';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Briefcase, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { CandidateContext } from '@/hooks/useAIAssistant';
 
 interface ApplicationDetail {
   id: string;
@@ -93,10 +96,34 @@ export default function CandidateProfile() {
 
   const { data: aiEvaluation, isLoading: aiLoading } = useAIEvaluation(applicationId);
   const { data: interviews = [], isLoading: interviewsLoading } = useInterviews(applicationId);
+  const { data: documentAnalyses } = useDocumentAnalyses(applicationId);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Build candidate context for AI Assistant
+  const candidateContext: CandidateContext | null = useMemo(() => {
+    if (!application) return null;
+    
+    const cvAnalysis = documentAnalyses?.find(d => d.document_type === 'cv');
+    const discAnalysis = documentAnalyses?.find(d => d.document_type === 'disc');
+    
+    return {
+      id: application.id,
+      name: application.candidate_name || application.profile.full_name || 'Unknown',
+      email: application.candidate_email || application.profile.email || undefined,
+      jobTitle: application.job.title,
+      jobId: application.job_id,
+      aiScore: aiEvaluation?.overall_score ?? null,
+      recommendation: aiEvaluation?.recommendation ?? null,
+      status: application.status,
+      cvSummary: cvAnalysis?.summary || undefined,
+      discProfile: (discAnalysis?.analysis as any)?.profile_type || undefined,
+      strengths: aiEvaluation?.strengths || undefined,
+      concerns: aiEvaluation?.concerns || undefined,
+    };
+  }, [application, aiEvaluation, documentAnalyses]);
 
   if (authLoading || isLoading) {
     return (
@@ -287,6 +314,9 @@ export default function CandidateProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Context-Aware AI Assistant */}
+      {candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
     </div>
   );
 }

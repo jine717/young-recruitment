@@ -2,12 +2,11 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Trash2, RefreshCw } from 'lucide-react';
+import { Sparkles, Send, Trash2, RefreshCw, Star, StarOff } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { useAIAssistantInsights } from '@/hooks/useAIAssistantInsights';
 import { useApplications } from '@/hooks/useApplications';
 import { AIAssistantChat } from './AIAssistantChat';
-
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,7 +18,16 @@ export const AIAssistant = () => {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   
-  const { messages, isLoading, error, sendMessage, clearConversation } = useAIAssistant();
+  const { 
+    messages, 
+    isLoading, 
+    error, 
+    sendMessage, 
+    clearConversation,
+    pinnedQuestions,
+    pinQuestion,
+    unpinQuestion,
+  } = useAIAssistant();
   const { data: insights } = useAIAssistantInsights();
   const { data: applications } = useApplications();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -46,6 +54,12 @@ export const AIAssistant = () => {
     "Compare interview conversion rates across jobs",
     "Who has strong leadership experience?",
   ];
+
+  // Combine pinned and suggested (non-duplicate)
+  const allQuestions = useMemo(() => {
+    const suggested = suggestedQuestions.filter(q => !pinnedQuestions.includes(q));
+    return { pinned: pinnedQuestions, suggested };
+  }, [pinnedQuestions, suggestedQuestions]);
 
   // Focus textarea when sheet opens
   useEffect(() => {
@@ -105,10 +119,13 @@ export const AIAssistant = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const totalQuestions = allQuestions.pinned.length + allQuestions.suggested.length;
+    
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (messages.length === 0 && selectedSuggestionIndex >= 0) {
-        handleSubmit(suggestedQuestions[selectedSuggestionIndex]);
+        const allQ = [...allQuestions.pinned, ...allQuestions.suggested];
+        handleSubmit(allQ[selectedSuggestionIndex]);
       } else {
         handleSubmit();
       }
@@ -119,12 +136,12 @@ export const AIAssistant = () => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedSuggestionIndex(prev => 
-          prev < suggestedQuestions.length - 1 ? prev + 1 : 0
+          prev < totalQuestions - 1 ? prev + 1 : 0
         );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedSuggestionIndex(prev => 
-          prev > 0 ? prev - 1 : suggestedQuestions.length - 1
+          prev > 0 ? prev - 1 : totalQuestions - 1
         );
       }
     }
@@ -134,8 +151,22 @@ export const AIAssistant = () => {
     handleSubmit(question);
   };
 
+  const togglePin = (question: string, isPinned: boolean) => {
+    if (isPinned) {
+      unpinQuestion(question);
+    } else {
+      pinQuestion(question);
+    }
+  };
+
   const hasError = error && messages.length > 0 && 
     messages[messages.length - 1]?.content?.includes('Sorry, I encountered an error');
+
+  // Get last message's follow-up suggestions
+  const lastMessage = messages[messages.length - 1];
+  const followUpSuggestions = lastMessage?.role === 'assistant' && !lastMessage.isStreaming
+    ? lastMessage.followUpSuggestions || []
+    : [];
 
   return (
     <>
@@ -209,26 +240,59 @@ export const AIAssistant = () => {
                   </p>
                 </div>
 
+                {/* Pinned Questions */}
+                {allQuestions.pinned.length > 0 && (
+                  <div className="w-full space-y-2 mb-4">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                      <Star className="w-3 h-3 text-[hsl(var(--young-gold))]" />
+                      Pinned questions
+                    </p>
+                    {allQuestions.pinned.map((question, index) => (
+                      <div key={`pinned-${index}`} className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleSuggestedQuestion(question)}
+                          className={cn(
+                            "flex-1 text-left px-3 py-2.5 rounded-lg text-sm transition-colors border",
+                            selectedSuggestionIndex === index
+                              ? "bg-[hsl(var(--young-gold))]/20 border-[hsl(var(--young-gold))]"
+                              : "bg-[hsl(var(--young-gold))]/10 hover:bg-[hsl(var(--young-gold))]/20 border-transparent"
+                          )}
+                        >
+                          {question}
+                        </button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => togglePin(question, true)}>
+                          <StarOff className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Dynamic Suggested Questions */}
                 <div className="w-full space-y-2">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Suggested questions</p>
-                  {suggestedQuestions.map((question, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestedQuestion(question)}
-                      className={cn(
-                        "w-full text-left px-3 py-2.5 rounded-lg text-sm",
-                        "transition-colors",
-                        "border",
-                        selectedSuggestionIndex === index
-                          ? "bg-primary/10 border-primary"
-                          : "bg-muted/50 hover:bg-muted border-transparent hover:border-border",
-                        isMobile && "py-3"
-                      )}
-                    >
-                      {question}
-                    </button>
-                  ))}
+                  {allQuestions.suggested.map((question, index) => {
+                    const actualIndex = allQuestions.pinned.length + index;
+                    return (
+                      <div key={index} className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleSuggestedQuestion(question)}
+                          className={cn(
+                            "flex-1 text-left px-3 py-2.5 rounded-lg text-sm transition-colors border",
+                            selectedSuggestionIndex === actualIndex
+                              ? "bg-primary/10 border-primary"
+                              : "bg-muted/50 hover:bg-muted border-transparent hover:border-border",
+                            isMobile && "py-3"
+                          )}
+                        >
+                          {question}
+                        </button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => togglePin(question, false)}>
+                          <Star className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Top Candidates Quick Access */}
@@ -262,11 +326,31 @@ export const AIAssistant = () => {
                 )}
               </div>
             ) : (
-              <AIAssistantChat 
-                messages={messages} 
-                isLoading={isLoading} 
-                candidateMap={candidateMap}
-              />
+              <>
+                <AIAssistantChat 
+                  messages={messages} 
+                  isLoading={isLoading} 
+                  candidateMap={candidateMap}
+                />
+                
+                {/* Follow-up Suggestions */}
+                {followUpSuggestions.length > 0 && !isLoading && (
+                  <div className="px-4 py-2 border-t bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-2">Follow-up questions</p>
+                    <div className="flex flex-wrap gap-2">
+                      {followUpSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestedQuestion(suggestion)}
+                          className="text-xs px-3 py-1.5 rounded-full bg-background border hover:bg-muted transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
