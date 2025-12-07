@@ -22,6 +22,7 @@ import { useSendNotification, NotificationType } from "@/hooks/useNotifications"
 import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
+import { AIAssistant } from "@/components/recruiter/AIAssistant";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-primary/20 text-primary-foreground",
@@ -859,6 +860,9 @@ const RecruiterDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Assistant */}
+      <AIAssistant />
     </div>;
 };
 export default RecruiterDashboard;
