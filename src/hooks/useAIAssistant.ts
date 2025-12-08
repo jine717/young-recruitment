@@ -445,8 +445,8 @@ function generateFollowUpSuggestions(
     if (!hasTitle) {
       // Check if AI just suggested a title
       if (responseLower.includes('[insertable:title]') || responseLower.includes('title')) {
-        suggestions.push('Click "Insert Title" above to add it');
-        suggestions.push('Suggest a different title');
+        suggestions.push('I inserted the title. What\'s next?');
+        suggestions.push('Suggest a different title style');
       } else {
         suggestions.push('Suggest a job title');
       }
@@ -456,7 +456,7 @@ function generateFollowUpSuggestions(
     if (!hasDescription) {
       // Check if AI just suggested a description
       if (responseLower.includes('[insertable:description]') || responseLower.includes('description')) {
-        suggestions.push('Click "Insert Description" above to add it');
+        suggestions.push('I inserted the description. What\'s next?');
         suggestions.push('Make this description more engaging');
       } else {
         suggestions.push('Write a job description');

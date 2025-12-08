@@ -13,13 +13,22 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Workflow Progress Tracker Component
 const WorkflowProgressTracker = ({ jobEditorContext }: { jobEditorContext: JobEditorContext }) => {
   const hasTitle = !!jobEditorContext.title?.trim();
+  const hasLocation = !!jobEditorContext.location?.trim();
   const hasDescription = !!jobEditorContext.description?.trim();
   const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
   const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
   const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
   
+  // Truncate title for display (max 30 chars)
+  const truncatedTitle = jobEditorContext.title 
+    ? jobEditorContext.title.length > 30 
+      ? `"${jobEditorContext.title.substring(0, 30)}..."` 
+      : `"${jobEditorContext.title}"`
+    : null;
+  
   const steps = [
-    { label: 'Title', done: hasTitle, value: hasTitle ? `"${jobEditorContext.title}"` : null },
+    { label: 'Title', done: hasTitle, value: truncatedTitle },
+    { label: 'Location', done: hasLocation, value: hasLocation ? jobEditorContext.location : null },
     { label: 'Description', done: hasDescription, value: hasDescription ? '✓' : null },
     { label: 'Responsibilities', done: responsibilitiesCount >= 3, value: `${responsibilitiesCount}/5` },
     { label: 'Requirements', done: requirementsCount >= 3, value: `${requirementsCount}/3` },
@@ -43,16 +52,16 @@ const WorkflowProgressTracker = ({ jobEditorContext }: { jobEditorContext: JobEd
               <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             )}
             <span className={cn(
-              "truncate",
+              "truncate flex-1",
               step.done ? "text-foreground" : "text-muted-foreground"
             )}>
               {step.label}
-              {step.value && (
-                <span className="text-xs ml-1 text-muted-foreground">
-                  {step.value.length > 20 ? step.value.substring(0, 20) + '...' : step.value}
-                </span>
-              )}
             </span>
+            {step.value && (
+              <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                {step.value}
+              </span>
+            )}
           </div>
         ))}
       </div>
