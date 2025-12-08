@@ -2,13 +2,21 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Users, TrendingUp, Clock, Brain, Timer, CalendarCheck, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRecruiterAnalytics } from '@/hooks/useRecruiterAnalytics';
+import { useRecruiterAnalytics, TimeDuration } from '@/hooks/useRecruiterAnalytics';
 import { StatsCard } from '@/components/analytics/StatsCard';
 import { ConversionFunnelChart } from '@/components/analytics/ConversionFunnelChart';
 import { ApplicationsTrendChart } from '@/components/analytics/ApplicationsTrendChart';
 import { AIScoreDistributionChart } from '@/components/analytics/AIScoreDistributionChart';
 import { JobPerformanceTable } from '@/components/analytics/JobPerformanceTable';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
+
+// Format duration as hours and minutes
+const formatDuration = (time: TimeDuration): string => {
+  if (time.hours === 0 && time.minutes === 0) return '0m';
+  if (time.hours === 0) return `${time.minutes}m`;
+  if (time.minutes === 0) return `${time.hours}h`;
+  return `${time.hours}h ${time.minutes}m`;
+};
 
 export default function RecruiterAnalytics() {
   const { hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
@@ -75,7 +83,7 @@ export default function RecruiterAnalytics() {
           />
           <StatsCard
             title="Avg. Time to Decision"
-            value={`${analytics.avgTimeToDecision} days`}
+            value={formatDuration(analytics.avgTimeToDecision)}
             icon={Clock}
             subtitle="Application to final decision"
           />
@@ -114,7 +122,7 @@ export default function RecruiterAnalytics() {
                       <p className="text-sm text-muted-foreground">From application to first review</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold">{analytics.timeMetrics.avgToReview} days</span>
+                  <span className="text-2xl font-bold">{formatDuration(analytics.timeMetrics.avgToReview)}</span>
                 </div>
                 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
@@ -127,7 +135,7 @@ export default function RecruiterAnalytics() {
                       <p className="text-sm text-muted-foreground">From application to interview scheduled</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold">{analytics.timeMetrics.avgToInterview} days</span>
+                  <span className="text-2xl font-bold">{formatDuration(analytics.timeMetrics.avgToInterview)}</span>
                 </div>
                 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
@@ -140,7 +148,7 @@ export default function RecruiterAnalytics() {
                       <p className="text-sm text-muted-foreground">From application to final decision</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold">{analytics.timeMetrics.avgToDecision} days</span>
+                  <span className="text-2xl font-bold">{formatDuration(analytics.timeMetrics.avgToDecision)}</span>
                 </div>
               </div>
             </CardContent>
