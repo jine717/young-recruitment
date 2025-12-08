@@ -28,6 +28,17 @@ interface InsertableBlock {
 const cleanAIResponse = (text: string): string => {
   let cleaned = text;
   
+  // Remove any internal status lines that leaked through
+  cleaned = cleaned.replace(/^.*(_TITLE|_DESC|_RESP|_REQS|_BENS|_BC|_IQ|TITLE_STATUS|DESCRIPTION_STATUS|RESPONSIBILITIES_COUNT|REQUIREMENTS_COUNT|BENEFITS_COUNT|BUSINESS_CASE_COUNT|INTERVIEW_QUESTIONS_COUNT).*$/gm, '');
+  cleaned = cleaned.replace(/<!-- SYSTEM_INTERNAL_STATE[\s\S]*?END SYSTEM_INTERNAL_STATE -->/g, '');
+  cleaned = cleaned.replace(/^.*[❌⏳✅].*(?:NOT_SET|SET|Needs more|NOT SET|minimum).*$/gm, '');
+  
+  // Fix "Lettitle]" or "Letdescription]" malformations
+  cleaned = cleaned.replace(/Let(title|location|description|responsibilities|requirements|benefits)\]/gi, '[INSERTABLE:$1]');
+  
+  // Fix missing opening bracket entirely: "INSERTABLE:title]" -> "[INSERTABLE:title]"
+  cleaned = cleaned.replace(/(?:^|\s)(INSERTABLE:(title|location|description|responsibilities|requirements|benefits))/gi, ' [INSERTABLE:$2');
+  
   // Fix common AI mistakes:
   // 1. "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
   cleaned = cleaned.replace(/\[\s+INSERTABLE:/gi, '[INSERTABLE:');
@@ -41,7 +52,10 @@ const cleanAIResponse = (text: string): string => {
   // 4. "[ /INSERTABLE]" -> "[/INSERTABLE]"
   cleaned = cleaned.replace(/\[\s*\/\s*INSERTABLE\s*\]/gi, '[/INSERTABLE]');
   
-  return cleaned;
+  // Clean up empty lines left by removed content
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  
+  return cleaned.trim();
 };
 
 const parseInsertableBlocks = (text: string): { cleanText: string; blocks: InsertableBlock[] } => {
