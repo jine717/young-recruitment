@@ -77,17 +77,17 @@ export function BulkActionsToolbar({
 
   return (
     <>
-      <div className="flex items-center gap-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+      <div className="flex items-center gap-4 p-4 bg-[hsl(var(--young-blue))]/10 border border-[hsl(var(--young-blue))]/20 rounded-xl shadow-young-sm animate-fade-in">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-semibold text-[hsl(var(--young-blue))]">
             {selectedCount} selected
           </span>
-          <Button variant="ghost" size="sm" onClick={onClearSelection}>
+          <Button variant="ghost" size="sm" onClick={onClearSelection} className="hover:bg-[hsl(var(--young-blue))]/10">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="h-6 w-px bg-border" />
+        <div className="h-6 w-px bg-[hsl(var(--young-blue))]/20" />
 
         <div className="flex items-center gap-2">
           <Select
@@ -97,9 +97,9 @@ export function BulkActionsToolbar({
               setStatusDialogOpen(true);
             }}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[160px] border-[hsl(var(--young-blue))]/30 bg-background hover:bg-muted/50">
               <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4 text-[hsl(var(--young-blue))]" />
                 <SelectValue placeholder="Change Status" />
               </div>
             </SelectTrigger>
@@ -119,9 +119,9 @@ export function BulkActionsToolbar({
               setNotificationDialogOpen(true);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] border-[hsl(var(--young-blue))]/30 bg-background hover:bg-muted/50">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
+                <Mail className="h-4 w-4 text-[hsl(var(--young-gold))]" />
                 <SelectValue placeholder="Send Notification" />
               </div>
             </SelectTrigger>
@@ -134,14 +134,14 @@ export function BulkActionsToolbar({
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="sm" onClick={onExport}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={onExport} className="border-[hsl(var(--young-khaki))]/30 hover:bg-[hsl(var(--young-khaki))]/10">
+            <Download className="h-4 w-4 mr-2 text-[hsl(var(--young-khaki))]" />
             Export
           </Button>
         </div>
 
         {isUpdating && (
-          <Loader2 className="h-4 w-4 animate-spin ml-auto" />
+          <Loader2 className="h-4 w-4 animate-spin ml-auto text-[hsl(var(--young-blue))]" />
         )}
       </div>
 
@@ -160,7 +160,7 @@ export function BulkActionsToolbar({
             <AlertDialogCancel onClick={() => setSelectedStatus('')}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleStatusConfirm} disabled={isUpdating}>
+            <AlertDialogAction onClick={handleStatusConfirm} disabled={isUpdating} className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90">
               {isUpdating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -189,7 +189,7 @@ export function BulkActionsToolbar({
             <AlertDialogCancel onClick={() => setSelectedNotificationType('')}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleNotificationConfirm} disabled={isUpdating}>
+            <AlertDialogAction onClick={handleNotificationConfirm} disabled={isUpdating} className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-[hsl(var(--young-black))]">
               {isUpdating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

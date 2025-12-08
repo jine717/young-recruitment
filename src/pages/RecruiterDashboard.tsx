@@ -325,29 +325,33 @@ const RecruiterDashboard = () => {
   return <div className="min-h-screen bg-background">
       <DashboardNavbar user={user} isAdmin={isAdmin} />
 
-      {/* Header */}
-      <section className="pt-32 pb-8 px-6">
-        <div className="container mx-auto max-w-7xl">
-          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-8">
+      {/* Header with gradient */}
+      <section className="pt-32 pb-8 px-6 bg-gradient-young-hero relative overflow-hidden">
+        {/* Decorative blur orbs */}
+        <div className="absolute top-20 right-10 w-64 h-64 bg-[hsl(var(--young-blue))]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-10 w-48 h-48 bg-[hsl(var(--young-gold))]/5 rounded-full blur-3xl" />
+        
+        <div className="container mx-auto max-w-7xl relative">
+          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-8 animate-fade-in">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
           <div className="flex items-center justify-between gap-4">
-            <h1 className="font-display text-5xl md:text-6xl">RECRUITER DASHBOARD</h1>
-            <div className="flex items-center gap-2">
-              <Button asChild>
+            <h1 className="font-display text-5xl md:text-6xl animate-fade-in">RECRUITER DASHBOARD</h1>
+            <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Button asChild variant="young-primary">
                 <Link to="/dashboard/evaluate">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Candidates Evaluation
                 </Link>
               </Button>
-              <Button asChild>
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/analytics">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
                 </Link>
               </Button>
-              <Button asChild>
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/jobs">
                   <Plus className="h-4 w-4 mr-2" />
                   Manage Jobs
@@ -358,14 +362,16 @@ const RecruiterDashboard = () => {
         </div>
       </section>
 
-      {/* Stats Cards */}
-      <section className="pb-8 px-6">
+      {/* Stats Cards with brand variants */}
+      <section className="pb-8 px-6 -mt-4">
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-blue))]/15">
+                    <Users className="h-4 w-4 text-[hsl(var(--young-blue))]" />
+                  </div>
                   Total Applications
                 </CardTitle>
               </CardHeader>
@@ -373,10 +379,12 @@ const RecruiterDashboard = () => {
                 <p className="text-3xl font-display">{stats.total}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.05s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-gold))]/15">
+                    <Clock className="h-4 w-4 text-[hsl(var(--young-gold))]" />
+                  </div>
                   Pending Review
                 </CardTitle>
               </CardHeader>
@@ -384,10 +392,12 @@ const RecruiterDashboard = () => {
                 <p className="text-3xl font-display">{stats.pending}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-khaki))]/15">
+                    <Briefcase className="h-4 w-4 text-[hsl(var(--young-khaki))]" />
+                  </div>
                   Under Review
                 </CardTitle>
               </CardHeader>
@@ -395,10 +405,12 @@ const RecruiterDashboard = () => {
                 <p className="text-3xl font-display">{stats.underReview}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.15s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-green-500/15">
+                    <Sparkles className="h-4 w-4 text-green-600" />
+                  </div>
                   AI Analyzed
                 </CardTitle>
               </CardHeader>
@@ -428,14 +440,32 @@ const RecruiterDashboard = () => {
                   />
                 </div>
               )}
-              {isLoading ? <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div> : error ? <div className="text-center py-20">
-                  <p className="text-destructive mb-4">Failed to load applications</p>
-                  <Button variant="outline" onClick={() => window.location.reload()}>
+              {isLoading ? (
+                <div className="py-8 space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 animate-fade-in" style={{ animationDelay: `${i * 0.05}s` }}>
+                      <div className="shimmer w-8 h-8 rounded-full" />
+                      <div className="shimmer w-10 h-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <div className="shimmer h-4 w-1/3 rounded" />
+                        <div className="shimmer h-3 w-1/4 rounded" />
+                      </div>
+                      <div className="shimmer h-6 w-20 rounded-full" />
+                      <div className="shimmer h-4 w-24 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-center py-20">
+                  <div className="p-4 rounded-full bg-destructive/10 w-fit mx-auto mb-4">
+                    <X className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="text-destructive mb-4 font-medium">Failed to load applications</p>
+                  <Button variant="outline" onClick={() => window.location.reload()} className="hover-lift">
                     Retry
                   </Button>
-                </div> : paginatedApplications && paginatedApplications.length > 0 ? <>
+                </div>
+              ) : paginatedApplications && paginatedApplications.length > 0 ? <>
                   <Table>
                     <TableHeader>
                       <TableRow>
