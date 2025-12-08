@@ -153,7 +153,7 @@ export default function Apply() {
           candidate_email: candidateEmail,
           cv_url: cvPath,
           disc_url: discPath,
-          status: 'under_review',
+          status: 'pending',
           business_case_completed: true,
           business_case_completed_at: new Date().toISOString(),
         });
