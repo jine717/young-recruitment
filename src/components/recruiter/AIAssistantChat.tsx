@@ -392,20 +392,58 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
                         {cleanText}
                       </ReactMarkdown>
                       
-                      {/* Insert buttons for job editor context */}
+                      {/* Insertable content cards */}
                       {blocks.length > 0 && jobEditorContext && !message.isStreaming && (
-                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+                        <div className="space-y-3 mt-4 pt-3 border-t border-border/50">
                           {blocks.map((block, idx) => (
-                            <Button
+                            <div 
                               key={idx}
-                              size="sm"
-                              variant="outline"
-                              className="gap-1.5 text-xs"
-                              onClick={() => handleInsert(block)}
+                              className="rounded-lg border border-primary/30 bg-primary/5 p-3"
                             >
-                              <Plus className="w-3.5 h-3.5" />
-                              Insert {fieldLabels[block.field]}
-                            </Button>
+                              {/* Header */}
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                                  {fieldLabels[block.field]}
+                                </span>
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="text-sm text-foreground mb-3">
+                                {block.structuredData && Array.isArray(block.structuredData) ? (
+                                  <div className="space-y-2">
+                                    {block.structuredData.map((item: any, i: number) => (
+                                      <div key={i} className="p-2 bg-muted/50 rounded text-sm">
+                                        <strong className="block">{item.title || item.question_title || item.text || `Question ${i + 1}`}</strong>
+                                        {(item.description || item.question_description) && (
+                                          <p className="text-muted-foreground text-xs mt-1">
+                                            {item.description || item.question_description}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : block.items && block.items.length > 0 ? (
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    {block.items.map((item, i) => (
+                                      <li key={i}>{item}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="whitespace-pre-wrap">{block.content}</p>
+                                )}
+                              </div>
+                              
+                              {/* Insert button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 text-xs"
+                                onClick={() => handleInsert(block)}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                Insert {fieldLabels[block.field]}
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       )}
