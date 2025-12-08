@@ -24,18 +24,39 @@ interface InsertableBlock {
   structuredData?: any;
 }
 
-// Validate and clean business case questions structure
+// Validate and clean business case questions structure - filters out empty/missing descriptions
 const validateBusinessCaseQuestions = (data: any): { title: string; description: string }[] => {
   if (!Array.isArray(data)) return [];
-  return data.filter(q => q && q.title && q.description).map(q => ({
-    title: String(q.title).trim(),
-    description: String(q.description).trim()
-  }));
+  const validated = data
+    .filter(q => q && q.title && q.description && String(q.description).trim().length > 0)
+    .map(q => ({
+      title: String(q.title).trim(),
+      description: String(q.description).trim()
+    }));
+  
+  if (validated.length < data.length) {
+    console.warn(`[AIAssistantChat] Filtered out ${data.length - validated.length} questions with missing/empty descriptions`);
+  }
+  return validated;
 };
 
 // Attempt to recover malformed JSON
 const attemptJsonRecovery = (content: string, field: string): any | null => {
   let cleaned = content.trim();
+  
+  // Fix objects with title but no description: {"title": "Something..."} -> add empty description
+  // This pattern finds objects that have title but appear to end without description
+  cleaned = cleaned.replace(
+    /\{\s*"title"\s*:\s*"([^"]+)"\s*\}/g,
+    '{"title": "$1", "description": ""}'
+  );
+  
+  // Fix truncated objects like: {"title": "Text", "description": "Incomplete...
+  // If we see a title and partial description, try to close it
+  cleaned = cleaned.replace(
+    /\{\s*"title"\s*:\s*"([^"]+)"\s*,\s*"description"\s*:\s*"([^"]*)$/g,
+    '{"title": "$1", "description": "$2"}'
+  );
   
   // Count brackets to find imbalance
   const openBrackets = (cleaned.match(/\[/g) || []).length;
@@ -252,28 +273,63 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
   
   // FALLBACK: Detect raw JSON array that looks like business case questions without wrapper
   if (blocks.length === 0 || !blocks.some(b => b.field === 'businessCaseQuestions')) {
-    // Pattern: JSON array at start of line with title/description structure
-    const rawJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"[\s\S]*?"description"[\s\S]*?\}\s*\]/m;
-    const jsonMatch = cleanText.match(rawJsonPattern);
+    // LENIENT pattern: Just needs title in any object - we validate description later
+    const rawJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"\s*:\s*"[^"]+[\s\S]*?\]\s*$/m;
+    let jsonMatch = cleanText.match(rawJsonPattern);
+    
+    // FALLBACK 2: If no complete array found, look for incomplete JSON starting with [{
+    if (!jsonMatch) {
+      const incompleteJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"\s*:\s*"/m;
+      const incompleteMatch = cleanText.match(incompleteJsonPattern);
+      
+      if (incompleteMatch) {
+        // Extract from [ to the end of meaningful content
+        const startIdx = cleanText.indexOf('[');
+        if (startIdx !== -1) {
+          // Find the last } or ] to determine where JSON likely ends
+          let endIdx = cleanText.length;
+          const lastBrace = cleanText.lastIndexOf('}');
+          const lastBracket = cleanText.lastIndexOf(']');
+          if (lastBrace > startIdx || lastBracket > startIdx) {
+            endIdx = Math.max(lastBrace, lastBracket) + 1;
+          }
+          const potentialJson = cleanText.substring(startIdx, endIdx);
+          
+          // Try recovery on this incomplete JSON
+          const recoveredJson = attemptJsonRecovery(potentialJson, 'businessCaseQuestions');
+          if (recoveredJson && Array.isArray(recoveredJson) && recoveredJson.length > 0) {
+            console.log('[AIAssistantChat] Recovered incomplete JSON as businessCaseQuestions');
+            blocks.push({ 
+              field: 'businessCaseQuestions', 
+              content: JSON.stringify(recoveredJson),
+              structuredData: recoveredJson 
+            });
+            cleanText = cleanText.substring(0, startIdx) + cleanText.substring(endIdx);
+          }
+        }
+      }
+    }
     
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.title && parsed[0]?.description) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.title) {
           console.log('[AIAssistantChat] Recovered raw JSON as businessCaseQuestions');
           const validated = validateBusinessCaseQuestions(parsed);
-          blocks.push({ 
-            field: 'businessCaseQuestions', 
-            content: jsonMatch[0],
-            structuredData: validated 
-          });
-          cleanText = cleanText.replace(jsonMatch[0], '');
+          if (validated.length > 0) {
+            blocks.push({ 
+              field: 'businessCaseQuestions', 
+              content: jsonMatch[0],
+              structuredData: validated 
+            });
+            cleanText = cleanText.replace(jsonMatch[0], '');
+          }
         }
       } catch (e) {
         console.warn('[AIAssistantChat] Found raw JSON but failed to parse:', e);
         // Try recovery on the raw JSON
         const recoveredJson = attemptJsonRecovery(jsonMatch[0], 'businessCaseQuestions');
-        if (recoveredJson) {
+        if (recoveredJson && Array.isArray(recoveredJson) && recoveredJson.length > 0) {
           console.log('[AIAssistantChat] Recovered malformed raw JSON as businessCaseQuestions');
           blocks.push({ 
             field: 'businessCaseQuestions', 
