@@ -18,9 +18,10 @@ interface AIAssistantChatProps {
 
 // Parse insertable content blocks from AI response
 interface InsertableBlock {
-  field: 'description' | 'responsibilities' | 'requirements' | 'benefits' | 'tags' | 'aiPrompt' | 'interviewPrompt';
+  field: 'title' | 'location' | 'jobType' | 'description' | 'responsibilities' | 'requirements' | 'benefits' | 'tags' | 'aiPrompt' | 'interviewPrompt' | 'businessCaseQuestions' | 'fixedInterviewQuestions';
   content: string;
   items?: string[];
+  structuredData?: any;
 }
 
 const parseInsertableBlocks = (text: string): { cleanText: string; blocks: InsertableBlock[] } => {
@@ -28,7 +29,7 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
   let cleanText = text;
   
   // Pattern: [INSERTABLE:field]content[/INSERTABLE]
-  const regex = /\[INSERTABLE:(description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt)\]([\s\S]*?)\[\/INSERTABLE\]/g;
+  const regex = /\[INSERTABLE:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]([\s\S]*?)\[\/INSERTABLE\]/g;
   
   let match;
   while ((match = regex.exec(text)) !== null) {
@@ -37,7 +38,19 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
     
     // Parse list items for array fields
     const listFields = ['responsibilities', 'requirements', 'benefits', 'tags'];
-    if (listFields.includes(field)) {
+    // Parse JSON for structured fields
+    const jsonFields = ['businessCaseQuestions', 'fixedInterviewQuestions'];
+    
+    if (jsonFields.includes(field)) {
+      try {
+        const structuredData = JSON.parse(content);
+        blocks.push({ field, content, structuredData });
+      } catch {
+        // If JSON parsing fails, try to parse as simple list
+        console.warn('[AIAssistantChat] Failed to parse JSON for field:', field);
+        blocks.push({ field, content });
+      }
+    } else if (listFields.includes(field)) {
       const items = content
         .split('\n')
         .map(line => line.replace(/^[-•*]\s*/, '').trim())
@@ -125,6 +138,9 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
     if (!jobEditorContext) return;
     
     const fieldLabels: Record<string, string> = {
+      title: 'Job Title',
+      location: 'Location',
+      jobType: 'Job Type',
       description: 'Description',
       responsibilities: 'Responsibilities',
       requirements: 'Requirements',
@@ -132,9 +148,20 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
       tags: 'Tags',
       aiPrompt: 'AI Evaluation Instructions',
       interviewPrompt: 'AI Interview Instructions',
+      businessCaseQuestions: 'Business Case Questions',
+      fixedInterviewQuestions: 'Interview Questions',
     };
     
     switch (block.field) {
+      case 'title':
+        jobEditorContext.onInsertTitle?.(block.content);
+        break;
+      case 'location':
+        jobEditorContext.onInsertLocation?.(block.content);
+        break;
+      case 'jobType':
+        jobEditorContext.onInsertJobType?.(block.content);
+        break;
       case 'description':
         jobEditorContext.onInsertDescription?.(block.content);
         break;
@@ -156,11 +183,27 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
       case 'interviewPrompt':
         jobEditorContext.onInsertInterviewPrompt?.(block.content);
         break;
+      case 'businessCaseQuestions':
+        if (block.structuredData && Array.isArray(block.structuredData)) {
+          jobEditorContext.onInsertBusinessCaseQuestions?.(block.structuredData);
+        }
+        break;
+      case 'fixedInterviewQuestions':
+        if (block.structuredData && Array.isArray(block.structuredData)) {
+          jobEditorContext.onInsertFixedInterviewQuestions?.(block.structuredData);
+        }
+        break;
     }
+    
+    const getDescription = () => {
+      if (block.items) return `Added ${block.items.length} items`;
+      if (block.structuredData && Array.isArray(block.structuredData)) return `Added ${block.structuredData.length} questions`;
+      return 'Content added to form';
+    };
     
     toast({
       title: `${fieldLabels[block.field]} inserted`,
-      description: block.items ? `Added ${block.items.length} items` : 'Content added to form',
+      description: getDescription(),
     });
   };
 

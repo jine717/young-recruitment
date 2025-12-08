@@ -773,12 +773,14 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext, co
 
     prompt += `
 ## Your Capabilities
-1. **Write Job Descriptions**: Create compelling, professional descriptions that highlight the role's impact
-2. **Suggest Responsibilities**: Provide specific, measurable responsibilities appropriate for the role
-3. **Define Requirements**: Distinguish between must-have and nice-to-have qualifications
-4. **Propose Benefits**: Suggest competitive benefits that attract talent
-5. **Write AI Evaluation Criteria**: Help define how AI should assess candidates for this role
-6. **Suggest Business Case Questions**: Create practical assessment questions
+1. **Suggest Job Titles**: Recommend professional, SEO-friendly job titles based on role description
+2. **Write Job Descriptions**: Create compelling, professional descriptions that highlight the role's impact
+3. **Suggest Responsibilities**: Provide specific, measurable responsibilities appropriate for the role
+4. **Define Requirements**: Distinguish between must-have and nice-to-have qualifications
+5. **Propose Benefits**: Suggest competitive benefits that attract talent
+6. **Write AI Evaluation Criteria**: Help define how AI should assess candidates for this role
+7. **Create Business Case Questions**: Generate practical scenario questions to evaluate candidates
+8. **Suggest Fixed Interview Questions**: Provide standardized interview questions for the role
 
 ## Guidelines
 - Write in a professional but engaging tone matching the YOUNG brand (fearless, unusual, down to earth)
@@ -788,6 +790,21 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext, co
 
 ## IMPORTANT: Insertable Content Format
 When generating content that can be directly inserted into the form, wrap it in special tags:
+
+For job title:
+[INSERTABLE:title]
+Senior Frontend Developer
+[/INSERTABLE]
+
+For location:
+[INSERTABLE:location]
+Amsterdam, Netherlands (Hybrid)
+[/INSERTABLE]
+
+For job type (must be one of: full-time, part-time, contract, internship):
+[INSERTABLE:jobType]
+full-time
+[/INSERTABLE]
 
 For job description:
 [INSERTABLE:description]
@@ -813,6 +830,13 @@ For benefits:
 - Benefit 2
 [/INSERTABLE]
 
+For tags:
+[INSERTABLE:tags]
+- React
+- TypeScript
+- Frontend
+[/INSERTABLE]
+
 For AI evaluation instructions:
 [INSERTABLE:aiPrompt]
 Your evaluation criteria here
@@ -821,6 +845,23 @@ Your evaluation criteria here
 For AI interview instructions:
 [INSERTABLE:interviewPrompt]
 Your interview question generation instructions here
+[/INSERTABLE]
+
+For business case questions (use JSON format):
+[INSERTABLE:businessCaseQuestions]
+[
+  {"title": "Problem Solving", "description": "Describe a complex technical challenge you faced and how you solved it. What was the impact?"},
+  {"title": "Team Collaboration", "description": "Tell us about a time you had to work with a difficult team member. How did you handle it?"}
+]
+[/INSERTABLE]
+
+For fixed interview questions (use JSON format):
+[INSERTABLE:fixedInterviewQuestions]
+[
+  {"text": "Tell me about your experience with React and modern frontend frameworks", "category": "Technical"},
+  {"text": "How do you handle tight deadlines while maintaining code quality?", "category": "Behavioral"},
+  {"text": "What excites you most about this role?", "category": "Motivation"}
+]
 [/INSERTABLE]
 
 Always include these insertable blocks when generating content the recruiter can use directly. This allows one-click insertion into the form.

@@ -75,6 +75,27 @@ export default function RecruiterJobEditor() {
   const { toast } = useToast();
 
   // Insert callbacks for AI Assistant
+  const handleInsertTitle = useCallback((title: string) => {
+    setFormData(prev => ({ ...prev, title }));
+    toast({ title: "Job title inserted" });
+  }, [toast]);
+
+  const handleInsertLocation = useCallback((location: string) => {
+    setFormData(prev => ({ ...prev, location }));
+    toast({ title: "Location inserted" });
+  }, [toast]);
+
+  const handleInsertJobType = useCallback((type: string) => {
+    const validTypes: JobType[] = ['full-time', 'part-time', 'contract', 'internship'];
+    const normalizedType = type.toLowerCase().replace(/\s+/g, '-') as JobType;
+    if (validTypes.includes(normalizedType)) {
+      setFormData(prev => ({ ...prev, type: normalizedType }));
+      toast({ title: "Job type inserted" });
+    } else {
+      toast({ title: "Invalid job type", description: "Must be full-time, part-time, contract, or internship", variant: "destructive" });
+    }
+  }, [toast]);
+
   const handleInsertDescription = useCallback((text: string) => {
     setFormData(prev => ({ ...prev, description: text }));
     toast({ title: "Description inserted" });
@@ -122,6 +143,29 @@ export default function RecruiterJobEditor() {
     toast({ title: "AI interview instructions inserted" });
   }, [toast]);
 
+  const handleInsertBusinessCaseQuestions = useCallback((questions: { title: string; description: string }[]) => {
+    const newQuestions: BusinessCaseQuestion[] = questions.map((q, idx) => ({
+      question_number: businessCaseQuestions.length + idx + 1,
+      question_title: q.title,
+      question_description: q.description,
+      has_text_response: true,
+      video_url: null,
+    }));
+    setBusinessCaseQuestions(prev => [...prev, ...newQuestions]);
+    toast({ title: `Added ${questions.length} business case questions` });
+  }, [businessCaseQuestions, toast]);
+
+  const handleInsertFixedInterviewQuestions = useCallback((questions: { text: string; category: string }[]) => {
+    const newQuestions: FixedInterviewQuestion[] = questions.map((q, idx) => ({
+      question_order: fixedInterviewQuestions.length + idx + 1,
+      question_text: q.text,
+      category: q.category || 'General',
+      priority: 1,
+    }));
+    setFixedInterviewQuestions(prev => [...prev, ...newQuestions]);
+    toast({ title: `Added ${questions.length} interview questions` });
+  }, [fixedInterviewQuestions, toast]);
+
   // Job editor context for AI Assistant
   const jobEditorContext = useMemo(() => ({
     title: formData.title,
@@ -144,6 +188,9 @@ export default function RecruiterJobEditor() {
     aiSystemPrompt: formData.ai_system_prompt,
     aiInterviewPrompt: formData.ai_interview_prompt,
     isEditing,
+    onInsertTitle: handleInsertTitle,
+    onInsertLocation: handleInsertLocation,
+    onInsertJobType: handleInsertJobType,
     onInsertDescription: handleInsertDescription,
     onInsertResponsibilities: handleInsertResponsibilities,
     onInsertRequirements: handleInsertRequirements,
@@ -151,7 +198,9 @@ export default function RecruiterJobEditor() {
     onInsertTags: handleInsertTags,
     onInsertAIPrompt: handleInsertAIPrompt,
     onInsertInterviewPrompt: handleInsertInterviewPrompt,
-  }), [formData, departments, businessCaseQuestions, fixedInterviewQuestions, isEditing, handleInsertDescription, handleInsertResponsibilities, handleInsertRequirements, handleInsertBenefits, handleInsertTags, handleInsertAIPrompt, handleInsertInterviewPrompt]);
+    onInsertBusinessCaseQuestions: handleInsertBusinessCaseQuestions,
+    onInsertFixedInterviewQuestions: handleInsertFixedInterviewQuestions,
+  }), [formData, departments, businessCaseQuestions, fixedInterviewQuestions, isEditing, handleInsertTitle, handleInsertLocation, handleInsertJobType, handleInsertDescription, handleInsertResponsibilities, handleInsertRequirements, handleInsertBenefits, handleInsertTags, handleInsertAIPrompt, handleInsertInterviewPrompt, handleInsertBusinessCaseQuestions, handleInsertFixedInterviewQuestions]);
 
   useEffect(() => {
     if (existingBusinessCases && !businessCasesLoading && !hasLoadedBusinessCases) {
