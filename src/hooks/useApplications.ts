@@ -16,6 +16,7 @@ export interface ApplicationWithDetails {
   ai_evaluation_status: 'pending' | 'processing' | 'completed' | 'failed' | null;
   created_at: string;
   updated_at: string;
+  assigned_to: string | null;
   jobs: {
     title: string;
     departments: {
@@ -26,6 +27,10 @@ export interface ApplicationWithDetails {
     full_name: string | null;
     email: string | null;
     phone: string | null;
+  } | null;
+  assigned_recruiter: {
+    full_name: string | null;
+    email: string | null;
   } | null;
 }
 
@@ -64,6 +69,23 @@ export function useApplications() {
         profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
       }
 
+      // Fetch profiles for assigned recruiters
+      const assignedToIds = applicationsData
+        .filter(app => app.assigned_to)
+        .map(app => app.assigned_to);
+      
+      let assignedRecruitersMap = new Map();
+      
+      if (assignedToIds.length > 0) {
+        const { data: recruitersData, error: recruitersError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', assignedToIds);
+
+        if (recruitersError) throw recruitersError;
+        assignedRecruitersMap = new Map(recruitersData?.map(r => [r.id, r]) || []);
+      }
+
       // Merge profiles into applications, use candidate_name/email for anonymous apps
       const merged = applicationsData.map(app => ({
         ...app,
@@ -74,6 +96,9 @@ export function useApplications() {
               email: app.candidate_email,
               phone: null,
             },
+        assigned_recruiter: app.assigned_to 
+          ? assignedRecruitersMap.get(app.assigned_to) || null
+          : null,
       }));
 
       return merged as ApplicationWithDetails[];
