@@ -381,7 +381,7 @@ const RecruiterDashboard = () => {
                   <div className="p-1.5 rounded-lg bg-[hsl(var(--young-gold))]/15">
                     <Clock className="h-4 w-4 text-[hsl(var(--young-gold))]" />
                   </div>
-                  Pending Review
+                  New
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -394,7 +394,7 @@ const RecruiterDashboard = () => {
                   <div className="p-1.5 rounded-lg bg-[hsl(var(--young-khaki))]/15">
                     <Briefcase className="h-4 w-4 text-[hsl(var(--young-khaki))]" />
                   </div>
-                  Under Review
+                  Review
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -746,7 +746,7 @@ const RecruiterDashboard = () => {
                                         Run AI Analysis
                                       </DropdownMenuItem>}
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
-                                      Mark Under Review
+                                      Mark Review
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
                                       Move to Interview
