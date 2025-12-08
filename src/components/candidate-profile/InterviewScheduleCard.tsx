@@ -102,8 +102,10 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
             {interviews.map((interview) => (
               <div
                 key={interview.id}
-                className={`border rounded-lg p-4 ${
-                  interview.status === 'cancelled' ? 'opacity-50' : ''
+                className={`border rounded-lg p-4 transition-all duration-200 ${
+                  interview.status === 'cancelled' 
+                    ? 'opacity-50' 
+                    : 'hover:border-[hsl(var(--young-gold))]/50 hover:shadow-young-sm'
                 }`}
               >
                 <div className="flex items-start justify-between">
