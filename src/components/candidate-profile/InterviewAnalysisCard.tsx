@@ -51,7 +51,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-young-sm hover-lift transition-all duration-200">
         <CardContent className="py-8 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
@@ -62,7 +62,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   // No analysis yet - show empty state with analyze button
   if (!hasAnalysis) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-dashed shadow-young-sm hover-lift transition-all duration-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -136,7 +136,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   };
 
   return (
-    <Card className="border-[hsl(var(--young-blue))]/30">
+    <Card className="border-[hsl(var(--young-blue))]/30 shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors pb-3">

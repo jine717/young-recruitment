@@ -87,7 +87,7 @@ export function BusinessCaseViewer({ applicationId, jobId }: BusinessCaseViewerP
   const totalCount = businessCases?.length || 0;
 
   return (
-    <Card>
+    <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
