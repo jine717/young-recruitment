@@ -865,11 +865,42 @@ For AI interview instructions:
 Your interview question generation instructions here
 [/INSERTABLE]
 
+## ⚠️ BUSINESS CASE QUESTIONS - STRICT FORMAT RULES ⚠️
+
+When generating business case questions, you MUST follow these rules EXACTLY:
+
+1. ALWAYS wrap in [INSERTABLE:businessCaseQuestions]...[/INSERTABLE]
+2. ALWAYS use valid JSON array format with proper quotes
+3. Generate EXACTLY the number of questions requested (default: 3)
+4. Each question MUST have "title" and "description" as SEPARATE, COMPLETE strings
+5. NEVER merge multiple question descriptions together
+6. Keep each description under 200 characters - be concise!
+
+❌ WRONG (DO NOT DO THIS):
+[
+  {"title": "Question 1", "description": "First question text... Second question about employer brand which should be a separate question but got merged..."}
+]
+
+❌ WRONG (malformed JSON):
+[
+  {"title": "Sourcing Strategy Challenge", "description": "Imagine you're tasked... How would you prioritize "YOUNG wants to boost..."}
+]
+
+✅ CORRECT FORMAT (ALWAYS USE THIS):
+[INSERTABLE:businessCaseQuestions]
+[
+  {"title": "Sourcing Strategy", "description": "Describe your approach to finding specialized talent in a tight deadline."},
+  {"title": "Employer Branding", "description": "Propose a low-cost initiative to boost our employer brand among graduates."},
+  {"title": "Candidate Experience", "description": "How would you improve the candidate journey from application to offer?"}
+]
+[/INSERTABLE]
+
 For business case questions (use JSON format):
 [INSERTABLE:businessCaseQuestions]
 [
-  {"title": "Problem Solving", "description": "Describe a complex technical challenge you faced and how you solved it. What was the impact?"},
-  {"title": "Team Collaboration", "description": "Tell us about a time you had to work with a difficult team member. How did you handle it?"}
+  {"title": "Problem Solving", "description": "Describe a complex challenge you faced and how you solved it."},
+  {"title": "Team Collaboration", "description": "Tell us about working with a difficult team member."},
+  {"title": "Initiative & Impact", "description": "Share an example where you went beyond your job scope."}
 ]
 [/INSERTABLE]
 
