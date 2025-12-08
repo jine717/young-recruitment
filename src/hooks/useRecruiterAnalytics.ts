@@ -114,14 +114,16 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
     minutes: Math.round(totalMinutes % 60),
   });
 
-  // Time to decision (in minutes for precision)
-  const decisionsWithTime = decisions.map(d => {
-    const app = applications.find(a => a.id === d.application_id);
-    if (!app) return null;
-    const appDate = new Date(app.created_at);
-    const decDate = new Date(d.created_at);
-    return (decDate.getTime() - appDate.getTime()) / (1000 * 60); // minutes
-  }).filter(Boolean) as number[];
+  // Time to decision - using applications with final status (hired/rejected)
+  const appsWithDecision = applications.filter(
+    a => a.status === 'hired' || a.status === 'rejected'
+  );
+  
+  const decisionsWithTime = appsWithDecision.map(app => {
+    const created = new Date(app.created_at);
+    const updated = new Date(app.updated_at);
+    return (updated.getTime() - created.getTime()) / (1000 * 60); // minutes
+  });
   
   const avgTimeToDecisionMinutes = decisionsWithTime.length > 0
     ? decisionsWithTime.reduce((a, b) => a + b, 0) / decisionsWithTime.length
