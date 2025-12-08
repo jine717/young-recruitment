@@ -62,7 +62,7 @@ export function ActivityTimeline({ applicationId }: ActivityTimelineProps) {
   };
 
   return (
-    <Card>
+    <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>

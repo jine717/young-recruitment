@@ -61,7 +61,7 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
@@ -80,7 +80,7 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
   const activeInterviews = interviews.filter(i => i.status !== 'cancelled');
 
   return (
-    <Card>
+    <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
