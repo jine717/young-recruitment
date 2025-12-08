@@ -42,26 +42,51 @@ export const JobEditorAIAssistant = ({ jobEditorContext }: JobEditorAIAssistantP
   const suggestedQuestions = useMemo(() => {
     const questions: string[] = [];
     
+    // Title suggestion
+    if (!jobEditorContext.title?.trim()) {
+      questions.push('Suggest a job title for a developer role focused on React');
+    }
+    
+    // Description
     if (jobEditorContext.title && !jobEditorContext.description?.trim()) {
       questions.push(`Write a compelling job description for ${jobEditorContext.title}`);
     }
+    
+    // Responsibilities
     if ((jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0) < 3) {
       questions.push('Suggest 5 key responsibilities for this role');
     }
+    
+    // Requirements
     if ((jobEditorContext.requirements?.filter(r => r.trim()).length || 0) < 3) {
       questions.push('What requirements should I include?');
     }
+    
+    // Benefits
     if ((jobEditorContext.benefits?.filter(b => b.trim()).length || 0) < 2) {
       questions.push('Suggest attractive benefits to include');
     }
+    
+    // Business case questions
+    if ((jobEditorContext.businessCaseQuestions?.length || 0) === 0) {
+      questions.push('Suggest 3 business case questions to evaluate candidates');
+    }
+    
+    // Fixed interview questions
+    if ((jobEditorContext.fixedInterviewQuestions?.length || 0) === 0 && jobEditorContext.title) {
+      questions.push(`Suggest fixed interview questions for ${jobEditorContext.title}`);
+    }
+    
+    // AI evaluation criteria
     if (!jobEditorContext.aiSystemPrompt?.trim()) {
       questions.push('Help me write AI evaluation criteria');
     }
+    
+    // General suggestions
     if (jobEditorContext.title) {
       questions.push('Review my job posting and suggest improvements');
     }
     questions.push('How can I make this posting more attractive?');
-    questions.push('Suggest business case questions for candidates');
     
     return questions.slice(0, 5);
   }, [jobEditorContext]);

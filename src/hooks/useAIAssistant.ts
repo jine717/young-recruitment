@@ -31,6 +31,9 @@ export interface JobEditorContext {
   isEditing: boolean;
   
   // Insert callbacks for direct content insertion
+  onInsertTitle?: (title: string) => void;
+  onInsertLocation?: (location: string) => void;
+  onInsertJobType?: (type: string) => void;
   onInsertDescription?: (text: string) => void;
   onInsertResponsibilities?: (items: string[]) => void;
   onInsertRequirements?: (items: string[]) => void;
@@ -38,6 +41,8 @@ export interface JobEditorContext {
   onInsertTags?: (items: string[]) => void;
   onInsertAIPrompt?: (prompt: string) => void;
   onInsertInterviewPrompt?: (prompt: string) => void;
+  onInsertBusinessCaseQuestions?: (questions: { title: string; description: string }[]) => void;
+  onInsertFixedInterviewQuestions?: (questions: { text: string; category: string }[]) => void;
 }
 
 export interface CandidateContext {
