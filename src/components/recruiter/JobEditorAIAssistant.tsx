@@ -38,57 +38,63 @@ export const JobEditorAIAssistant = ({ jobEditorContext }: JobEditorAIAssistantP
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Dynamic suggested questions based on form state
+  // Dynamic suggested questions based on form state - PRIORITY ORDER
   const suggestedQuestions = useMemo(() => {
     const questions: string[] = [];
+    const hasTitle = jobEditorContext.title?.trim();
+    const hasDescription = jobEditorContext.description?.trim();
+    const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
+    const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
+    const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
+    const businessCaseCount = jobEditorContext.businessCaseQuestions?.length || 0;
+    const interviewQuestionsCount = jobEditorContext.fixedInterviewQuestions?.length || 0;
     
-    // Title suggestion
-    if (!jobEditorContext.title?.trim()) {
-      questions.push('Suggest a job title for a developer role focused on React');
+    // PRIORITY 1: Title (if not set) - This is the first step
+    if (!hasTitle) {
+      questions.push('Help me create a new job vacancy');
+      questions.push('Suggest a job title for a developer role');
+      return questions; // Only show title-related suggestions first
     }
     
-    // Description
-    if (jobEditorContext.title && !jobEditorContext.description?.trim()) {
+    // PRIORITY 2: Description (if not set)
+    if (!hasDescription) {
       questions.push(`Write a compelling job description for ${jobEditorContext.title}`);
+      questions.push(`Suggest a location for this ${jobEditorContext.title} role`);
+      return questions.slice(0, 3);
     }
     
-    // Responsibilities
-    if ((jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0) < 3) {
-      questions.push('Suggest 5 key responsibilities for this role');
+    // PRIORITY 3: Core sections (responsibilities, requirements, benefits)
+    if (responsibilitiesCount < 3) {
+      questions.push(`Suggest 5 key responsibilities for ${jobEditorContext.title}`);
     }
-    
-    // Requirements
-    if ((jobEditorContext.requirements?.filter(r => r.trim()).length || 0) < 3) {
+    if (requirementsCount < 3) {
       questions.push('What requirements should I include?');
     }
-    
-    // Benefits
-    if ((jobEditorContext.benefits?.filter(b => b.trim()).length || 0) < 2) {
-      questions.push('Suggest attractive benefits to include');
+    if (benefitsCount < 2) {
+      questions.push('Suggest attractive benefits for this role');
     }
     
-    // Business case questions
-    if ((jobEditorContext.businessCaseQuestions?.length || 0) === 0) {
-      questions.push('Suggest 3 business case questions to evaluate candidates');
+    // If we have some core sections suggestions, return them
+    if (questions.length >= 2) {
+      return questions.slice(0, 4);
     }
     
-    // Fixed interview questions
-    if ((jobEditorContext.fixedInterviewQuestions?.length || 0) === 0 && jobEditorContext.title) {
+    // PRIORITY 4: Advanced sections (business case, interview questions)
+    if (businessCaseCount === 0) {
+      questions.push(`Suggest 3 business case questions for ${jobEditorContext.title}`);
+    }
+    if (interviewQuestionsCount === 0) {
       questions.push(`Suggest fixed interview questions for ${jobEditorContext.title}`);
     }
     
-    // AI evaluation criteria
+    // PRIORITY 5: Polish and review
     if (!jobEditorContext.aiSystemPrompt?.trim()) {
       questions.push('Help me write AI evaluation criteria');
     }
     
-    // General suggestions
-    if (jobEditorContext.title) {
-      questions.push('Review my job posting and suggest improvements');
-    }
-    questions.push('How can I make this posting more attractive?');
+    questions.push('Review my job posting and suggest improvements');
     
-    return questions.slice(0, 5);
+    return questions.slice(0, 4);
   }, [jobEditorContext]);
 
   // Combine pinned and suggested
