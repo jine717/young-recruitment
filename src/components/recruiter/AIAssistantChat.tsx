@@ -24,16 +24,38 @@ interface InsertableBlock {
   structuredData?: any;
 }
 
+// Pre-process AI response to fix common formatting mistakes
+const cleanAIResponse = (text: string): string => {
+  let cleaned = text;
+  
+  // Fix common AI mistakes:
+  // 1. "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[\s+INSERTABLE:/gi, '[INSERTABLE:');
+  
+  // 2. "[INSERTABLE :field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[INSERTABLE\s+:/gi, '[INSERTABLE:');
+  
+  // 3. "[INSERTABLE: field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[INSERTABLE:\s+/gi, '[INSERTABLE:');
+  
+  // 4. "[ /INSERTABLE]" -> "[/INSERTABLE]"
+  cleaned = cleaned.replace(/\[\s*\/\s*INSERTABLE\s*\]/gi, '[/INSERTABLE]');
+  
+  return cleaned;
+};
+
 const parseInsertableBlocks = (text: string): { cleanText: string; blocks: InsertableBlock[] } => {
   const blocks: InsertableBlock[] = [];
-  let cleanText = text;
+  
+  // Pre-process to fix common AI formatting mistakes
+  let cleanText = cleanAIResponse(text);
   
   // Pattern: [INSERTABLE:field]content[/INSERTABLE]
-  const regex = /\[INSERTABLE:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]([\s\S]*?)\[\/INSERTABLE\]/g;
+  const regex = /\[INSERTABLE:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]([\s\S]*?)\[\/INSERTABLE\]/gi;
   
   let match;
-  while ((match = regex.exec(text)) !== null) {
-    const field = match[1] as InsertableBlock['field'];
+  while ((match = regex.exec(cleanText)) !== null) {
+    const field = match[1].toLowerCase() as InsertableBlock['field'];
     const content = match[2].trim();
     
     // Parse list items for array fields
@@ -59,32 +81,61 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
     } else {
       blocks.push({ field, content });
     }
-    
-    // Remove the insertable block from display text
-    cleanText = cleanText.replace(match[0], '');
   }
   
-  // FALLBACK: Detect malformed blocks (closing tag without opening tag)
-  // This helps recover from AI formatting errors
-  if (blocks.length === 0) {
-    const orphanClosingMatch = cleanText.match(/\[\/INSERTABLE\]/);
-    if (orphanClosingMatch) {
-      console.warn('[AIAssistantChat] Detected malformed INSERTABLE block (closing without opening)');
-      
-      // Try to find description-like content before orphan closing tag
-      // Look for substantial content that looks like a description
-      const descPattern = /([\s\S]{100,}?)\[\/INSERTABLE\]/;
-      const descMatch = cleanText.match(descPattern);
-      if (descMatch) {
-        const potentialContent = descMatch[1].trim();
-        // Check if it looks like a description (has sentences, not just bullets)
-        if (potentialContent.includes('.') && potentialContent.length > 150) {
+  // Remove all matched blocks from display text
+  cleanText = cleanText.replace(regex, '');
+  
+  // FALLBACK: Detect malformed blocks (closing tag without proper opening tag)
+  if (blocks.length === 0 && cleanText.includes('[/INSERTABLE]')) {
+    console.warn('[AIAssistantChat] Detected malformed INSERTABLE block - attempting recovery');
+    
+    // Strategy 1: Look for content that starts with "[ " (malformed opening bracket)
+    // Pattern: "[ Content...[/INSERTABLE]" where the AI used "[ " instead of "[INSERTABLE:field]"
+    const malformedPatterns = [
+      // Pattern: "[ Content..." before closing tag (AI started with bracket but no INSERTABLE)
+      /\[\s+([A-Z][^[\]]{50,}?)\[\/INSERTABLE\]/gi,
+      // Pattern: Just content before closing tag with no opening at all
+      /(?:^|\n\n)((?:[A-Z][^[\]]{100,}?))\[\/INSERTABLE\]/gi,
+    ];
+    
+    for (const pattern of malformedPatterns) {
+      const fallbackMatch = cleanText.match(pattern);
+      if (fallbackMatch) {
+        let potentialContent = fallbackMatch[1].trim();
+        // Clean up any malformed opening brackets
+        potentialContent = potentialContent.replace(/^\[\s*/, '');
+        
+        // Check if it looks like a description (has sentences, substantial length)
+        if (potentialContent.includes('.') && potentialContent.length > 100) {
+          console.log('[AIAssistantChat] Recovered malformed block as description');
           blocks.push({ field: 'description', content: potentialContent });
-          cleanText = cleanText.replace(descMatch[0], '');
+          cleanText = cleanText.replace(fallbackMatch[0], '');
+          break;
+        }
+      }
+    }
+    
+    // Strategy 2: If still no blocks, try to find any substantial content before [/INSERTABLE]
+    if (blocks.length === 0) {
+      const lastResortPattern = /([\s\S]{150,}?)\[\/INSERTABLE\]/;
+      const lastMatch = cleanText.match(lastResortPattern);
+      if (lastMatch) {
+        let content = lastMatch[1].trim();
+        // Remove any malformed brackets at the start
+        content = content.replace(/^\[\s*/, '');
+        
+        if (content.includes('.') && content.length > 100) {
+          console.log('[AIAssistantChat] Recovered block using last resort pattern');
+          blocks.push({ field: 'description', content });
+          cleanText = cleanText.replace(lastMatch[0], '');
         }
       }
     }
   }
+  
+  // Clean up orphan [/INSERTABLE] tags
+  cleanText = cleanText.replace(/\[\/INSERTABLE\]/g, '');
   
   return { cleanText: cleanText.trim(), blocks };
 };

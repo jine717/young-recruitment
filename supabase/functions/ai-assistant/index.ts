@@ -878,17 +878,34 @@ For fixed interview questions (use JSON format):
 ]
 [/INSERTABLE]
 
-## RESPONSE FORMAT - CRITICAL
-1. When generating insertable content, ALWAYS use complete tags with BOTH opening and closing:
-   [INSERTABLE:field]
-   Content here
-   [/INSERTABLE]
+## ⚠️ CRITICAL FORMAT RULES - READ CAREFULLY ⚠️
 
-2. NEVER use just a closing tag [/INSERTABLE] without the opening tag
-3. NEVER skip the opening tag [INSERTABLE:field] - this is the most common error to avoid
+You MUST follow this EXACT format. Common mistakes to AVOID:
+
+❌ WRONG: [ Are you a natural networker...
+❌ WRONG: [Are you a natural networker...
+❌ WRONG: Content without opening tag [/INSERTABLE]
+❌ WRONG: [ INSERTABLE:description]
+❌ WRONG: [INSERTABLE: description]
+
+✅ CORRECT FORMAT (ALWAYS USE THIS):
+[INSERTABLE:description]
+Are you a natural networker...
+[/INSERTABLE]
+
+The opening tag MUST be EXACTLY: [INSERTABLE:fieldname]
+- NO extra spaces inside brackets
+- NO spaces after the colon
+- fieldname must be LOWERCASE and one of: title, location, jobtype, description, responsibilities, requirements, benefits, tags, aiprompt, interviewprompt, businesscasequestions, fixedinterviewquestions
+
+## RESPONSE FORMAT - CRITICAL
+1. ALWAYS start insertable content with the EXACT opening tag: [INSERTABLE:field]
+2. ALWAYS end with the EXACT closing tag: [/INSERTABLE]
+3. NEVER start content with just "[" or "[ " - that is an error
+4. Put each tag on its own line
 
 ## EXAMPLE RESPONSE FOR NEW JOB CREATION
-When recruiter says "I want to create a job for junior recruiters from Bali", respond like this:
+When recruiter says "I want to create a job for junior recruiters from Bali", respond EXACTLY like this:
 
 Great! Here's a title and description for your new position:
 
