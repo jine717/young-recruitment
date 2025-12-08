@@ -3,12 +3,62 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { FloatingPanel } from '@/components/ui/floating-panel';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Trash2, RefreshCw, Star, StarOff } from 'lucide-react';
+import { Sparkles, Send, Trash2, RefreshCw, Star, StarOff, CheckCircle2, Circle } from 'lucide-react';
 import { useAIAssistant, JobEditorContext } from '@/hooks/useAIAssistant';
 import { AIAssistantChat } from './AIAssistantChat';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Workflow Progress Tracker Component
+const WorkflowProgressTracker = ({ jobEditorContext }: { jobEditorContext: JobEditorContext }) => {
+  const hasTitle = !!jobEditorContext.title?.trim();
+  const hasDescription = !!jobEditorContext.description?.trim();
+  const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
+  const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
+  const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
+  
+  const steps = [
+    { label: 'Title', done: hasTitle, value: hasTitle ? `"${jobEditorContext.title}"` : null },
+    { label: 'Description', done: hasDescription, value: hasDescription ? '✓' : null },
+    { label: 'Responsibilities', done: responsibilitiesCount >= 3, value: `${responsibilitiesCount}/5` },
+    { label: 'Requirements', done: requirementsCount >= 3, value: `${requirementsCount}/3` },
+    { label: 'Benefits', done: benefitsCount >= 2, value: `${benefitsCount}/2` },
+  ];
+  
+  const completedCount = steps.filter(s => s.done).length;
+  
+  return (
+    <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-muted-foreground">Job Creation Progress</p>
+        <span className="text-xs text-muted-foreground">{completedCount}/{steps.length}</span>
+      </div>
+      <div className="space-y-1.5">
+        {steps.map((step, index) => (
+          <div key={index} className="flex items-center gap-2 text-sm">
+            {step.done ? (
+              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+            ) : (
+              <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            )}
+            <span className={cn(
+              "truncate",
+              step.done ? "text-foreground" : "text-muted-foreground"
+            )}>
+              {step.label}
+              {step.value && (
+                <span className="text-xs ml-1 text-muted-foreground">
+                  {step.value.length > 20 ? step.value.substring(0, 20) + '...' : step.value}
+                </span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface JobEditorAIAssistantProps {
   jobEditorContext: JobEditorContext;
@@ -230,16 +280,8 @@ export const JobEditorAIAssistant = ({ jobEditorContext }: JobEditorAIAssistantP
               </p>
             </div>
 
-            {/* Current Form Status */}
-            {jobEditorContext.title && (
-              <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Currently editing:</p>
-                <p className="text-sm font-semibold">{jobEditorContext.title}</p>
-                {jobEditorContext.department && (
-                  <p className="text-xs text-muted-foreground">{jobEditorContext.department}</p>
-                )}
-              </div>
-            )}
+            {/* Workflow Progress Tracker */}
+            <WorkflowProgressTracker jobEditorContext={jobEditorContext} />
 
             {/* Pinned Questions */}
             {allQuestions.pinned.length > 0 && (
