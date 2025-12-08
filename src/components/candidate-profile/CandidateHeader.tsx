@@ -245,29 +245,43 @@ export function CandidateHeader({
         <div className="flex flex-col gap-3">
           {/* Status Selector */}
           <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Change status" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue>
+                <span className="flex items-center">
+                  {statusIcons[status]}
+                  {statusLabels[status] || status}
+                </span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">New</SelectItem>
-              <SelectItem value="under_review">Review</SelectItem>
-              <SelectItem value="interview">Interview</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="pending">
+                <span className="flex items-center">{statusIcons.pending} New</span>
+              </SelectItem>
+              <SelectItem value="under_review">
+                <span className="flex items-center">{statusIcons.under_review} Review</span>
+              </SelectItem>
+              <SelectItem value="interview">
+                <span className="flex items-center">{statusIcons.interview} Interview</span>
+              </SelectItem>
+              <SelectItem value="hired">
+                <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>
+              </SelectItem>
+              <SelectItem value="rejected">
+                <span className="flex items-center text-destructive">{statusIcons.rejected} Rejected</span>
+              </SelectItem>
             </SelectContent>
           </Select>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            onClick={onScheduleInterview} 
-            variant="outline" 
-            size="sm"
-            className="gap-1"
-          >
-            <CalendarPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Schedule</span>
-          </Button>
+          {/* Quick Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              onClick={onScheduleInterview} 
+              size="sm"
+              className="gap-1 bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
+            >
+              <CalendarPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </Button>
           
           <InterviewEvaluationForm applicationId={applicationId} />
           <HiringDecisionModal applicationId={applicationId} />
