@@ -24,6 +24,61 @@ interface InsertableBlock {
   structuredData?: any;
 }
 
+// Validate and clean business case questions structure
+const validateBusinessCaseQuestions = (data: any): { title: string; description: string }[] => {
+  if (!Array.isArray(data)) return [];
+  return data.filter(q => q && q.title && q.description).map(q => ({
+    title: String(q.title).trim(),
+    description: String(q.description).trim()
+  }));
+};
+
+// Attempt to recover malformed JSON
+const attemptJsonRecovery = (content: string, field: string): any | null => {
+  let cleaned = content.trim();
+  
+  // Count brackets to find imbalance
+  const openBrackets = (cleaned.match(/\[/g) || []).length;
+  const closeBrackets = (cleaned.match(/\]/g) || []).length;
+  
+  if (openBrackets > closeBrackets) {
+    cleaned += ']'.repeat(openBrackets - closeBrackets);
+  }
+  
+  // Count braces
+  const openBraces = (cleaned.match(/\{/g) || []).length;
+  const closeBraces = (cleaned.match(/\}/g) || []).length;
+  
+  if (openBraces > closeBraces) {
+    // Close any open strings and objects
+    // Check if we're in the middle of a string (odd number of unescaped quotes)
+    const quoteCount = (cleaned.match(/(?<!\\)"/g) || []).length;
+    if (quoteCount % 2 !== 0) {
+      cleaned += '"';
+    }
+    cleaned += '}'.repeat(openBraces - closeBraces);
+  }
+  
+  // If still unbalanced brackets after fixing braces
+  const finalOpenBrackets = (cleaned.match(/\[/g) || []).length;
+  const finalCloseBrackets = (cleaned.match(/\]/g) || []).length;
+  if (finalOpenBrackets > finalCloseBrackets) {
+    cleaned += ']'.repeat(finalOpenBrackets - finalCloseBrackets);
+  }
+  
+  try {
+    const parsed = JSON.parse(cleaned);
+    // Validate structure for business case questions
+    if (field === 'businessCaseQuestions' && Array.isArray(parsed)) {
+      return validateBusinessCaseQuestions(parsed);
+    }
+    return parsed;
+  } catch {
+    console.warn('[AIAssistantChat] JSON recovery failed for field:', field);
+    return null;
+  }
+};
+
 // Pre-process AI response to fix common formatting mistakes
 const cleanAIResponse = (text: string): string => {
   let cleaned = text;
@@ -115,11 +170,23 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
     if (jsonFields.includes(field)) {
       try {
         const structuredData = JSON.parse(content);
-        blocks.push({ field, content, structuredData });
+        // Validate business case questions structure
+        if (field === 'businessCaseQuestions') {
+          const validated = validateBusinessCaseQuestions(structuredData);
+          blocks.push({ field, content, structuredData: validated });
+        } else {
+          blocks.push({ field, content, structuredData });
+        }
       } catch {
-        // If JSON parsing fails, try to parse as simple list
-        console.warn('[AIAssistantChat] Failed to parse JSON for field:', field);
-        blocks.push({ field, content });
+        // Attempt JSON recovery for incomplete/malformed JSON
+        console.warn('[AIAssistantChat] Failed to parse JSON for field:', field, '- attempting recovery');
+        const recoveredJson = attemptJsonRecovery(content, field);
+        if (recoveredJson) {
+          console.log('[AIAssistantChat] Successfully recovered JSON for field:', field);
+          blocks.push({ field, content: JSON.stringify(recoveredJson), structuredData: recoveredJson });
+        } else {
+          blocks.push({ field, content });
+        }
       }
     } else if (listFields.includes(field)) {
       const items = content
@@ -178,6 +245,42 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
           console.log('[AIAssistantChat] Recovered block using last resort pattern');
           blocks.push({ field: 'description', content });
           cleanText = cleanText.replace(lastMatch[0], '');
+        }
+      }
+    }
+  }
+  
+  // FALLBACK: Detect raw JSON array that looks like business case questions without wrapper
+  if (blocks.length === 0 || !blocks.some(b => b.field === 'businessCaseQuestions')) {
+    // Pattern: JSON array at start of line with title/description structure
+    const rawJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"[\s\S]*?"description"[\s\S]*?\}\s*\]/m;
+    const jsonMatch = cleanText.match(rawJsonPattern);
+    
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.title && parsed[0]?.description) {
+          console.log('[AIAssistantChat] Recovered raw JSON as businessCaseQuestions');
+          const validated = validateBusinessCaseQuestions(parsed);
+          blocks.push({ 
+            field: 'businessCaseQuestions', 
+            content: jsonMatch[0],
+            structuredData: validated 
+          });
+          cleanText = cleanText.replace(jsonMatch[0], '');
+        }
+      } catch (e) {
+        console.warn('[AIAssistantChat] Found raw JSON but failed to parse:', e);
+        // Try recovery on the raw JSON
+        const recoveredJson = attemptJsonRecovery(jsonMatch[0], 'businessCaseQuestions');
+        if (recoveredJson) {
+          console.log('[AIAssistantChat] Recovered malformed raw JSON as businessCaseQuestions');
+          blocks.push({ 
+            field: 'businessCaseQuestions', 
+            content: JSON.stringify(recoveredJson),
+            structuredData: recoveredJson 
+          });
+          cleanText = cleanText.replace(jsonMatch[0], '');
         }
       }
     }
