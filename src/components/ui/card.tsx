@@ -3,9 +3,40 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
+  <div 
+    ref={ref} 
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-young-sm transition-all duration-300",
+      className
+    )} 
+    {...props} 
+  />
 ));
 Card.displayName = "Card";
+
+const CardHover = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
+  <div 
+    ref={ref} 
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-young-sm transition-all duration-300 hover:shadow-young-md hover:-translate-y-1",
+      className
+    )} 
+    {...props} 
+  />
+));
+CardHover.displayName = "CardHover";
+
+const CardFeatured = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
+  <div 
+    ref={ref} 
+    className={cn(
+      "rounded-lg border-l-4 border-l-young-gold border bg-card text-card-foreground shadow-young-md transition-all duration-300 hover:shadow-young-lg hover:-translate-y-1",
+      className
+    )} 
+    {...props} 
+  />
+));
+CardFeatured.displayName = "CardFeatured";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
@@ -40,4 +71,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export { Card, CardHover, CardFeatured, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

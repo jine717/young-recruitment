@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -15,6 +15,10 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // YOUNG Brand Variants
+        "young-primary": "bg-young-blue text-young-black font-semibold hover:bg-young-blue-dark hover:shadow-young-md hover:-translate-y-0.5",
+        "young-secondary": "bg-young-gold text-white font-semibold hover:bg-young-gold/90 hover:shadow-young-gold hover:-translate-y-0.5",
+        "young-outline": "border-2 border-young-blue text-young-blue bg-transparent hover:bg-young-blue hover:text-young-black hover:-translate-y-0.5",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,8 +1,15 @@
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
-    <footer className="py-10 px-6 border-t border-border">
+    <footer className="py-12 px-6 border-t border-border/50 bg-young-cream/30">
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="font-display text-2xl">YOUNG.</p>
+        <Link 
+          to="/" 
+          className="font-display text-2xl text-foreground hover:text-young-blue transition-colors duration-200"
+        >
+          YOUNG.
+        </Link>
         <p className="text-muted-foreground text-sm">
           © {new Date().getFullYear()} Young. Unite to Disrupt.
         </p>
