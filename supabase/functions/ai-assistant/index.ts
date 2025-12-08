@@ -337,10 +337,6 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Use Gemini 3 Pro for job creation, otherwise use Gemini 2.5 Flash
-    const model = jobEditorContext ? 'google/gemini-3-pro-preview' : 'google/gemini-2.5-flash';
-    console.log('[AI Assistant] Using model:', model);
-
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -348,7 +344,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
+        model: 'google/gemini-2.5-flash',
         messages,
         stream: true,
       }),
