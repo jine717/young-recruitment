@@ -36,6 +36,20 @@ const cleanAIResponse = (text: string): string => {
   // === AGGRESSIVE TAG MALFORMATION FIXES ===
   const validFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
   
+  // PRIORITY 1: Fix hybrid corruptions where word + partial "INSERTABLE" + field
+  // Examples: "GotABLE:title]", "HereABLE:description]", "SoABLE:location]", "AndABLE:requirements]"
+  const hybridCorruptionPattern = new RegExp(`\\w{1,15}(?:ERT)?ABLE:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(hybridCorruptionPattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 2: Catch ANY text ending with "ABLE:field]" 
+  // Examples: "GotABLE:title]", "SomeTextABLE:description]"
+  const anythingAblePattern = new RegExp(`\\S*ABLE:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(anythingAblePattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 3: Catch-all for anything ending with ":fieldname]" that looks like a corrupted tag
+  const catchAllPattern = new RegExp(`\\S*(?:INSERT|NSERT|SERT|ERT|ABLE)\\S*:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(catchAllPattern, '[INSERTABLE:$1]');
+  
   // Fix ANY 1-10 char prefix followed by field name and closing bracket
   // Examples: "Notitle]", "Lettitle]", "Thetitle]", "Adescription]", "Herequirements]"
   const prefixPattern = new RegExp(`\\w{1,10}(${validFields})\\]`, 'gi');
