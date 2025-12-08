@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { InterviewEvaluationForm } from './InterviewEvaluationForm';
@@ -61,6 +61,14 @@ const statusLabels: Record<string, string> = {
   interview: 'Interview',
   hired: 'Hired',
   rejected: 'Rejected',
+};
+
+const statusIcons: Record<string, React.ReactNode> = {
+  pending: <Sparkles className="h-3 w-3 mr-1" />,
+  under_review: <Eye className="h-3 w-3 mr-1" />,
+  interview: <Video className="h-3 w-3 mr-1" />,
+  hired: <CheckCircle className="h-3 w-3 mr-1" />,
+  rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
 
 function AIScoreBadge({ 

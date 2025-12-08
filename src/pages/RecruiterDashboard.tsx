@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -36,6 +36,14 @@ const statusLabels: Record<ApplicationWithDetails['status'], string> = {
   interview: "Interview",
   rejected: "Rejected",
   hired: "Hired"
+};
+
+const statusIcons: Record<ApplicationWithDetails['status'], React.ReactNode> = {
+  pending: <Sparkles className="h-3 w-3 mr-1" />,
+  under_review: <Eye className="h-3 w-3 mr-1" />,
+  interview: <Video className="h-3 w-3 mr-1" />,
+  rejected: <XCircle className="h-3 w-3 mr-1" />,
+  hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
 const RecruiterDashboard = () => {
   const {
@@ -708,6 +716,7 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <Badge className={statusColors[app.status]}>
+                                  {statusIcons[app.status]}
                                   {statusLabels[app.status]}
                                 </Badge>
                               </TableCell>
