@@ -25,10 +25,10 @@ import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
-  under_review: "bg-primary/20 text-primary-foreground",
-  interview: "bg-secondary/20 text-secondary-foreground",
-  rejected: "bg-destructive/20 text-destructive",
-  hired: "bg-green-500/20 text-green-700"
+  under_review: "bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/30",
+  interview: "bg-purple-500/20 text-purple-700 border border-purple-500/30",
+  rejected: "bg-destructive/20 text-destructive border border-destructive/30",
+  hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
 const statusLabels: Record<ApplicationWithDetails['status'], string> = {
   pending: "Pending",
@@ -325,19 +325,15 @@ const RecruiterDashboard = () => {
   return <div className="min-h-screen bg-background">
       <DashboardNavbar user={user} isAdmin={isAdmin} />
 
-      {/* Header with gradient */}
-      <section className="pt-32 pb-8 px-6 bg-gradient-young-hero relative overflow-hidden">
-        {/* Decorative blur orbs */}
-        <div className="absolute top-20 right-10 w-64 h-64 bg-[hsl(var(--young-blue))]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-48 h-48 bg-[hsl(var(--young-gold))]/5 rounded-full blur-3xl" />
-        
-        <div className="container mx-auto max-w-7xl relative">
-          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-8 animate-fade-in">
+      {/* Header - compact */}
+      <section className="pt-24 pb-6 px-6 bg-background border-b">
+        <div className="container mx-auto max-w-7xl">
+          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
           <div className="flex items-center justify-between gap-4">
-            <h1 className="font-display text-5xl md:text-6xl animate-fade-in">RECRUITER DASHBOARD</h1>
+            <h1 className="font-display text-3xl md:text-4xl">RECRUITER DASHBOARD</h1>
             <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <Button asChild variant="young-primary">
                 <Link to="/dashboard/evaluate">
@@ -717,15 +713,15 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 {evaluation?.evaluation_stage === 'post_interview' ? (
-                                  <div className="flex items-center gap-1.5 text-[hsl(var(--young-blue))]">
-                                    <FileCheck className="h-4 w-4" />
-                                    <span className="text-xs font-medium">Interviewed</span>
-                                  </div>
+                                  <Badge className="bg-green-500/20 text-green-700 border border-green-500/30">
+                                    <FileCheck className="h-3 w-3 mr-1" />
+                                    Interviewed
+                                  </Badge>
                                 ) : (
-                                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                                    <FileQuestion className="h-4 w-4" />
-                                    <span className="text-xs">Initial</span>
-                                  </div>
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    <FileQuestion className="h-3 w-3 mr-1" />
+                                    Initial
+                                  </Badge>
                                 )}
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
