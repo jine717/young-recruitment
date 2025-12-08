@@ -62,13 +62,13 @@ export function ActivityTimeline({ applicationId }: ActivityTimelineProps) {
   };
 
   return (
-    <Card>
+    <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
             <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
                 Activity
               </CardTitle>
               <div className="flex items-center gap-2">
@@ -125,11 +125,11 @@ export function ActivityTimeline({ applicationId }: ActivityTimelineProps) {
                 No activity yet
               </p>
             ) : (
-              <div className="space-y-1 max-h-[300px] overflow-y-auto">
+              <div className="space-y-1 max-h-[300px] overflow-y-auto scrollbar-thin">
                 {activities.map((item) => (
                   <div
                     key={item.id}
-                    className="group flex items-start gap-2 p-2 rounded-md hover:bg-muted/30 transition-colors"
+                    className="group flex items-start gap-2 p-2 rounded-md hover:bg-muted/30 border border-transparent hover:border-border/50 transition-all duration-200"
                   >
                     <div className={cn(
                       "mt-0.5 p-1 rounded",

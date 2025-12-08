@@ -432,8 +432,8 @@ export default function CandidateProfile() {
 
         {/* Full-width Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start mb-4">
-            <TabsTrigger value="overview" className="gap-2">
+          <TabsList className="w-full justify-start mb-4 bg-muted/50 p-1 rounded-lg border border-border/50">
+            <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Briefcase className="w-4 h-4" />
               Overview
               {application.ai_evaluation_status === 'pending' && (
@@ -443,7 +443,7 @@ export default function CandidateProfile() {
                 <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
+            <TabsTrigger value="documents" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <FileText className="w-4 h-4" />
               Documents
               {(application.cv_url || application.disc_url) && (
@@ -452,7 +452,7 @@ export default function CandidateProfile() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="interview" className="gap-2">
+            <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
               {interviews.length > 0 && (

@@ -155,10 +155,10 @@ export function InterviewEvaluationsCard({ applicationId }: InterviewEvaluations
   }
 
   return (
-    <Card>
+    <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
-          <ClipboardList className="w-4 h-4" />
+          <ClipboardList className="w-4 h-4 text-[hsl(var(--young-blue))]" />
           Interview Evaluations
         </CardTitle>
       </CardHeader>

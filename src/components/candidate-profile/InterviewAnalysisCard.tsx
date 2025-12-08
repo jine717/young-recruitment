@@ -51,7 +51,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-young-sm hover-lift transition-all duration-200">
         <CardContent className="py-8 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
@@ -62,7 +62,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   // No analysis yet - show empty state with analyze button
   if (!hasAnalysis) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-dashed shadow-young-sm hover-lift transition-all duration-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -120,8 +120,10 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
     return 'text-muted-foreground bg-muted/50 border-muted';
   };
 
+  const recommendation = analysis?.new_recommendation || 'review';
+
   const getRecommendationStyle = () => {
-    switch (analysis!.new_recommendation) {
+    switch (recommendation) {
       case 'proceed':
         return 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30';
       case 'review':
@@ -134,7 +136,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   };
 
   return (
-    <Card className="border-[hsl(var(--young-blue))]/30">
+    <Card className="border-[hsl(var(--young-blue))]/30 shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors pb-3">
@@ -143,7 +145,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
                 <ClipboardCheck className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 Interview Analysis
                 <Badge className={getRecommendationStyle()}>
-                  {analysis!.new_recommendation.charAt(0).toUpperCase() + analysis!.new_recommendation.slice(1)}
+                  {recommendation.charAt(0).toUpperCase() + recommendation.slice(1)}
                 </Badge>
               </CardTitle>
               <div className="flex items-center gap-2">

@@ -9,13 +9,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
+import { useRecruiters } from "@/hooks/useRecruiters";
+import { useAssignApplication } from "@/hooks/useAssignApplication";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSendNotification, NotificationType } from "@/hooks/useNotifications";
@@ -25,17 +27,25 @@ import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
-  under_review: "bg-primary/20 text-primary-foreground",
-  interview: "bg-secondary/20 text-secondary-foreground",
-  rejected: "bg-destructive/20 text-destructive",
-  hired: "bg-green-500/20 text-green-700"
+  under_review: "bg-muted text-muted-foreground",
+  interview: "bg-muted text-muted-foreground",
+  rejected: "bg-destructive/20 text-destructive border border-destructive/30",
+  hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
 const statusLabels: Record<ApplicationWithDetails['status'], string> = {
-  pending: "Pending",
-  under_review: "Under Review",
+  pending: "New",
+  under_review: "Review",
   interview: "Interview",
   rejected: "Rejected",
   hired: "Hired"
+};
+
+const statusIcons: Record<ApplicationWithDetails['status'], React.ReactNode> = {
+  pending: <Sparkles className="h-3 w-3 mr-1" />,
+  under_review: <Eye className="h-3 w-3 mr-1" />,
+  interview: <Video className="h-3 w-3 mr-1" />,
+  rejected: <XCircle className="h-3 w-3 mr-1" />,
+  hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
 const RecruiterDashboard = () => {
   const {
@@ -55,6 +65,7 @@ const RecruiterDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
+  const [assignedFilter, setAssignedFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -63,6 +74,10 @@ const RecruiterDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
+  
+  // Fetch recruiters for assignment dropdown
+  const { data: recruiters = [] } = useRecruiters();
+  const assignApplication = useAssignApplication();
 
   const applicationIds = applications?.map(a => a.id) || [];
   const {
@@ -72,6 +87,13 @@ const RecruiterDashboard = () => {
   const filteredApplications = applications?.filter(app => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
+    
+    // Assigned filter
+    if (assignedFilter !== "all") {
+      if (assignedFilter === "unassigned" && app.assigned_to !== null) return false;
+      if (assignedFilter === "me" && app.assigned_to !== user?.id) return false;
+      if (assignedFilter !== "unassigned" && assignedFilter !== "me" && app.assigned_to !== assignedFilter) return false;
+    }
     
     // Stage filter
     if (stageFilter !== "all") {
@@ -140,12 +162,22 @@ const RecruiterDashboard = () => {
     setCurrentPage(1);
   };
   
-  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all";
+  const handleAssignedFilterChange = (value: string) => {
+    setAssignedFilter(value);
+    setCurrentPage(1);
+  };
+  
+  const handleAssignment = (applicationId: string, recruiterId: string | null) => {
+    assignApplication.mutate({ applicationId, assignedTo: recruiterId });
+  };
+  
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all" || assignedFilter !== "all";
   
   const clearAllFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
     setStageFilter("all");
+    setAssignedFilter("all");
     setSortBy("date");
     setDateFilter("all");
     setCurrentPage(1);
@@ -325,29 +357,29 @@ const RecruiterDashboard = () => {
   return <div className="min-h-screen bg-background">
       <DashboardNavbar user={user} isAdmin={isAdmin} />
 
-      {/* Header */}
-      <section className="pt-32 pb-8 px-6">
+      {/* Header - compact */}
+      <section className="pt-24 pb-6 px-6 bg-background">
         <div className="container mx-auto max-w-7xl">
-          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-8">
+          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
           <div className="flex items-center justify-between gap-4">
-            <h1 className="font-display text-5xl md:text-6xl">RECRUITER DASHBOARD</h1>
-            <div className="flex items-center gap-2">
-              <Button asChild>
+            <h1 className="font-display text-3xl md:text-4xl">RECRUITER DASHBOARD</h1>
+            <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/evaluate">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Candidates Evaluation
                 </Link>
               </Button>
-              <Button asChild>
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/analytics">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
                 </Link>
               </Button>
-              <Button asChild>
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/jobs">
                   <Plus className="h-4 w-4 mr-2" />
                   Manage Jobs
@@ -358,14 +390,16 @@ const RecruiterDashboard = () => {
         </div>
       </section>
 
-      {/* Stats Cards */}
-      <section className="pb-8 px-6">
+      {/* Stats Cards with brand variants */}
+      <section className="pb-8 px-6 pt-4">
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-blue))]/15">
+                    <Users className="h-4 w-4 text-[hsl(var(--young-blue))]" />
+                  </div>
                   Total Applications
                 </CardTitle>
               </CardHeader>
@@ -373,32 +407,38 @@ const RecruiterDashboard = () => {
                 <p className="text-3xl font-display">{stats.total}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.05s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Pending Review
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-gold))]/15">
+                    <Clock className="h-4 w-4 text-[hsl(var(--young-gold))]" />
+                  </div>
+                  New
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-display">{stats.pending}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Under Review
+                  <div className="p-1.5 rounded-lg bg-[hsl(var(--young-khaki))]/15">
+                    <Briefcase className="h-4 w-4 text-[hsl(var(--young-khaki))]" />
+                  </div>
+                  Review
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-display">{stats.underReview}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0.15s' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
+                  <div className="p-1.5 rounded-lg bg-green-500/15">
+                    <Sparkles className="h-4 w-4 text-green-600" />
+                  </div>
                   AI Analyzed
                 </CardTitle>
               </CardHeader>
@@ -428,14 +468,32 @@ const RecruiterDashboard = () => {
                   />
                 </div>
               )}
-              {isLoading ? <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div> : error ? <div className="text-center py-20">
-                  <p className="text-destructive mb-4">Failed to load applications</p>
-                  <Button variant="outline" onClick={() => window.location.reload()}>
+              {isLoading ? (
+                <div className="py-8 space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 animate-fade-in" style={{ animationDelay: `${i * 0.05}s` }}>
+                      <div className="shimmer w-8 h-8 rounded-full" />
+                      <div className="shimmer w-10 h-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <div className="shimmer h-4 w-1/3 rounded" />
+                        <div className="shimmer h-3 w-1/4 rounded" />
+                      </div>
+                      <div className="shimmer h-6 w-20 rounded-full" />
+                      <div className="shimmer h-4 w-24 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-center py-20">
+                  <div className="p-4 rounded-full bg-destructive/10 w-fit mx-auto mb-4">
+                    <X className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="text-destructive mb-4 font-medium">Failed to load applications</p>
+                  <Button variant="outline" onClick={() => window.location.reload()} className="hover-lift">
                     Retry
                   </Button>
-                </div> : paginatedApplications && paginatedApplications.length > 0 ? <>
+                </div>
+              ) : paginatedApplications && paginatedApplications.length > 0 ? <>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -530,11 +588,11 @@ const RecruiterDashboard = () => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("pending")} className="flex items-center justify-between">
-                                Pending
+                                New
                                 {statusFilter === "pending" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("under_review")} className="flex items-center justify-between">
-                                Under Review
+                                Review
                                 {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">
@@ -583,6 +641,45 @@ const RecruiterDashboard = () => {
                                 </span>
                                 {stageFilter === "interviewed" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Assigned
+                              <ChevronDown className="h-3 w-3" />
+                              {assignedFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("all")} className="flex items-center justify-between">
+                                All
+                                {assignedFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("me")} className="flex items-center justify-between">
+                                Assigned to Me
+                                {assignedFilter === "me" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("unassigned")} className="flex items-center justify-between">
+                                Unassigned
+                                {assignedFilter === "unassigned" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              {recruiters.length > 0 && <DropdownMenuSeparator />}
+                              {recruiters.map(recruiter => (
+                                <DropdownMenuItem 
+                                  key={recruiter.id} 
+                                  onClick={() => handleAssignedFilterChange(recruiter.id)} 
+                                  className="flex items-center justify-between"
+                                >
+                                  {recruiter.full_name || recruiter.email || 'Unknown'}
+                                  {assignedFilter === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
@@ -682,21 +779,59 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <Badge className={statusColors[app.status]}>
+                                  {statusIcons[app.status]}
                                   {statusLabels[app.status]}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 {evaluation?.evaluation_stage === 'post_interview' ? (
-                                  <div className="flex items-center gap-1.5 text-[hsl(var(--young-blue))]">
-                                    <FileCheck className="h-4 w-4" />
-                                    <span className="text-xs font-medium">Interviewed</span>
-                                  </div>
+                                  <Badge className="bg-muted text-muted-foreground">
+                                    <FileCheck className="h-3 w-3 mr-1" />
+                                    Interviewed
+                                  </Badge>
                                 ) : (
-                                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                                    <FileQuestion className="h-4 w-4" />
-                                    <span className="text-xs">Initial</span>
-                                  </div>
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    <FileQuestion className="h-3 w-3 mr-1" />
+                                    Initial
+                                  </Badge>
                                 )}
+                              </TableCell>
+                              <TableCell onClick={e => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                                      {app.assigned_recruiter ? (
+                                        <>
+                                          <UserCircle className="h-3 w-3" />
+                                          {app.assigned_recruiter.full_name || app.assigned_recruiter.email?.split('@')[0] || 'Assigned'}
+                                        </>
+                                      ) : (
+                                        <span className="text-muted-foreground">Unassigned</span>
+                                      )}
+                                      <ChevronDown className="h-3 w-3 ml-1" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start" className="bg-popover">
+                                    <DropdownMenuItem 
+                                      onClick={() => handleAssignment(app.id, null)}
+                                      className="flex items-center justify-between"
+                                    >
+                                      Unassigned
+                                      {!app.assigned_to && <Check className="h-4 w-4 ml-2" />}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {recruiters.map(recruiter => (
+                                      <DropdownMenuItem 
+                                        key={recruiter.id} 
+                                        onClick={() => handleAssignment(app.id, recruiter.id)}
+                                        className="flex items-center justify-between"
+                                      >
+                                        {recruiter.full_name || recruiter.email || 'Unknown'}
+                                        {app.assigned_to === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {format(new Date(app.created_at), "MMM d, yyyy 'at' HH:mm")}
@@ -720,7 +855,7 @@ const RecruiterDashboard = () => {
                                         Run AI Analysis
                                       </DropdownMenuItem>}
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
-                                      Mark Under Review
+                                      Mark Review
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
                                       Move to Interview
@@ -742,7 +877,7 @@ const RecruiterDashboard = () => {
                             </TableRow>
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
-                                  <TableCell colSpan={8} className="bg-muted/30 p-0">
+                                  <TableCell colSpan={9} className="bg-muted/30 p-0">
                                     <div className="p-4">
                                       <AIEvaluationCard evaluation={evaluation} />
                                     </div>

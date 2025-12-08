@@ -67,10 +67,11 @@ export function AIScoreBadge({
     );
   }
 
+  // Green for positive, gold for medium, red for low
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'bg-green-500/20 text-green-700 border-green-500/50';
-    if (score >= 40) return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50';
-    return 'bg-red-500/20 text-red-700 border-red-500/50';
+    if (score >= 40) return 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50';
+    return 'bg-destructive/20 text-destructive border-destructive/50';
   };
 
   const isPostInterview = evaluationStage === 'post_interview';
@@ -84,9 +85,10 @@ export function AIScoreBadge({
           <div className="flex items-center gap-1">
             <div className={cn(
               "rounded-full flex items-center justify-center font-bold border-2 gap-0.5",
-              sizeClasses,
-              getScoreColor(score)
-            )}>
+            sizeClasses,
+            getScoreColor(score),
+            score >= 70 && "shadow-[0_0_12px_rgba(34,197,94,0.3)]"
+          )}>
               <span className="text-muted-foreground/60 line-through text-[0.65em]">{initialScore}</span>
               <span>→</span>
               <span>{score}</span>
@@ -95,12 +97,12 @@ export function AIScoreBadge({
               {scoreChange !== null && scoreChange !== 0 && (
                 <span className={cn(
                   "text-[0.65em] font-medium",
-                  scoreChange > 0 ? 'text-green-600' : 'text-red-600'
+                  scoreChange > 0 ? 'text-green-600' : 'text-destructive'
                 )}>
                   {scoreChange > 0 ? '+' : ''}{scoreChange}
                 </span>
               )}
-              <Users className="w-3 h-3 ml-0.5 text-[hsl(var(--young-blue))]" />
+              <Users className="w-3 h-3 ml-0.5 text-green-600" />
             </div>
           </div>
         </TooltipTrigger>
@@ -117,14 +119,15 @@ export function AIScoreBadge({
     );
   }
 
-  // Standard score badge
+  // Standard score badge with glow for high scores
   return (
     <Tooltip>
       <TooltipTrigger>
         <div className={cn(
-          "rounded-full flex items-center justify-center font-bold border-2",
+          "rounded-full flex items-center justify-center font-bold border-2 transition-shadow",
           size === 'sm' ? 'w-8 h-8 text-xs' : 'w-12 h-12 text-sm',
-          getScoreColor(score)
+          getScoreColor(score),
+          score >= 70 && "shadow-[0_0_12px_rgba(34,197,94,0.3)]"
         )}>
           {score}
         </div>

@@ -30,16 +30,31 @@ export function DashboardNavbar({ user, isAdmin = false, showDashboardLink = fal
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Account';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border/50">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="font-display text-3xl tracking-tight">YOUNG.</Link>
-        <div className="flex items-center gap-4">
-          <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link 
+          to="/" 
+          className="font-display text-3xl tracking-tight text-foreground hover:text-young-blue transition-colors duration-200"
+        >
+          YOUNG.
+        </Link>
+        <div className="flex items-center gap-6">
+          {/* Hidden for now - will unhide after new features
+          <Link 
+            to="/jobs" 
+            className="group relative text-muted-foreground hover:text-foreground transition-colors duration-200"
+          >
             Open Positions
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-young-blue transition-all duration-300 group-hover:w-full" />
           </Link>
+          */}
           {showDashboardLink && (
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link 
+              to="/dashboard" 
+              className="group relative text-muted-foreground hover:text-foreground transition-colors duration-200"
+            >
               Dashboard
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-young-blue transition-all duration-300 group-hover:w-full" />
             </Link>
           )}
           <DropdownMenu>

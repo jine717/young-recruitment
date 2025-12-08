@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Young Brand Design System
+/* Young Brand Design System 2.0
    Primary Colors:
    - Cream: #FDFAF0 (background)
    - Bold Black: #100D0A (text, logos)
@@ -45,8 +45,14 @@
 
     /* Young Brand Colors */
     --young-blue: 223 100% 79%;
+    --young-blue-light: 223 100% 86%;
+    --young-blue-dark: 223 75% 69%;
     --young-gold: 33 43% 55%;
+    --young-gold-light: 33 52% 72%;
     --young-khaki: 42 26% 29%;
+    --young-khaki-light: 42 26% 46%;
+    --young-cream: 46 68% 97%;
+    --young-black: 30 23% 5%;
 
     --sidebar-background: 46 68% 95%;
     --sidebar-foreground: 30 23% 5%;
@@ -56,6 +62,13 @@
     --sidebar-accent-foreground: 46 68% 97%;
     --sidebar-border: 47 26% 80%;
     --sidebar-ring: 223 100% 79%;
+
+    /* Chart Colors */
+    --chart-1: 142 71% 45%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 33 100% 50%;
+    --chart-5: 0 84% 60%;
   }
 
   .dark {
@@ -89,47 +102,14 @@
 
     /* Young Brand Colors - Dark Mode */
     --young-blue: 223 100% 79%;
+    --young-blue-light: 223 100% 86%;
+    --young-blue-dark: 223 75% 69%;
     --young-gold: 33 43% 55%;
+    --young-gold-light: 33 52% 72%;
     --young-khaki: 42 26% 50%;
-
-    --sidebar-background: 30 23% 8%;
-    --sidebar-foreground: 46 68% 97%;
-    --sidebar-primary: 223 100% 79%;
-    --sidebar-primary-foreground: 30 23% 5%;
-    --sidebar-accent: 33 43% 45%;
-    --sidebar-accent-foreground: 46 68% 97%;
-    --sidebar-border: 47 26% 20%;
-    --sidebar-ring: 223 100% 79%;
-  }
-
-  .dark {
-    --background: 30 23% 5%;
-    --foreground: 46 68% 97%;
-
-    --card: 30 23% 8%;
-    --card-foreground: 46 68% 97%;
-
-    --popover: 30 23% 8%;
-    --popover-foreground: 46 68% 97%;
-
-    --primary: 223 100% 79%;
-    --primary-foreground: 30 23% 5%;
-
-    --secondary: 33 43% 45%;
-    --secondary-foreground: 46 68% 97%;
-
-    --muted: 47 26% 20%;
-    --muted-foreground: 47 26% 70%;
-
-    --accent: 33 43% 45%;
-    --accent-foreground: 46 68% 97%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 46 68% 97%;
-
-    --border: 47 26% 20%;
-    --input: 47 26% 20%;
-    --ring: 223 100% 79%;
+    --young-khaki-light: 42 26% 60%;
+    --young-cream: 46 68% 97%;
+    --young-black: 30 23% 5%;
 
     --sidebar-background: 30 23% 8%;
     --sidebar-foreground: 46 68% 97%;
@@ -155,20 +135,194 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body antialiased;
   }
 }
 
-/* Custom utilities for Young brand */
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
 @layer utilities {
+  /* Display Typography - Headlines (Bebas Neue) */
+  .text-display-xl {
+    @apply font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl leading-none tracking-tight uppercase;
+  }
+  
+  .text-display-lg {
+    @apply font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none tracking-tight uppercase;
+  }
+  
+  .text-display-md {
+    @apply font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-tight tracking-tight uppercase;
+  }
+  
+  .text-display-sm {
+    @apply font-display text-xl sm:text-2xl md:text-3xl leading-tight tracking-tight uppercase;
+  }
+  
+  /* Body Typography (Inter) */
+  .text-body-lg {
+    @apply font-body text-lg md:text-xl leading-relaxed;
+  }
+  
+  .text-body-md {
+    @apply font-body text-base leading-relaxed;
+  }
+  
+  .text-body-sm {
+    @apply font-body text-sm leading-relaxed;
+  }
+
+  /* Legacy font-display class for backwards compatibility */
   .font-display {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Bebas Neue', Impact, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.02em;
   }
 }
 
-/* Print Styles for Executive Report */
+/* ============================================
+   YOUNG SIGNATURE EFFECTS
+   ============================================ */
+@layer utilities {
+  /* Signature Young Blue underline - like "DISRUPT" on young.com */
+  .young-underline {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .young-underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -4px;
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12'%3E%3Cpath d='M2 8 Q50 2 100 8 T198 6' stroke='%2393B1FF' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+
+  .young-underline-lg::after {
+    bottom: -8px;
+    height: 12px;
+  }
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   ============================================ */
+@layer utilities {
+  /* Background Gradients */
+  .bg-gradient-young-hero {
+    background: linear-gradient(135deg, hsl(var(--young-cream)) 0%, hsl(46 68% 94%) 50%, hsl(46 68% 91%) 100%);
+  }
+  
+  .bg-gradient-young-cta {
+    background: linear-gradient(135deg, hsl(var(--young-blue)) 0%, hsl(var(--young-blue-dark)) 100%);
+  }
+  
+  .bg-gradient-young-gold {
+    background: linear-gradient(135deg, hsl(var(--young-gold)) 0%, hsl(33 43% 45%) 100%);
+  }
+  
+  /* Text Gradient */
+  .text-gradient-young {
+    background: linear-gradient(135deg, hsl(var(--young-blue)) 0%, hsl(var(--young-gold)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ============================================
+   HOVER & INTERACTIVE UTILITIES
+   ============================================ */
+@layer utilities {
+  /* Hover Lift Effect */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .hover-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 4px 16px -4px hsl(var(--young-blue) / 0.2);
+  }
+  
+  /* Hover Scale Effect */
+  .hover-scale {
+    @apply transition-transform duration-200 ease-out;
+  }
+  
+  .hover-scale:hover {
+    @apply scale-[1.02];
+  }
+  
+  /* Hover Glow Effect */
+  .hover-glow {
+    @apply transition-shadow duration-300;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 8px 32px -8px hsl(var(--young-blue) / 0.25);
+  }
+  
+  /* Focus Rings - YOUNG Brand */
+  .focus-young {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
+  }
+}
+
+/* ============================================
+   GLASS & BACKDROP EFFECTS
+   ============================================ */
+@layer utilities {
+  .glass {
+    @apply bg-background/80 backdrop-blur-md;
+  }
+  
+  .glass-strong {
+    @apply bg-background/90 backdrop-blur-lg;
+  }
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+@layer utilities {
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+/* ============================================
+   LINK UNDERLINE ANIMATION
+   ============================================ */
+@layer utilities {
+  .story-link {
+    @apply relative inline-block;
+  }
+
+  .story-link::after {
+    content: '';
+    @apply absolute w-full scale-x-0 h-0.5 bottom-0 left-0 bg-primary origin-bottom-right transition-transform duration-300;
+  }
+
+  .story-link:hover::after {
+    @apply scale-x-100 origin-bottom-left;
+  }
+}
+
+/* ============================================
+   PRINT STYLES FOR EXECUTIVE REPORT
+   ============================================ */
 @media print {
   @page {
     size: A4;

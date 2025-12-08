@@ -93,7 +93,7 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
       <DialogTrigger asChild>
         <Button 
           size="sm"
-          className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
+          variant="outline"
         >
           <Gavel className="w-4 h-4 mr-2" />
           Decision
@@ -188,7 +188,6 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
             <Button 
               type="submit" 
               disabled={addDecision.isPending}
-              className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
             >
               {addDecision.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Confirm Decision

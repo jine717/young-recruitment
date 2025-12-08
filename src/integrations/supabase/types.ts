@@ -127,6 +127,7 @@ export type Database = {
             | Database["public"]["Enums"]["ai_evaluation_status"]
             | null
           ai_score: number | null
+          assigned_to: string | null
           business_case_completed: boolean
           business_case_completed_at: string | null
           candidate_email: string | null
@@ -145,6 +146,7 @@ export type Database = {
             | Database["public"]["Enums"]["ai_evaluation_status"]
             | null
           ai_score?: number | null
+          assigned_to?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -163,6 +165,7 @@ export type Database = {
             | Database["public"]["Enums"]["ai_evaluation_status"]
             | null
           ai_score?: number | null
+          assigned_to?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -177,6 +180,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "applications_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "applications_job_id_fkey"
             columns: ["job_id"]

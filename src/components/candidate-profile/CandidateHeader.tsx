@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { InterviewEvaluationForm } from './InterviewEvaluationForm';
@@ -48,19 +48,27 @@ interface CandidateHeaderProps {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50',
-  under_review: 'bg-blue-500/20 text-blue-700 border-blue-500/50',
-  interview: 'bg-purple-500/20 text-purple-700 border-purple-500/50',
+  pending: 'bg-muted text-muted-foreground',
+  under_review: 'bg-muted text-muted-foreground',
+  interview: 'bg-muted text-muted-foreground',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
   rejected: 'bg-red-500/20 text-red-700 border-red-500/50',
 };
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pending',
-  under_review: 'Under Review',
+  pending: 'New',
+  under_review: 'Review',
   interview: 'Interview',
   hired: 'Hired',
   rejected: 'Rejected',
+};
+
+const statusIcons: Record<string, React.ReactNode> = {
+  pending: <Sparkles className="h-3 w-3 mr-1" />,
+  under_review: <Eye className="h-3 w-3 mr-1" />,
+  interview: <Video className="h-3 w-3 mr-1" />,
+  hired: <CheckCircle className="h-3 w-3 mr-1" />,
+  rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
 
 function AIScoreBadge({ 
@@ -237,29 +245,44 @@ export function CandidateHeader({
         <div className="flex flex-col gap-3">
           {/* Status Selector */}
           <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Change status" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue>
+                <span className="flex items-center">
+                  {statusIcons[status]}
+                  {statusLabels[status] || status}
+                </span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="interview">Interview</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="pending">
+                <span className="flex items-center">{statusIcons.pending} New</span>
+              </SelectItem>
+              <SelectItem value="under_review">
+                <span className="flex items-center">{statusIcons.under_review} Review</span>
+              </SelectItem>
+              <SelectItem value="interview">
+                <span className="flex items-center">{statusIcons.interview} Interview</span>
+              </SelectItem>
+              <SelectItem value="hired">
+                <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>
+              </SelectItem>
+              <SelectItem value="rejected">
+                <span className="flex items-center text-destructive">{statusIcons.rejected} Rejected</span>
+              </SelectItem>
             </SelectContent>
           </Select>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            onClick={onScheduleInterview} 
-            variant="outline" 
-            size="sm"
-            className="gap-1"
-          >
-            <CalendarPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Schedule</span>
-          </Button>
+          {/* Quick Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              onClick={onScheduleInterview} 
+              size="sm"
+              variant="outline"
+              className="gap-1"
+            >
+              <CalendarPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </Button>
           
           <InterviewEvaluationForm applicationId={applicationId} />
           <HiringDecisionModal applicationId={applicationId} />
