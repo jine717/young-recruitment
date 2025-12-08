@@ -201,11 +201,30 @@ interface ComparisonContext {
   };
 }
 
+// Job Editor Context for AI-assisted job creation
+interface JobEditorContext {
+  title?: string;
+  location?: string;
+  type?: string;
+  department?: string;
+  description?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  tags?: string[];
+  businessCaseQuestions?: { title: string; description: string }[];
+  fixedInterviewQuestions?: { text: string; category: string }[];
+  aiSystemPrompt?: string;
+  aiInterviewPrompt?: string;
+  isEditing: boolean;
+}
+
 interface AIAssistantRequest {
   question: string;
   conversationHistory?: Message[];
   candidateContext?: CandidateContext;
   comparisonContext?: ComparisonContext;
+  jobEditorContext?: JobEditorContext;
 }
 
 // Detect intent from user question
@@ -273,7 +292,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question, conversationHistory = [], candidateContext, comparisonContext } = await req.json() as AIAssistantRequest;
+    const { question, conversationHistory = [], candidateContext, comparisonContext, jobEditorContext } = await req.json() as AIAssistantRequest;
 
     if (!question || typeof question !== 'string') {
       return new Response(
@@ -286,6 +305,7 @@ serve(async (req) => {
     console.log('[AI Assistant] Conversation history length:', conversationHistory.length);
     console.log('[AI Assistant] Candidate context:', candidateContext?.name || 'None');
     console.log('[AI Assistant] Comparison context:', comparisonContext?.jobTitle || 'None');
+    console.log('[AI Assistant] Job editor context:', jobEditorContext?.title || 'None');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -296,12 +316,13 @@ serve(async (req) => {
     const intents = detectIntent(question);
     console.log('[AI Assistant] Detected intents:', intents);
 
-    // Fetch data based on detected intents
-    const context = await fetchContextData(supabase, intents);
+    // Fetch data based on detected intents (skip for job editor context)
+    const context = jobEditorContext ? { overview: null, candidates: [], jobs: [], interviews: [], analytics: null, recentActivity: [] } : await fetchContextData(supabase, intents);
     console.log('[AI Assistant] Context fetched successfully');
 
-    // Build system prompt with context (and candidate context or comparison context if provided)
-    const systemPrompt = buildSystemPrompt(context, candidateContext, comparisonContext);
+    // Build system prompt with context
+    const systemPrompt = buildSystemPrompt(context, candidateContext, comparisonContext, jobEditorContext);
+
 
     // Build messages array
     const messages = [
@@ -684,8 +705,8 @@ async function fetchRecentActivity(supabase: any) {
   };
 }
 
-// Build system prompt with comprehensive candidate or comparison context
-function buildSystemPrompt(context: any, candidateContext?: CandidateContext, comparisonContext?: ComparisonContext) {
+// Build system prompt with comprehensive candidate, comparison, or job editor context
+function buildSystemPrompt(context: any, candidateContext?: CandidateContext, comparisonContext?: ComparisonContext, jobEditorContext?: JobEditorContext) {
   const { overview, candidates, jobs, interviews, analytics, recentActivity } = context;
 
   let prompt = `You are an AI assistant for the Young recruitment platform. You help recruiters make data-driven decisions by answering questions about candidates, job openings, and recruitment analytics.
@@ -704,6 +725,110 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext, co
 - If you don't have enough information, say so clearly
 - Format responses with clear sections when presenting multiple items
 `;
+
+  // Add job editor context if provided (for AI-assisted job creation)
+  if (jobEditorContext) {
+    prompt = `You are Young AI, a recruitment specialist helping recruiters create compelling job postings. You have deep expertise in writing job descriptions that attract top talent.
+
+## CURRENT CONTEXT: JOB ${jobEditorContext.isEditing ? 'EDITING' : 'CREATION'}
+
+### Current Job Details
+- **Title:** ${jobEditorContext.title || 'Not set yet'}
+- **Location:** ${jobEditorContext.location || 'Not set'}
+- **Type:** ${jobEditorContext.type || 'Not set'}
+- **Department:** ${jobEditorContext.department || 'Not set'}
+`;
+
+    if (jobEditorContext.description) {
+      prompt += `- **Description:** ${jobEditorContext.description.substring(0, 300)}${jobEditorContext.description.length > 300 ? '...' : ''}\n`;
+    } else {
+      prompt += `- **Description:** Not written yet\n`;
+    }
+
+    const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
+    const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
+    const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
+    
+    prompt += `- **Responsibilities:** ${responsibilitiesCount} items`;
+    if (responsibilitiesCount > 0 && jobEditorContext.responsibilities) {
+      prompt += ` (${jobEditorContext.responsibilities.filter(r => r.trim()).slice(0, 3).join(', ')}${responsibilitiesCount > 3 ? '...' : ''})`;
+    }
+    prompt += '\n';
+    
+    prompt += `- **Requirements:** ${requirementsCount} items`;
+    if (requirementsCount > 0 && jobEditorContext.requirements) {
+      prompt += ` (${jobEditorContext.requirements.filter(r => r.trim()).slice(0, 3).join(', ')}${requirementsCount > 3 ? '...' : ''})`;
+    }
+    prompt += '\n';
+    
+    prompt += `- **Benefits:** ${benefitsCount} items\n`;
+    
+    if (jobEditorContext.businessCaseQuestions?.length) {
+      prompt += `- **Business Case Questions:** ${jobEditorContext.businessCaseQuestions.length} questions\n`;
+    }
+    
+    if (jobEditorContext.aiSystemPrompt) {
+      prompt += `- **AI Evaluation Instructions:** Configured\n`;
+    }
+
+    prompt += `
+## Your Capabilities
+1. **Write Job Descriptions**: Create compelling, professional descriptions that highlight the role's impact
+2. **Suggest Responsibilities**: Provide specific, measurable responsibilities appropriate for the role
+3. **Define Requirements**: Distinguish between must-have and nice-to-have qualifications
+4. **Propose Benefits**: Suggest competitive benefits that attract talent
+5. **Write AI Evaluation Criteria**: Help define how AI should assess candidates for this role
+6. **Suggest Business Case Questions**: Create practical assessment questions
+
+## Guidelines
+- Write in a professional but engaging tone matching the YOUNG brand (fearless, unusual, down to earth)
+- Be specific and actionable in suggestions
+- Consider industry standards and competitive job markets
+- Focus on attracting top talent while being realistic
+
+## IMPORTANT: Insertable Content Format
+When generating content that can be directly inserted into the form, wrap it in special tags:
+
+For job description:
+[INSERTABLE:description]
+Your generated description here
+[/INSERTABLE]
+
+For responsibilities (use bullet list format):
+[INSERTABLE:responsibilities]
+- Responsibility 1
+- Responsibility 2
+- Responsibility 3
+[/INSERTABLE]
+
+For requirements:
+[INSERTABLE:requirements]
+- Requirement 1
+- Requirement 2
+[/INSERTABLE]
+
+For benefits:
+[INSERTABLE:benefits]
+- Benefit 1
+- Benefit 2
+[/INSERTABLE]
+
+For AI evaluation instructions:
+[INSERTABLE:aiPrompt]
+Your evaluation criteria here
+[/INSERTABLE]
+
+For AI interview instructions:
+[INSERTABLE:interviewPrompt]
+Your interview question generation instructions here
+[/INSERTABLE]
+
+Always include these insertable blocks when generating content the recruiter can use directly. This allows one-click insertion into the form.
+
+Now answer the recruiter's question and help them create an outstanding job posting.`;
+
+    return prompt;
+  }
 
   // Add comparison context if provided (for Candidates Evaluation drill-down)
   if (comparisonContext) {
