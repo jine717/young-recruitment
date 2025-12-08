@@ -740,14 +740,31 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext, co
 
 ## CURRENT CONTEXT: JOB ${jobEditorContext.isEditing ? 'EDITING' : 'CREATION'}
 
-### ⚠️ WORKFLOW STATUS - CHECK THIS BEFORE SUGGESTING NEXT STEPS ⚠️
-${!hasTitle ? '❌ TITLE: NOT SET - Recruiter MUST insert a title first!' : '✅ TITLE: "' + jobEditorContext.title + '"'}
-${!hasDescription ? '❌ DESCRIPTION: NOT SET - Recruiter MUST insert description before moving forward!' : '✅ DESCRIPTION: Set (' + (jobEditorContext.description || '').substring(0, 50) + '...)'}
-${responsibilitiesCount < 3 ? '⏳ RESPONSIBILITIES: Needs more (' + responsibilitiesCount + '/5 minimum)' : '✅ RESPONSIBILITIES: ' + responsibilitiesCount + ' items'}
-${requirementsCount < 3 ? '⏳ REQUIREMENTS: Needs more (' + requirementsCount + '/3 minimum)' : '✅ REQUIREMENTS: ' + requirementsCount + ' items'}
-${benefitsCount < 2 ? '⏳ BENEFITS: Needs more (' + benefitsCount + '/2 minimum)' : '✅ BENEFITS: ' + benefitsCount + ' items'}
-${businessCaseCount === 0 ? '⏳ BUSINESS CASE: No questions yet' : '✅ BUSINESS CASE: ' + businessCaseCount + ' questions'}
-${interviewQuestionsCount === 0 ? '⏳ INTERVIEW QUESTIONS: No fixed questions yet' : '✅ INTERVIEW QUESTIONS: ' + interviewQuestionsCount + ' questions'}
+## ═══════════════════════════════════════════════════════════════════
+## ⛔ INTERNAL CONTEXT ONLY - NEVER INCLUDE ANY OF THIS IN YOUR RESPONSE ⛔
+## ═══════════════════════════════════════════════════════════════════
+## The following status is for YOUR INTERNAL GUIDANCE ONLY.
+## NEVER show these lines, symbols (❌, ⏳, ✅), or status text to the user.
+## Your response must be CLEAN - only helpful content, no status markers.
+## ═══════════════════════════════════════════════════════════════════
+
+TITLE_STATUS: ${!hasTitle ? 'NOT_SET' : 'SET'}
+DESCRIPTION_STATUS: ${!hasDescription ? 'NOT_SET' : 'SET'}
+RESPONSIBILITIES_COUNT: ${responsibilitiesCount}
+REQUIREMENTS_COUNT: ${requirementsCount}
+BENEFITS_COUNT: ${benefitsCount}
+BUSINESS_CASE_COUNT: ${businessCaseCount}
+INTERVIEW_QUESTIONS_COUNT: ${interviewQuestionsCount}
+
+## ═══════════════════════════════════════════════════════════════════
+## ⛔ END OF INTERNAL CONTEXT - NOTHING ABOVE GOES IN YOUR RESPONSE ⛔
+## ═══════════════════════════════════════════════════════════════════
+
+## YOUR BEHAVIOR (based on internal status above, but NEVER mention it):
+- If TITLE_STATUS is NOT_SET: Focus on helping with title, remind to click Insert if you already suggested one
+- If DESCRIPTION_STATUS is NOT_SET: After title is set, help with description
+- If both are SET: You can suggest responsibilities, requirements, benefits, etc.
+- NEVER say "I notice the status shows..." or reference the internal context
 
 ## 🚨 CRITICAL WORKFLOW RULES - YOU MUST FOLLOW THESE 🚨
 
