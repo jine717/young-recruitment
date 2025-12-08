@@ -9,13 +9,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle } from "lucide-react";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
+import { useRecruiters } from "@/hooks/useRecruiters";
+import { useAssignApplication } from "@/hooks/useAssignApplication";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSendNotification, NotificationType } from "@/hooks/useNotifications";
@@ -63,6 +65,7 @@ const RecruiterDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
+  const [assignedFilter, setAssignedFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -71,6 +74,10 @@ const RecruiterDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
+  
+  // Fetch recruiters for assignment dropdown
+  const { data: recruiters = [] } = useRecruiters();
+  const assignApplication = useAssignApplication();
 
   const applicationIds = applications?.map(a => a.id) || [];
   const {
@@ -80,6 +87,13 @@ const RecruiterDashboard = () => {
   const filteredApplications = applications?.filter(app => {
     if (statusFilter !== "all" && app.status !== statusFilter) return false;
     if (jobFilter !== "all" && app.job_id !== jobFilter) return false;
+    
+    // Assigned filter
+    if (assignedFilter !== "all") {
+      if (assignedFilter === "unassigned" && app.assigned_to !== null) return false;
+      if (assignedFilter === "me" && app.assigned_to !== user?.id) return false;
+      if (assignedFilter !== "unassigned" && assignedFilter !== "me" && app.assigned_to !== assignedFilter) return false;
+    }
     
     // Stage filter
     if (stageFilter !== "all") {
@@ -148,12 +162,22 @@ const RecruiterDashboard = () => {
     setCurrentPage(1);
   };
   
-  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all";
+  const handleAssignedFilterChange = (value: string) => {
+    setAssignedFilter(value);
+    setCurrentPage(1);
+  };
+  
+  const handleAssignment = (applicationId: string, recruiterId: string | null) => {
+    assignApplication.mutate({ applicationId, assignedTo: recruiterId });
+  };
+  
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all" || assignedFilter !== "all";
   
   const clearAllFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
     setStageFilter("all");
+    setAssignedFilter("all");
     setSortBy("date");
     setDateFilter("all");
     setCurrentPage(1);
@@ -623,6 +647,45 @@ const RecruiterDashboard = () => {
                         <TableHead>
                           <DropdownMenu>
                             <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
+                              Assigned
+                              <ChevronDown className="h-3 w-3" />
+                              {assignedFilter !== "all" && (
+                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  <Filter className="h-3 w-3" />
+                                </Badge>
+                              )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("all")} className="flex items-center justify-between">
+                                All
+                                {assignedFilter === "all" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("me")} className="flex items-center justify-between">
+                                Assigned to Me
+                                {assignedFilter === "me" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAssignedFilterChange("unassigned")} className="flex items-center justify-between">
+                                Unassigned
+                                {assignedFilter === "unassigned" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              {recruiters.length > 0 && <DropdownMenuSeparator />}
+                              {recruiters.map(recruiter => (
+                                <DropdownMenuItem 
+                                  key={recruiter.id} 
+                                  onClick={() => handleAssignedFilterChange(recruiter.id)} 
+                                  className="flex items-center justify-between"
+                                >
+                                  {recruiter.full_name || recruiter.email || 'Unknown'}
+                                  {assignedFilter === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableHead>
+                        <TableHead>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
                               Applied
                               <ChevronDown className="h-3 w-3" />
                               {dateFilter !== "all" && (
@@ -733,6 +796,43 @@ const RecruiterDashboard = () => {
                                   </Badge>
                                 )}
                               </TableCell>
+                              <TableCell onClick={e => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                                      {app.assigned_recruiter ? (
+                                        <>
+                                          <UserCircle className="h-3 w-3" />
+                                          {app.assigned_recruiter.full_name || app.assigned_recruiter.email?.split('@')[0] || 'Assigned'}
+                                        </>
+                                      ) : (
+                                        <span className="text-muted-foreground">Unassigned</span>
+                                      )}
+                                      <ChevronDown className="h-3 w-3 ml-1" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start" className="bg-popover">
+                                    <DropdownMenuItem 
+                                      onClick={() => handleAssignment(app.id, null)}
+                                      className="flex items-center justify-between"
+                                    >
+                                      Unassigned
+                                      {!app.assigned_to && <Check className="h-4 w-4 ml-2" />}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {recruiters.map(recruiter => (
+                                      <DropdownMenuItem 
+                                        key={recruiter.id} 
+                                        onClick={() => handleAssignment(app.id, recruiter.id)}
+                                        className="flex items-center justify-between"
+                                      >
+                                        {recruiter.full_name || recruiter.email || 'Unknown'}
+                                        {app.assigned_to === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {format(new Date(app.created_at), "MMM d, yyyy 'at' HH:mm")}
                               </TableCell>
@@ -777,7 +877,7 @@ const RecruiterDashboard = () => {
                             </TableRow>
                             {evaluation && <CollapsibleContent asChild>
                                 <TableRow>
-                                  <TableCell colSpan={8} className="bg-muted/30 p-0">
+                                  <TableCell colSpan={9} className="bg-muted/30 p-0">
                                     <div className="p-4">
                                       <AIEvaluationCard evaluation={evaluation} />
                                     </div>
