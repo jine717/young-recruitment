@@ -39,6 +39,7 @@ export function DashboardNavbar({ user, isAdmin = false, showDashboardLink = fal
           YOUNG.
         </Link>
         <div className="flex items-center gap-6">
+          {/* Hidden for now - will unhide after new features
           <Link 
             to="/jobs" 
             className="group relative text-muted-foreground hover:text-foreground transition-colors duration-200"
@@ -46,6 +47,7 @@ export function DashboardNavbar({ user, isAdmin = false, showDashboardLink = fal
             Open Positions
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-young-blue transition-all duration-300 group-hover:w-full" />
           </Link>
+          */}
           {showDashboardLink && (
             <Link 
               to="/dashboard" 
