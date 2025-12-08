@@ -31,8 +31,8 @@ const statusColors: Record<ApplicationWithDetails['status'], string> = {
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
 const statusLabels: Record<ApplicationWithDetails['status'], string> = {
-  pending: "Pending",
-  under_review: "Under Review",
+  pending: "New",
+  under_review: "Review",
   interview: "Interview",
   rejected: "Rejected",
   hired: "Hired"
@@ -556,11 +556,11 @@ const RecruiterDashboard = () => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("pending")} className="flex items-center justify-between">
-                                Pending
+                                New
                                 {statusFilter === "pending" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("under_review")} className="flex items-center justify-between">
-                                Under Review
+                                Review
                                 {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">

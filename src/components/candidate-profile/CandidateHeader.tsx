@@ -56,8 +56,8 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pending',
-  under_review: 'Under Review',
+  pending: 'New',
+  under_review: 'Review',
   interview: 'Interview',
   hired: 'Hired',
   rejected: 'Rejected',
@@ -241,8 +241,8 @@ export function CandidateHeader({
               <SelectValue placeholder="Change status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
+              <SelectItem value="pending">New</SelectItem>
+              <SelectItem value="under_review">Review</SelectItem>
               <SelectItem value="interview">Interview</SelectItem>
               <SelectItem value="hired">Hired</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
