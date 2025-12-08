@@ -120,8 +120,10 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
     return 'text-muted-foreground bg-muted/50 border-muted';
   };
 
+  const recommendation = analysis?.new_recommendation || 'review';
+
   const getRecommendationStyle = () => {
-    switch (analysis!.new_recommendation) {
+    switch (recommendation) {
       case 'proceed':
         return 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30';
       case 'review':
@@ -143,7 +145,7 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
                 <ClipboardCheck className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 Interview Analysis
                 <Badge className={getRecommendationStyle()}>
-                  {analysis!.new_recommendation.charAt(0).toUpperCase() + analysis!.new_recommendation.slice(1)}
+                  {recommendation.charAt(0).toUpperCase() + recommendation.slice(1)}
                 </Badge>
               </CardTitle>
               <div className="flex items-center gap-2">
