@@ -48,9 +48,9 @@ interface CandidateHeaderProps {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50',
-  under_review: 'bg-blue-500/20 text-blue-700 border-blue-500/50',
-  interview: 'bg-purple-500/20 text-purple-700 border-purple-500/50',
+  pending: 'bg-muted text-muted-foreground',
+  under_review: 'bg-muted text-muted-foreground',
+  interview: 'bg-muted text-muted-foreground',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
   rejected: 'bg-red-500/20 text-red-700 border-red-500/50',
 };

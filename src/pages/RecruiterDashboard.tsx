@@ -25,8 +25,8 @@ import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
 const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
-  under_review: "bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/30",
-  interview: "bg-purple-500/20 text-purple-700 border border-purple-500/30",
+  under_review: "bg-muted text-muted-foreground",
+  interview: "bg-muted text-muted-foreground",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
@@ -713,7 +713,7 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 {evaluation?.evaluation_stage === 'post_interview' ? (
-                                  <Badge className="bg-green-500/20 text-green-700 border border-green-500/30">
+                                  <Badge className="bg-muted text-muted-foreground">
                                     <FileCheck className="h-3 w-3 mr-1" />
                                     Interviewed
                                   </Badge>
