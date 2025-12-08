@@ -343,7 +343,7 @@ const RecruiterDashboard = () => {
           <div className="flex items-center justify-between gap-4">
             <h1 className="font-display text-3xl md:text-4xl">RECRUITER DASHBOARD</h1>
             <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <Button asChild variant="young-primary">
+              <Button asChild variant="outline" className="hover-lift">
                 <Link to="/dashboard/evaluate">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Candidates Evaluation
