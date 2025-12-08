@@ -347,6 +347,7 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash',
         messages,
         stream: true,
+        max_tokens: 4096,
       }),
     });
 
@@ -936,7 +937,7 @@ CRITICAL RULES:
 The opening tag MUST be EXACTLY: [INSERTABLE:fieldname]
 - NO extra spaces inside brackets
 - NO spaces after the colon
-- fieldname must be LOWERCASE and one of: title, location, jobtype, description, responsibilities, requirements, benefits, tags, aiprompt, interviewprompt, businesscasequestions, fixedinterviewquestions
+- fieldname must be LOWERCASE and one of: title, location, jobtype, description, responsibilities, requirements, benefits, tags
 
 ## RESPONSE FORMAT - CRITICAL
 1. ALWAYS start insertable content with the EXACT opening tag: [INSERTABLE:field]
