@@ -102,7 +102,7 @@ export function InterviewEvaluationForm({ applicationId }: InterviewEvaluationFo
       <DialogTrigger asChild>
         <Button 
           size="sm"
-          className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
+          variant="outline"
         >
           <ClipboardList className="w-4 h-4 mr-2" />
           Evaluate

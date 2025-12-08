@@ -277,7 +277,8 @@ export function CandidateHeader({
             <Button 
               onClick={onScheduleInterview} 
               size="sm"
-              className="gap-1 bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-white"
+              variant="outline"
+              className="gap-1"
             >
               <CalendarPlus className="w-4 h-4" />
               <span className="hidden sm:inline">Schedule</span>
