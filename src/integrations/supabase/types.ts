@@ -686,6 +686,7 @@ export type Database = {
           ai_system_prompt: string | null
           benefits: string[] | null
           created_at: string
+          created_by: string | null
           department_id: string | null
           description: string
           id: string
@@ -707,6 +708,7 @@ export type Database = {
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
+          created_by?: string | null
           department_id?: string | null
           description: string
           id?: string
@@ -728,6 +730,7 @@ export type Database = {
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
+          created_by?: string | null
           department_id?: string | null
           description?: string
           id?: string

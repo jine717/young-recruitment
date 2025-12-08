@@ -27,7 +27,11 @@ export function useAllJobs() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select(`*, departments (name)`)
+        .select(`
+          *, 
+          departments (name),
+          creator:profiles!created_by (email)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -42,9 +46,11 @@ export function useCreateJob() {
 
   return useMutation({
     mutationFn: async (job: JobInput) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('jobs')
-        .insert(job)
+        .insert({ ...job, created_by: user?.id })
         .select()
         .single();
 
