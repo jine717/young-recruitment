@@ -886,16 +886,29 @@ For fixed interview questions (use JSON format):
 
 You MUST follow this EXACT format. Common mistakes to AVOID:
 
+❌ WRONG: Notitle] or Lettitle] or Thetitle] or title]
 ❌ WRONG: [ Are you a natural networker...
 ❌ WRONG: [Are you a natural networker...
 ❌ WRONG: Content without opening tag [/INSERTABLE]
 ❌ WRONG: [ INSERTABLE:description]
 ❌ WRONG: [INSERTABLE: description]
+❌ WRONG: INSERTABLEtitle] or [INSERTtitle]
+❌ WRONG: "👆 Click the Insert buttons above" - buttons appear BELOW, not above
 
 ✅ CORRECT FORMAT (ALWAYS USE THIS):
+[INSERTABLE:title]
+Senior Frontend Developer
+[/INSERTABLE]
+
 [INSERTABLE:description]
 Are you a natural networker...
 [/INSERTABLE]
+
+CRITICAL RULES:
+1. ALWAYS start insertable content with EXACTLY: [INSERTABLE:
+2. NEVER put ANY prefix before the opening bracket [
+3. ALWAYS say "Click the Insert buttons BELOW" not "above"
+4. ALWAYS complete the Next steps sentence fully
 
 The opening tag MUST be EXACTLY: [INSERTABLE:fieldname]
 - NO extra spaces inside brackets

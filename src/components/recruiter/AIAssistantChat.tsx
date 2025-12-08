@@ -33,11 +33,22 @@ const cleanAIResponse = (text: string): string => {
   cleaned = cleaned.replace(/<!-- SYSTEM_INTERNAL_STATE[\s\S]*?END SYSTEM_INTERNAL_STATE -->/g, '');
   cleaned = cleaned.replace(/^.*[❌⏳✅].*(?:NOT_SET|SET|Needs more|NOT SET|minimum).*$/gm, '');
   
-  // Fix "Lettitle]" or "Letdescription]" malformations
-  cleaned = cleaned.replace(/Let(title|location|description|responsibilities|requirements|benefits)\]/gi, '[INSERTABLE:$1]');
+  // === AGGRESSIVE TAG MALFORMATION FIXES ===
+  const validFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  
+  // Fix ANY 1-10 char prefix followed by field name and closing bracket
+  // Examples: "Notitle]", "Lettitle]", "Thetitle]", "Adescription]", "Herequirements]"
+  const prefixPattern = new RegExp(`\\w{1,10}(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(prefixPattern, '[INSERTABLE:$1]');
+  
+  // Fix corrupted "INSERTABLE" prefix variations
+  // Examples: "[INSERTtitle]", "INSERTABLEtitle]", "[INSERTABLtitle]"
+  const corruptedInsertablePattern = new RegExp(`\\[?INSERT(?:ABLE?)?:?\\s*(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(corruptedInsertablePattern, '[INSERTABLE:$1]');
   
   // Fix missing opening bracket entirely: "INSERTABLE:title]" -> "[INSERTABLE:title]"
-  cleaned = cleaned.replace(/(?:^|\s)(INSERTABLE:(title|location|description|responsibilities|requirements|benefits))/gi, ' [INSERTABLE:$2');
+  const missingBracketPattern = new RegExp(`(?:^|\\s)(INSERTABLE:(${validFields}))`, 'gi');
+  cleaned = cleaned.replace(missingBracketPattern, ' [INSERTABLE:$2');
   
   // Fix common AI mistakes:
   // 1. "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
@@ -51,6 +62,16 @@ const cleanAIResponse = (text: string): string => {
   
   // 4. "[ /INSERTABLE]" -> "[/INSERTABLE]"
   cleaned = cleaned.replace(/\[\s*\/\s*INSERTABLE\s*\]/gi, '[/INSERTABLE]');
+  
+  // === FIX "ABOVE" TO "BELOW" IN BUTTON INSTRUCTIONS ===
+  // Remove pointing-up emoji and fix "above" -> "below"
+  cleaned = cleaned.replace(/👆\s*/g, '');
+  cleaned = cleaned.replace(/Click the "Insert" buttons? above/gi, 'Click the "Insert" buttons below');
+  cleaned = cleaned.replace(/buttons? above to add/gi, 'buttons below to add');
+  
+  // === FIX TRUNCATED "NEXT STEPS" ===
+  // Remove lines that start with "Next steps:" followed by incomplete text (e.g., "Next steps: How")
+  cleaned = cleaned.replace(/^Next steps:\s*\w{0,5}$/gm, '');
   
   // Clean up empty lines left by removed content
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
