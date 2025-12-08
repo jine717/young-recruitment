@@ -10,6 +10,36 @@ export interface Message {
   followUpSuggestions?: string[];
 }
 
+// Job Editor Context for AI-assisted job creation
+export interface JobEditorContext {
+  // Current form state
+  title?: string;
+  location?: string;
+  type?: string;
+  department?: string;
+  description?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  tags?: string[];
+  businessCaseQuestions?: { title: string; description: string }[];
+  fixedInterviewQuestions?: { text: string; category: string }[];
+  aiSystemPrompt?: string;
+  aiInterviewPrompt?: string;
+  
+  // Mode
+  isEditing: boolean;
+  
+  // Insert callbacks for direct content insertion
+  onInsertDescription?: (text: string) => void;
+  onInsertResponsibilities?: (items: string[]) => void;
+  onInsertRequirements?: (items: string[]) => void;
+  onInsertBenefits?: (items: string[]) => void;
+  onInsertTags?: (items: string[]) => void;
+  onInsertAIPrompt?: (prompt: string) => void;
+  onInsertInterviewPrompt?: (prompt: string) => void;
+}
+
 export interface CandidateContext {
   // Basic info
   id: string;
@@ -122,6 +152,7 @@ export interface CandidateContext {
 
 interface UseAIAssistantOptions {
   candidateContext?: CandidateContext;
+  jobEditorContext?: JobEditorContext;
   sessionKey?: string;
 }
 
@@ -164,6 +195,7 @@ const deserializeMessages = (data: string): Message[] => {
 export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantReturn => {
   const sessionKey = options?.sessionKey || DEFAULT_SESSION_KEY;
   const candidateContext = options?.candidateContext;
+  const jobEditorContext = options?.jobEditorContext;
 
   const [messages, setMessages] = useState<Message[]>(() => {
     // Restore messages from session storage on init
@@ -258,6 +290,22 @@ export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantR
             question: content.trim(),
             conversationHistory,
             candidateContext,
+            jobEditorContext: jobEditorContext ? {
+              title: jobEditorContext.title,
+              location: jobEditorContext.location,
+              type: jobEditorContext.type,
+              department: jobEditorContext.department,
+              description: jobEditorContext.description,
+              responsibilities: jobEditorContext.responsibilities,
+              requirements: jobEditorContext.requirements,
+              benefits: jobEditorContext.benefits,
+              tags: jobEditorContext.tags,
+              businessCaseQuestions: jobEditorContext.businessCaseQuestions,
+              fixedInterviewQuestions: jobEditorContext.fixedInterviewQuestions,
+              aiSystemPrompt: jobEditorContext.aiSystemPrompt,
+              aiInterviewPrompt: jobEditorContext.aiInterviewPrompt,
+              isEditing: jobEditorContext.isEditing,
+            } : undefined,
           }),
           signal: abortControllerRef.current.signal,
         }
@@ -316,7 +364,7 @@ export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantR
       }
 
       // Generate follow-up suggestions based on the response
-      const followUpSuggestions = generateFollowUpSuggestions(content, fullContent, candidateContext);
+      const followUpSuggestions = generateFollowUpSuggestions(content, fullContent, candidateContext, jobEditorContext);
 
       // Mark streaming as complete and add follow-up suggestions
       setMessages(prev => 
@@ -346,7 +394,7 @@ export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantR
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, candidateContext]);
+  }, [messages, isLoading, candidateContext, jobEditorContext]);
 
   const clearConversation = useCallback(() => {
     setMessages([]);
@@ -373,11 +421,40 @@ export const useAIAssistant = (options?: UseAIAssistantOptions): UseAIAssistantR
 function generateFollowUpSuggestions(
   userQuestion: string,
   aiResponse: string,
-  candidateContext?: CandidateContext
+  candidateContext?: CandidateContext,
+  jobEditorContext?: JobEditorContext
 ): string[] {
   const suggestions: string[] = [];
   const questionLower = userQuestion.toLowerCase();
   const responseLower = aiResponse.toLowerCase();
+
+  // Job Editor context suggestions
+  if (jobEditorContext) {
+    if (questionLower.includes('description') || responseLower.includes('description')) {
+      suggestions.push('Make this description more engaging');
+      suggestions.push('Add information about company culture');
+    }
+    if (questionLower.includes('responsibilit') || responseLower.includes('responsibilit')) {
+      suggestions.push('Suggest more responsibilities');
+      suggestions.push('Make these responsibilities more specific');
+    }
+    if (questionLower.includes('requirement') || responseLower.includes('requirement')) {
+      suggestions.push('Differentiate must-haves vs nice-to-haves');
+      suggestions.push('Suggest additional technical requirements');
+    }
+    if (questionLower.includes('benefit') || responseLower.includes('benefit')) {
+      suggestions.push('Suggest competitive benefits');
+    }
+    if (questionLower.includes('evaluation') || responseLower.includes('evaluation') || questionLower.includes('criteria')) {
+      suggestions.push('Add criteria for soft skills');
+      suggestions.push('Include technical assessment criteria');
+    }
+    if (suggestions.length === 0) {
+      suggestions.push('Review my job posting and suggest improvements');
+      suggestions.push('Help me write compelling requirements');
+    }
+    return suggestions.slice(0, 3);
+  }
 
   if (candidateContext) {
     // Candidate-specific follow-ups
