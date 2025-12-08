@@ -326,7 +326,7 @@ const RecruiterDashboard = () => {
       <DashboardNavbar user={user} isAdmin={isAdmin} />
 
       {/* Header - compact */}
-      <section className="pt-24 pb-6 px-6 bg-background border-b">
+      <section className="pt-24 pb-6 px-6 bg-background">
         <div className="container mx-auto max-w-7xl">
           <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -359,7 +359,7 @@ const RecruiterDashboard = () => {
       </section>
 
       {/* Stats Cards with brand variants */}
-      <section className="pb-8 px-6 -mt-4">
+      <section className="pb-8 px-6 pt-4">
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="shadow-young-sm hover-lift animate-fade-in" style={{ animationDelay: '0s' }}>
