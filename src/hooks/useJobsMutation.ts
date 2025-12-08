@@ -15,6 +15,10 @@ export interface JobInput {
   status: 'draft' | 'published' | 'closed';
   ai_system_prompt?: string | null;
   ai_interview_prompt?: string | null;
+  linkedin_post_status?: 'not_posted' | 'draft' | 'posted';
+  linkedin_posted_at?: string | null;
+  linkedin_post_content?: string | null;
+  linkedin_posted_by?: string | null;
 }
 
 export function useAllJobs() {

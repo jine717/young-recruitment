@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -33,6 +34,8 @@ import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft,
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
+import { LinkedInPostModal } from '@/components/recruiter/LinkedInPostModal';
 
 interface DeleteJobInfo {
   id: string;
@@ -69,6 +72,23 @@ export default function RecruiterJobsList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<DeleteJobInfo | null>(null);
   const [loadingDeleteInfo, setLoadingDeleteInfo] = useState(false);
+  const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
+  const [selectedJobForLinkedIn, setSelectedJobForLinkedIn] = useState<{
+    id: string;
+    title: string;
+    linkedin_post_content?: string | null;
+    linkedin_post_status?: string;
+  } | null>(null);
+
+  const handleOpenLinkedInModal = (job: any) => {
+    setSelectedJobForLinkedIn({
+      id: job.id,
+      title: job.title,
+      linkedin_post_content: job.linkedin_post_content,
+      linkedin_post_status: job.linkedin_post_status,
+    });
+    setLinkedInModalOpen(true);
+  };
 
   const handleDelete = async (job: { id: string; title: string }) => {
     setLoadingDeleteInfo(true);
@@ -123,6 +143,32 @@ export default function RecruiterJobsList() {
         return <Badge variant="outline">Closed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getLinkedInStatusBadge = (status: string, postedAt?: string | null) => {
+    switch (status) {
+      case 'posted':
+        return (
+          <Badge className="bg-[#0077B5] text-white hover:bg-[#006097]">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Posted
+          </Badge>
+        );
+      case 'draft':
+        return (
+          <Badge variant="secondary">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Draft
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-muted-foreground">
+            <LinkedInIcon className="h-3 w-3 mr-1" />
+            Not Posted
+          </Badge>
+        );
     }
   };
 
@@ -212,6 +258,7 @@ export default function RecruiterJobsList() {
                       <TableHead>Type</TableHead>
                       <TableHead>Candidates</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>LinkedIn</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -233,6 +280,7 @@ export default function RecruiterJobsList() {
                             </div>
                           </TableCell>
                           <TableCell>{getStatusBadge(job.status)}</TableCell>
+                          <TableCell>{getLinkedInStatusBadge(job.linkedin_post_status, job.linkedin_posted_at)}</TableCell>
                           <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -262,6 +310,12 @@ export default function RecruiterJobsList() {
                                   </>
                                 )}
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleOpenLinkedInModal(job)}>
+                                <LinkedInIcon className="h-4 w-4 mr-2" />
+                                Post to LinkedIn
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleDelete({ id: job.id, title: job.title })}
                                 className="text-destructive"
@@ -346,6 +400,12 @@ export default function RecruiterJobsList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LinkedInPostModal
+        open={linkedInModalOpen}
+        onOpenChange={setLinkedInModalOpen}
+        job={selectedJobForLinkedIn}
+      />
     </div>
   );
 }
