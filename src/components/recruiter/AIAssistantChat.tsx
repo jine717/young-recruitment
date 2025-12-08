@@ -64,6 +64,28 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
     cleanText = cleanText.replace(match[0], '');
   }
   
+  // FALLBACK: Detect malformed blocks (closing tag without opening tag)
+  // This helps recover from AI formatting errors
+  if (blocks.length === 0) {
+    const orphanClosingMatch = cleanText.match(/\[\/INSERTABLE\]/);
+    if (orphanClosingMatch) {
+      console.warn('[AIAssistantChat] Detected malformed INSERTABLE block (closing without opening)');
+      
+      // Try to find description-like content before orphan closing tag
+      // Look for substantial content that looks like a description
+      const descPattern = /([\s\S]{100,}?)\[\/INSERTABLE\]/;
+      const descMatch = cleanText.match(descPattern);
+      if (descMatch) {
+        const potentialContent = descMatch[1].trim();
+        // Check if it looks like a description (has sentences, not just bullets)
+        if (potentialContent.includes('.') && potentialContent.length > 150) {
+          blocks.push({ field: 'description', content: potentialContent });
+          cleanText = cleanText.replace(descMatch[0], '');
+        }
+      }
+    }
+  }
+  
   return { cleanText: cleanText.trim(), blocks };
 };
 
@@ -255,6 +277,9 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
                 (() => {
                   const { cleanText, blocks } = parseInsertableBlocks(message.content);
                   const fieldLabels: Record<string, string> = {
+                    title: 'Title',
+                    location: 'Location',
+                    jobType: 'Job Type',
                     description: 'Description',
                     responsibilities: 'Responsibilities',
                     requirements: 'Requirements',
@@ -262,6 +287,8 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
                     tags: 'Tags',
                     aiPrompt: 'AI Evaluation',
                     interviewPrompt: 'Interview Instructions',
+                    businessCaseQuestions: 'Business Case Questions',
+                    fixedInterviewQuestions: 'Interview Questions',
                   };
                   
                   return (
