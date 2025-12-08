@@ -728,50 +728,53 @@ function buildSystemPrompt(context: any, candidateContext?: CandidateContext, co
 
   // Add job editor context if provided (for AI-assisted job creation)
   if (jobEditorContext) {
+    const hasTitle = !!jobEditorContext.title?.trim();
+    const hasDescription = !!jobEditorContext.description?.trim();
+    const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
+    const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
+    const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
+    const businessCaseCount = jobEditorContext.businessCaseQuestions?.length || 0;
+    const interviewQuestionsCount = jobEditorContext.fixedInterviewQuestions?.length || 0;
+
     prompt = `You are Young AI, a recruitment specialist helping recruiters create compelling job postings. You have deep expertise in writing job descriptions that attract top talent.
 
 ## CURRENT CONTEXT: JOB ${jobEditorContext.isEditing ? 'EDITING' : 'CREATION'}
+
+### ⚠️ WORKFLOW STATUS - CHECK THIS BEFORE SUGGESTING NEXT STEPS ⚠️
+${!hasTitle ? '❌ TITLE: NOT SET - Recruiter MUST insert a title first!' : '✅ TITLE: "' + jobEditorContext.title + '"'}
+${!hasDescription ? '❌ DESCRIPTION: NOT SET - Recruiter MUST insert description before moving forward!' : '✅ DESCRIPTION: Set (' + (jobEditorContext.description || '').substring(0, 50) + '...)'}
+${responsibilitiesCount < 3 ? '⏳ RESPONSIBILITIES: Needs more (' + responsibilitiesCount + '/5 minimum)' : '✅ RESPONSIBILITIES: ' + responsibilitiesCount + ' items'}
+${requirementsCount < 3 ? '⏳ REQUIREMENTS: Needs more (' + requirementsCount + '/3 minimum)' : '✅ REQUIREMENTS: ' + requirementsCount + ' items'}
+${benefitsCount < 2 ? '⏳ BENEFITS: Needs more (' + benefitsCount + '/2 minimum)' : '✅ BENEFITS: ' + benefitsCount + ' items'}
+${businessCaseCount === 0 ? '⏳ BUSINESS CASE: No questions yet' : '✅ BUSINESS CASE: ' + businessCaseCount + ' questions'}
+${interviewQuestionsCount === 0 ? '⏳ INTERVIEW QUESTIONS: No fixed questions yet' : '✅ INTERVIEW QUESTIONS: ' + interviewQuestionsCount + ' questions'}
+
+## 🚨 CRITICAL WORKFLOW RULES - YOU MUST FOLLOW THESE 🚨
+
+1. **CHECK STATUS BEFORE NEXT STEPS**: Look at the WORKFLOW STATUS above. If TITLE or DESCRIPTION shows "NOT SET", you MUST:
+   - Remind the recruiter to click "Insert" on your previous suggestion
+   - Do NOT suggest moving to responsibilities/requirements/benefits until BOTH title AND description are SET
+   - Example: "I notice you haven't inserted the title/description yet. Please click the 'Insert' button on my previous suggestions, then we can move on to responsibilities!"
+
+2. **If recruiter asks about next steps but fields are missing**:
+   - Politely redirect them: "Before we move to [next section], please insert the [missing field] first by clicking the Insert button above."
+
+3. **Only suggest the next logical step when current step is complete**:
+   - Title NOT SET → Focus only on title suggestions
+   - Title SET, Description NOT SET → Focus on description
+   - Both SET → NOW you can suggest responsibilities, requirements, etc.
 
 ### Current Job Details
 - **Title:** ${jobEditorContext.title || 'Not set yet'}
 - **Location:** ${jobEditorContext.location || 'Not set'}
 - **Type:** ${jobEditorContext.type || 'Not set'}
 - **Department:** ${jobEditorContext.department || 'Not set'}
-`;
+- **Description:** ${jobEditorContext.description ? jobEditorContext.description.substring(0, 300) + (jobEditorContext.description.length > 300 ? '...' : '') : 'Not written yet'}
+- **Responsibilities:** ${responsibilitiesCount} items
+- **Requirements:** ${requirementsCount} items
+- **Benefits:** ${benefitsCount} items
+${businessCaseCount > 0 ? '- **Business Case Questions:** ' + businessCaseCount + ' questions\n' : ''}${jobEditorContext.aiSystemPrompt ? '- **AI Evaluation Instructions:** Configured\n' : ''}
 
-    if (jobEditorContext.description) {
-      prompt += `- **Description:** ${jobEditorContext.description.substring(0, 300)}${jobEditorContext.description.length > 300 ? '...' : ''}\n`;
-    } else {
-      prompt += `- **Description:** Not written yet\n`;
-    }
-
-    const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
-    const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
-    const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
-    
-    prompt += `- **Responsibilities:** ${responsibilitiesCount} items`;
-    if (responsibilitiesCount > 0 && jobEditorContext.responsibilities) {
-      prompt += ` (${jobEditorContext.responsibilities.filter(r => r.trim()).slice(0, 3).join(', ')}${responsibilitiesCount > 3 ? '...' : ''})`;
-    }
-    prompt += '\n';
-    
-    prompt += `- **Requirements:** ${requirementsCount} items`;
-    if (requirementsCount > 0 && jobEditorContext.requirements) {
-      prompt += ` (${jobEditorContext.requirements.filter(r => r.trim()).slice(0, 3).join(', ')}${requirementsCount > 3 ? '...' : ''})`;
-    }
-    prompt += '\n';
-    
-    prompt += `- **Benefits:** ${benefitsCount} items\n`;
-    
-    if (jobEditorContext.businessCaseQuestions?.length) {
-      prompt += `- **Business Case Questions:** ${jobEditorContext.businessCaseQuestions.length} questions\n`;
-    }
-    
-    if (jobEditorContext.aiSystemPrompt) {
-      prompt += `- **AI Evaluation Instructions:** Configured\n`;
-    }
-
-    prompt += `
 ## WORKFLOW GUIDE - STEP BY STEP JOB CREATION
 When a recruiter asks for help creating a new job, follow this guided workflow:
 

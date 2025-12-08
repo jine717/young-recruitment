@@ -433,27 +433,59 @@ function generateFollowUpSuggestions(
   const questionLower = userQuestion.toLowerCase();
   const responseLower = aiResponse.toLowerCase();
 
-  // Job Editor context suggestions
+  // Job Editor context suggestions - WORKFLOW AWARE
   if (jobEditorContext) {
-    if (questionLower.includes('description') || responseLower.includes('description')) {
-      suggestions.push('Make this description more engaging');
-      suggestions.push('Add information about company culture');
+    const hasTitle = !!jobEditorContext.title?.trim();
+    const hasDescription = !!jobEditorContext.description?.trim();
+    const responsibilitiesCount = jobEditorContext.responsibilities?.filter(r => r.trim()).length || 0;
+    const requirementsCount = jobEditorContext.requirements?.filter(r => r.trim()).length || 0;
+    const benefitsCount = jobEditorContext.benefits?.filter(b => b.trim()).length || 0;
+    
+    // PRIORITY 1: If essential fields are missing, prioritize those
+    if (!hasTitle) {
+      // Check if AI just suggested a title
+      if (responseLower.includes('[insertable:title]') || responseLower.includes('title')) {
+        suggestions.push('Click "Insert Title" above to add it');
+        suggestions.push('Suggest a different title');
+      } else {
+        suggestions.push('Suggest a job title');
+      }
+      return suggestions.slice(0, 2);
     }
+    
+    if (!hasDescription) {
+      // Check if AI just suggested a description
+      if (responseLower.includes('[insertable:description]') || responseLower.includes('description')) {
+        suggestions.push('Click "Insert Description" above to add it');
+        suggestions.push('Make this description more engaging');
+      } else {
+        suggestions.push('Write a job description');
+      }
+      return suggestions.slice(0, 2);
+    }
+    
+    // PRIORITY 2: Now we can suggest next sections
+    if (responsibilitiesCount < 3) {
+      suggestions.push('Suggest responsibilities for this role');
+    }
+    if (requirementsCount < 3) {
+      suggestions.push('What requirements should I include?');
+    }
+    if (benefitsCount < 2) {
+      suggestions.push('Suggest attractive benefits');
+    }
+    
+    // Context-specific suggestions
     if (questionLower.includes('responsibilit') || responseLower.includes('responsibilit')) {
-      suggestions.push('Suggest more responsibilities');
       suggestions.push('Make these responsibilities more specific');
     }
     if (questionLower.includes('requirement') || responseLower.includes('requirement')) {
       suggestions.push('Differentiate must-haves vs nice-to-haves');
-      suggestions.push('Suggest additional technical requirements');
     }
     if (questionLower.includes('benefit') || responseLower.includes('benefit')) {
       suggestions.push('Suggest competitive benefits');
     }
-    if (questionLower.includes('evaluation') || responseLower.includes('evaluation') || questionLower.includes('criteria')) {
-      suggestions.push('Add criteria for soft skills');
-      suggestions.push('Include technical assessment criteria');
-    }
+    
     if (suggestions.length === 0) {
       suggestions.push('Review my job posting and suggest improvements');
       suggestions.push('Help me write compelling requirements');
