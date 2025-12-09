@@ -100,7 +100,7 @@ const attemptJsonRecovery = (content: string, field: string): any | null => {
   }
 };
 
-// Pre-process AI response to fix common formatting mistakes
+// Pre-process AI response to fix common formatting mistakes - COMPREHENSIVE MULTI-LAYER FIX
 const cleanAIResponse = (text: string): string => {
   let cleaned = text;
   
@@ -109,29 +109,51 @@ const cleanAIResponse = (text: string): string => {
   cleaned = cleaned.replace(/<!-- SYSTEM_INTERNAL_STATE[\s\S]*?END SYSTEM_INTERNAL_STATE -->/g, '');
   cleaned = cleaned.replace(/^.*[❌⏳✅].*(?:NOT_SET|SET|Needs more|NOT SET|minimum).*$/gm, '');
   
-  // === FIX DOUBLE BRACKETS AND INCOMPLETE TAGS ===
-  // FIX DOUBLE BRACKETS: "[[INSERTABLE" -> "[INSERTABLE"
+  // === LAYER 1: AGGRESSIVE DOUBLE BRACKET AND ORPHAN TAG CLEANUP ===
+  
+  // Remove "[[" at start of lines (orphan double brackets with nothing after)
+  cleaned = cleaned.replace(/^\[\[+\s*$/gm, '');
+  
+  // Remove "[[ " at start of lines followed by newlines (incomplete tag starts)
+  cleaned = cleaned.replace(/^\[\[\s*\n/gm, '\n');
+  
+  // Fix double brackets followed by INSERTABLE: "[[INSERTABLE" -> "[INSERTABLE"
   cleaned = cleaned.replace(/\[\[+INSERTABLE/gi, '[INSERTABLE');
   
-  // FIX INCOMPLETE TAGS ON THEIR OWN LINE - remove lines that are just "[[INSERTABLE" or "[INSERTABLE" without the full tag
+  // Fix any remaining double brackets not followed by INSERTABLE
+  cleaned = cleaned.replace(/\[\[(?!INSERTABLE)/g, '[');
+  
+  // === LAYER 2: REMOVE COMPLETELY ORPHAN INSERTABLE TAGS ===
+  // These have no field name at all - just "[[INSERTABLE" or "[INSERTABLE" on their own
+  const validFieldsPattern = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  
+  // Remove orphan INSERTABLE that doesn't have a valid field after it
+  // Pattern: "[INSERTABLE" or "[[INSERTABLE" NOT followed by :fieldname
+  const orphanInsertableRegex = new RegExp(`\\[\\[?INSERTABLE(?!\\s*:\\s*(${validFieldsPattern}))`, 'gi');
+  cleaned = cleaned.replace(orphanInsertableRegex, '');
+  
+  // Remove standalone incomplete tags on their own line
   cleaned = cleaned.replace(/^\[\[?INSERTABLE\s*$/gm, '');
+  cleaned = cleaned.replace(/^INSERTABLE\s*$/gm, '');
   
-  // FIX ORPHANED/SPLIT TAGS: "[INSERTABLE" then newline then ":fieldname]" -> join them
-  cleaned = cleaned.replace(/\[\[?INSERTABLE\s*\n+\s*:?(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)/gi, '[INSERTABLE:$1');
+  // === LAYER 3: FIX SPLIT TAGS ACROSS LINES ===
+  // Pattern: "[INSERTABLE" then newline then ":fieldname]" -> join them
+  const splitTagRegex = new RegExp(`\\[\\[?INSERTABLE\\s*[\\n\\r]+\\s*:?(${validFieldsPattern})`, 'gi');
+  cleaned = cleaned.replace(splitTagRegex, '[INSERTABLE:$1');
   
-  // FIX TAGS SPLIT ACROSS LINES: "[[INSERTABLE\n\n:title]" pattern
-  cleaned = cleaned.replace(/\[\[?INSERTABLE\s*[\n\r]+\s*:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]/gi, '[INSERTABLE:$1]');
+  // Pattern: "[[INSERTABLE\n\n:title]" -> "[INSERTABLE:title]"
+  const splitWithBracketRegex = new RegExp(`\\[\\[?INSERTABLE\\s*[\\n\\r]+\\s*:(${validFieldsPattern})\\]`, 'gi');
+  cleaned = cleaned.replace(splitWithBracketRegex, '[INSERTABLE:$1]');
   
-  // === AGGRESSIVE TAG MALFORMATION FIXES ===
-  const validFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  // === LAYER 4: FIX WORD-CORRUPTED TAGS ===
+  const validFields = validFieldsPattern;
   
   // PRIORITY 1: Fix hybrid corruptions where word + partial "INSERTABLE" + field
-  // Examples: "GotABLE:title]", "HereABLE:description]", "SoABLE:location]", "AndABLE:requirements]"
+  // Examples: "GotABLE:title]", "HereABLE:description]", "SoABLE:location]"
   const hybridCorruptionPattern = new RegExp(`\\w{1,15}(?:ERT)?ABLE:(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(hybridCorruptionPattern, '[INSERTABLE:$1]');
   
   // PRIORITY 2: Catch ANY text ending with "ABLE:field]" 
-  // Examples: "GotABLE:title]", "SomeTextABLE:description]"
   const anythingAblePattern = new RegExp(`\\S*ABLE:(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(anythingAblePattern, '[INSERTABLE:$1]');
   
@@ -140,22 +162,19 @@ const cleanAIResponse = (text: string): string => {
   cleaned = cleaned.replace(catchAllPattern, '[INSERTABLE:$1]');
   
   // PRIORITY 4: Catch natural words followed by ":field]" 
-  // Examples: "Absolutely:requirements]", "Here:description]", "Certainly:benefits]", "Great:requirements]"
+  // Examples: "Absolutely:requirements]", "Here:description]", "Certainly:benefits]"
   const naturalWordPattern = new RegExp(`\\b\\w{2,15}:(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(naturalWordPattern, '[INSERTABLE:$1]');
   
   // PRIORITY 5: Catch patterns where comma/colon/space precedes bare field name with bracket
-  // Examples: ", requirements]", ": requirements]", " requirements]"
   const punctuationFieldPattern = new RegExp(`[,:\\s]+(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(punctuationFieldPattern, ' [INSERTABLE:$1]');
   
   // Fix ANY 1-10 char prefix followed by field name and closing bracket
-  // Examples: "Notitle]", "Lettitle]", "Thetitle]", "Adescription]", "Herequirements]"
   const prefixPattern = new RegExp(`\\w{1,10}(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(prefixPattern, '[INSERTABLE:$1]');
   
   // Fix corrupted "INSERTABLE" prefix variations
-  // Examples: "[INSERTtitle]", "INSERTABLEtitle]", "[INSERTABLtitle]"
   const corruptedInsertablePattern = new RegExp(`\\[?INSERT(?:ABLE?)?:?\\s*(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(corruptedInsertablePattern, '[INSERTABLE:$1]');
   
@@ -163,28 +182,31 @@ const cleanAIResponse = (text: string): string => {
   const missingBracketPattern = new RegExp(`(?:^|\\s)(INSERTABLE:(${validFields}))`, 'gi');
   cleaned = cleaned.replace(missingBracketPattern, ' [INSERTABLE:$2');
   
-  // Fix common AI mistakes:
-  // 1. "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
+  // === LAYER 5: FIX SPACING ISSUES IN TAGS ===
+  // "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
   cleaned = cleaned.replace(/\[\s+INSERTABLE:/gi, '[INSERTABLE:');
   
-  // 2. "[INSERTABLE :field]" -> "[INSERTABLE:field]"
+  // "[INSERTABLE :field]" -> "[INSERTABLE:field]"
   cleaned = cleaned.replace(/\[INSERTABLE\s+:/gi, '[INSERTABLE:');
   
-  // 3. "[INSERTABLE: field]" -> "[INSERTABLE:field]"
+  // "[INSERTABLE: field]" -> "[INSERTABLE:field]"
   cleaned = cleaned.replace(/\[INSERTABLE:\s+/gi, '[INSERTABLE:');
   
-  // 4. "[ /INSERTABLE]" -> "[/INSERTABLE]"
+  // "[ /INSERTABLE]" -> "[/INSERTABLE]"
   cleaned = cleaned.replace(/\[\s*\/\s*INSERTABLE\s*\]/gi, '[/INSERTABLE]');
   
-  // === FIX "ABOVE" TO "BELOW" IN BUTTON INSTRUCTIONS ===
-  // Remove pointing-up emoji and fix "above" -> "below"
+  // === LAYER 6: FIX BUTTON INSTRUCTION TEXT ===
   cleaned = cleaned.replace(/👆\s*/g, '');
   cleaned = cleaned.replace(/Click the "Insert" buttons? above/gi, 'Click the "Insert" buttons below');
   cleaned = cleaned.replace(/buttons? above to add/gi, 'buttons below to add');
   
-  // === FIX TRUNCATED "NEXT STEPS" ===
-  // Remove lines that start with "Next steps:" followed by incomplete text (e.g., "Next steps: How")
+  // === LAYER 7: FIX TRUNCATED "NEXT STEPS" ===
   cleaned = cleaned.replace(/^Next steps:\s*\w{0,5}$/gm, '');
+  
+  // === LAYER 8: FINAL CLEANUP ===
+  // Remove any remaining orphan "[[" or "[INSERTABLE" without valid continuation
+  cleaned = cleaned.replace(/\[\[(?!\w)/g, '');
+  cleaned = cleaned.replace(/\[INSERTABLE(?!:)/g, '');
   
   // Clean up empty lines left by removed content
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
@@ -365,8 +387,23 @@ const parseInsertableBlocks = (text: string): { cleanText: string; blocks: Inser
     }
   }
   
+  // === FINAL DISPLAY CLEANUP - LAYER 3 ===
   // Clean up orphan [/INSERTABLE] tags
   cleanText = cleanText.replace(/\[\/INSERTABLE\]/g, '');
+  
+  // Remove any remaining orphan tags that leaked through all previous cleanup
+  // These should never appear in the UI
+  cleanText = cleanText.replace(/\[\[?INSERTABLE(?!:)/gi, '');  // Remove [INSERTABLE or [[INSERTABLE without :field
+  cleanText = cleanText.replace(/\[\[+/g, '');  // Remove any remaining [[
+  cleanText = cleanText.replace(/^\[+\s*$/gm, '');  // Remove lines that are just brackets
+  
+  // Clean up any leftover malformed patterns
+  const finalValidFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  const leftoverMalformedRegex = new RegExp(`\\[\\[?INSERTABLE(?!\\s*:\\s*(${finalValidFields}))`, 'gi');
+  cleanText = cleanText.replace(leftoverMalformedRegex, '');
+  
+  // Final cleanup of empty lines
+  cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
   
   return { cleanText: cleanText.trim(), blocks };
 };
