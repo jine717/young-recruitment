@@ -23,6 +23,7 @@ import RecruiterJobEditor from "./pages/recruiter/RecruiterJobEditor";
 import RecruiterBusinessCase from "./pages/recruiter/RecruiterBusinessCase";
 import RecruiterAnalytics from "./pages/recruiter/RecruiterAnalytics";
 import CandidatesEvaluation from "./pages/recruiter/CandidatesEvaluation";
+import PitchDeck from "./pages/PitchDeck";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,8 @@ const App = () => (
             <Route path="/admin/departments" element={<DepartmentsManager />} />
             <Route path="/admin/users" element={<UsersManager />} />
             <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+            {/* Sales & Marketing Routes */}
+            <Route path="/pitch" element={<PitchDeck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
