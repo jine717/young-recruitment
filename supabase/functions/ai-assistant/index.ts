@@ -344,10 +344,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5-mini',
+        model: 'google/gemini-2.5-flash',
         messages,
         stream: true,
-        max_completion_tokens: 4096,
+        max_tokens: 4096,
       }),
     });
 
