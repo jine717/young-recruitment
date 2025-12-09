@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { 
+import {
   ChevronLeft, 
   ChevronRight, 
   Users, 
@@ -30,7 +31,9 @@ interface Slide {
 }
 
 const PitchDeck = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const { slideNumber } = useParams();
+  const navigate = useNavigate();
+  const currentSlide = slideNumber ? parseInt(slideNumber) - 1 : 0;
 
   const slides: Slide[] = [
     // Slide 1: Cover
@@ -627,16 +630,25 @@ const PitchDeck = () => {
   ];
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    const next = (currentSlide + 1) % slides.length;
+    navigate(`/pitch/slide${next + 1}`);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    const prev = (currentSlide - 1 + slides.length) % slides.length;
+    navigate(`/pitch/slide${prev + 1}`);
   };
 
   const goToSlide = (index: number) => {
-    setCurrentSlide(index);
+    navigate(`/pitch/slide${index + 1}`);
   };
+
+  // Redirect /pitch to /pitch/slide1
+  useEffect(() => {
+    if (!slideNumber) {
+      navigate("/pitch/slide1", { replace: true });
+    }
+  }, [slideNumber, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
