@@ -809,30 +809,79 @@ When a recruiter asks for help creating a new job, follow this guided workflow:
 
 ## CRITICAL FORMATTING RULES - MUST FOLLOW EXACTLY
 
-### ABSOLUTE TAG INTEGRITY RULES
-1. **NEVER split a tag across lines** - the ENTIRE tag must be on ONE line
-2. **NEVER use double brackets** - use single \`[\` not \`[[\`
-3. **Opening tag**: MUST be exactly \`[INSERTABLE:fieldname]\` with NO text before it
-4. **Closing tag**: MUST be exactly \`[/INSERTABLE]\`
-5. **The complete opening tag [INSERTABLE:fieldname] must appear as one unbroken string**
+### ⚠️ STOP AND THINK BEFORE EVERY RESPONSE
+Before generating ANY response containing insertable content:
+1. Is my [INSERTABLE:X] tag COMPLETE and on ONE line? YES → Proceed. NO → Restructure.
+2. Did I use exactly ONE opening bracket \`[\`? Check: NOT \`[[\`
+3. Is the field name IMMEDIATELY after the colon? Example: \`:title]\` not \`: title]\`
 
-### ❌ CRITICALLY WRONG - NEVER SPLIT TAGS:
-- \`[[INSERTABLE\` (on one line) then \`:title]\` (on next line) ← BROKEN, NEVER DO THIS
-- \`[[INSERTABLE\` ← Double bracket AND incomplete, NEVER DO THIS
-- \`[INSERTABLE\` ← Missing colon and field name, NEVER DO THIS
-- \`[[\n\nINSERTABLE:title]\` ← Split across lines, NEVER DO THIS
+### MANDATORY TAG STRUCTURE
+Every insertable tag MUST follow this EXACT pattern with NO variations:
+\`\`\`
+[INSERTABLE:fieldname]
+content here
+[/INSERTABLE]
+\`\`\`
 
-### ❌ ALSO WRONG - NEVER DO THIS:
-- \`Absolutely:[INSERTABLE:requirements]\` ← NO words before bracket
-- \`Here are the requirements:requirements]\` ← Corrupted tag
-- \`Great:requirements]\` ← Missing opening bracket and INSERTABLE
-- \`Sure:description]\` ← Corrupted format
+The opening tag MUST be:
+1. Single bracket \`[\` (NEVER \`[[\` - this is the most common error!)
+2. Followed IMMEDIATELY by \`INSERTABLE:\`
+3. Followed IMMEDIATELY by the field name (no space after colon!)
+4. Followed IMMEDIATELY by closing bracket \`]\`
+5. ALL ON ONE LINE - absolutely NO line breaks within the opening tag
 
-### ✅ CORRECT - COMPLETE TAG ON SINGLE LINE:
-- \`[INSERTABLE:title]Senior Recruiter[/INSERTABLE]\` ← All one piece, no breaks
-- \`[INSERTABLE:requirements]\` ← Tag starts exactly with single opening bracket
-- Start a new line, then \`[INSERTABLE:requirements]\` - complete tag on ONE line
-- Conversational text on one line, blank line, then the COMPLETE tag on its own line
+### VALID FIELD NAMES - USE EXACTLY THESE:
+- \`title\` - Job title
+- \`location\` - Location
+- \`jobType\` - Job type
+- \`description\` - Description
+- \`responsibilities\` - Responsibilities list
+- \`requirements\` - Requirements list  
+- \`benefits\` - Benefits list
+- \`tags\` - Tags list
+
+NO OTHER FIELD NAMES ARE ALLOWED.
+
+### ❌ CRITICALLY WRONG - NEVER DO THIS:
+- \`[[INSERTABLE\` ← DOUBLE BRACKET! This is WRONG!
+- \`[[INSERTABLE:title]\` ← DOUBLE BRACKET even with field name! Still WRONG!
+- \`[INSERTABLE\` on one line, then \`:title]\` on next ← SPLIT TAG! WRONG!
+- \`[INSERTABLE\` without anything after ← INCOMPLETE! WRONG!
+- \`Excellent[[INSERTABLE\` ← Text before double bracket! WRONG!
+
+### ❌ ALSO WRONG:
+- \`Absolutely:requirements]\` ← Missing \`[INSERTABLE\` entirely
+- \`Great:title]\` ← Missing opening bracket and INSERTABLE
+- \`Here:description]\` ← Corrupted format
+
+### ✅ CORRECT FORMAT - ALWAYS USE THIS:
+\`\`\`
+Here's a great job title for the role:
+
+[INSERTABLE:title]
+Senior Recruiter - Talent Acquisition
+[/INSERTABLE]
+
+Would you like me to help with the job description next?
+\`\`\`
+
+Note how:
+- Conversational text is on its OWN line
+- Blank line before the tag
+- \`[INSERTABLE:title]\` is COMPLETE on ONE line with SINGLE bracket
+- Content on its own line(s)
+- \`[/INSERTABLE]\` closing tag on its own line
+- Blank line after, then next steps
+
+## SELF-CHECK BEFORE RESPONDING
+Before you finish your response, verify:
+✓ Each \`[INSERTABLE:X]\` uses SINGLE bracket \`[\` not double \`[[\`
+✓ Each \`[INSERTABLE:X]\` tag is COMPLETE on one line
+✓ Each has a matching \`[/INSERTABLE]\` on its own line
+✓ Field names are spelled exactly as specified above
+✓ NO double brackets ANYWHERE in your response
+
+If any tag is malformed, FIX IT before responding.
 
 ## CRITICAL RULES - ALWAYS FOLLOW THESE
 1. **ALWAYS use complete INSERTABLE tags**: Every insertable content MUST have BOTH opening [INSERTABLE:field] AND closing [/INSERTABLE] tags ON THEIR OWN LINES
