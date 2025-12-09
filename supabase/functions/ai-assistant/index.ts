@@ -771,11 +771,33 @@ _IQ: ${interviewQuestionsCount}
 - **Location:** ${jobEditorContext.location || 'Not set'}
 - **Type:** ${jobEditorContext.type || 'Not set'}
 - **Department:** ${jobEditorContext.department || 'Not set'}
-- **Description:** ${jobEditorContext.description ? jobEditorContext.description.substring(0, 300) + (jobEditorContext.description.length > 300 ? '...' : '') : 'Not written yet'}
-- **Responsibilities:** ${responsibilitiesCount} items
-- **Requirements:** ${requirementsCount} items
-- **Benefits:** ${benefitsCount} items
-${businessCaseCount > 0 ? '- **Business Case Questions:** ' + businessCaseCount + ' questions\n' : ''}${jobEditorContext.aiSystemPrompt ? '- **AI Evaluation Instructions:** Configured\n' : ''}
+
+**Description:**
+${jobEditorContext.description || 'Not written yet'}
+
+**Responsibilities (${responsibilitiesCount} items):**
+${jobEditorContext.responsibilities?.filter((r: string) => r.trim()).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n') || 'None yet'}
+
+**Requirements (${requirementsCount} items):**
+${jobEditorContext.requirements?.filter((r: string) => r.trim()).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n') || 'None yet'}
+
+**Benefits (${benefitsCount} items):**
+${jobEditorContext.benefits?.filter((b: string) => b.trim()).map((b: string, i: number) => `${i + 1}. ${b}`).join('\n') || 'None yet'}
+
+**Tags:**
+${jobEditorContext.tags?.filter((t: string) => t.trim()).join(', ') || 'None yet'}
+
+**Business Case Questions (${businessCaseCount}):**
+${jobEditorContext.businessCaseQuestions?.map((q: { title: string; description: string }, i: number) => `${i + 1}. **${q.title || 'Untitled'}**\n   ${q.description || 'No description'}`).join('\n') || 'None yet'}
+
+**Fixed Interview Questions (${interviewQuestionsCount}):**
+${jobEditorContext.fixedInterviewQuestions?.map((q: { category: string; text: string }, i: number) => `${i + 1}. [${q.category || 'General'}] ${q.text}`).join('\n') || 'None yet'}
+
+**AI Evaluation Instructions:**
+${jobEditorContext.aiSystemPrompt || 'Not configured'}
+
+**AI Interview Instructions:**
+${jobEditorContext.aiInterviewPrompt || 'Not configured'}
 
 ## WORKFLOW GUIDE - STEP BY STEP JOB CREATION
 When a recruiter asks for help creating a new job, follow this guided workflow:
