@@ -109,6 +109,19 @@ const cleanAIResponse = (text: string): string => {
   cleaned = cleaned.replace(/<!-- SYSTEM_INTERNAL_STATE[\s\S]*?END SYSTEM_INTERNAL_STATE -->/g, '');
   cleaned = cleaned.replace(/^.*[❌⏳✅].*(?:NOT_SET|SET|Needs more|NOT SET|minimum).*$/gm, '');
   
+  // === FIX DOUBLE BRACKETS AND INCOMPLETE TAGS ===
+  // FIX DOUBLE BRACKETS: "[[INSERTABLE" -> "[INSERTABLE"
+  cleaned = cleaned.replace(/\[\[+INSERTABLE/gi, '[INSERTABLE');
+  
+  // FIX INCOMPLETE TAGS ON THEIR OWN LINE - remove lines that are just "[[INSERTABLE" or "[INSERTABLE" without the full tag
+  cleaned = cleaned.replace(/^\[\[?INSERTABLE\s*$/gm, '');
+  
+  // FIX ORPHANED/SPLIT TAGS: "[INSERTABLE" then newline then ":fieldname]" -> join them
+  cleaned = cleaned.replace(/\[\[?INSERTABLE\s*\n+\s*:?(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)/gi, '[INSERTABLE:$1');
+  
+  // FIX TAGS SPLIT ACROSS LINES: "[[INSERTABLE\n\n:title]" pattern
+  cleaned = cleaned.replace(/\[\[?INSERTABLE\s*[\n\r]+\s*:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]/gi, '[INSERTABLE:$1]');
+  
   // === AGGRESSIVE TAG MALFORMATION FIXES ===
   const validFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
   
