@@ -495,19 +495,30 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
 
   // Auto-scroll to bottom on new messages AND during streaming
   useEffect(() => {
-    if (scrollRef.current) {
-      const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        // Double requestAnimationFrame ensures DOM is fully painted before scrolling
+    if (!scrollRef.current) return;
+    
+    const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+    
+    const scrollToBottom = () => {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: isLastMessageStreaming ? 'auto' : 'smooth'
+      });
+    };
+    
+    if (isLastMessageStreaming) {
+      // During streaming: immediate scroll on each content update
+      requestAnimationFrame(scrollToBottom);
+    } else {
+      // After streaming or new messages: delay for Markdown render
+      const timeoutId = setTimeout(() => {
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            viewport.scrollTo({
-              top: viewport.scrollHeight,
-              behavior: 'smooth'
-            });
-          });
+          requestAnimationFrame(scrollToBottom);
         });
-      }
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [messages.length, lastMessageContent, isLastMessageStreaming]);
 
