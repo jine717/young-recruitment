@@ -488,12 +488,24 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(),
     });
   };
 
-  // Auto-scroll to bottom on new messages
+  // Get last message for scroll dependencies (trigger during streaming)
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageContent = lastMessage?.content;
+  const isLastMessageStreaming = lastMessage?.isStreaming;
+
+  // Auto-scroll to bottom on new messages AND during streaming
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      // ScrollArea uses a viewport element inside - target that for scrolling
+      const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTo({
+          top: viewport.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
-  }, [messages]);
+  }, [messages.length, lastMessageContent, isLastMessageStreaming]);
 
   const handleCandidateClick = (id: string) => {
     navigate(`/candidate/${id}`);
