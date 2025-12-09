@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
             {/* Sales & Marketing Routes */}
             <Route path="/pitch" element={<PitchDeck />} />
+            <Route path="/pitch/:slideNumber" element={<PitchDeck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
