@@ -126,6 +126,16 @@ const cleanAIResponse = (text: string): string => {
   const catchAllPattern = new RegExp(`\\S*(?:INSERT|NSERT|SERT|ERT|ABLE)\\S*:(${validFields})\\]`, 'gi');
   cleaned = cleaned.replace(catchAllPattern, '[INSERTABLE:$1]');
   
+  // PRIORITY 4: Catch natural words followed by ":field]" 
+  // Examples: "Absolutely:requirements]", "Here:description]", "Certainly:benefits]", "Great:requirements]"
+  const naturalWordPattern = new RegExp(`\\b\\w{2,15}:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(naturalWordPattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 5: Catch patterns where comma/colon/space precedes bare field name with bracket
+  // Examples: ", requirements]", ": requirements]", " requirements]"
+  const punctuationFieldPattern = new RegExp(`[,:\\s]+(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(punctuationFieldPattern, ' [INSERTABLE:$1]');
+  
   // Fix ANY 1-10 char prefix followed by field name and closing bracket
   // Examples: "Notitle]", "Lettitle]", "Thetitle]", "Adescription]", "Herequirements]"
   const prefixPattern = new RegExp(`\\w{1,10}(${validFields})\\]`, 'gi');
