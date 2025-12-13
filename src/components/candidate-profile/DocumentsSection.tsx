@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileText, Download, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
   const discAnalysis = analyses?.find(a => a.document_type === 'disc');
 
   const documentCount = [cvUrl, discUrl].filter(Boolean).length;
+  const analyzedCount = [
+    cvAnalysis?.status === 'completed',
+    discAnalysis?.status === 'completed'
+  ].filter(Boolean).length;
 
   const getSignedUrl = async (bucketName: string, path: string) => {
     const { data, error } = await supabase.storage
@@ -89,9 +94,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
               </CardTitle>
               <div className="flex items-center gap-2">
                 {documentCount > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    {documentCount} uploaded
-                  </span>
+                  <Badge 
+                    className={analyzedCount === documentCount 
+                      ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30' 
+                      : 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30'
+                    }
+                  >
+                    {analyzedCount}/{documentCount} Analyzed
+                  </Badge>
                 )}
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
