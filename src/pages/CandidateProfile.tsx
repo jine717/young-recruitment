@@ -18,14 +18,13 @@ import { useInterviewEvaluations } from '@/hooks/useInterviewEvaluations';
 import { useHiringDecisions } from '@/hooks/useHiringDecisions';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
-import { DocumentsTab } from '@/components/candidate-profile/DocumentsTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
 import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAIAssistant';
 import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
 
@@ -443,15 +442,6 @@ export default function CandidateProfile() {
                 <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
-              <FileText className="w-4 h-4" />
-              Documents
-              {(application.cv_url || application.disc_url) && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                  {[application.cv_url, application.disc_url].filter(Boolean).length}
-                </span>
-              )}
-            </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
@@ -471,12 +461,6 @@ export default function CandidateProfile() {
               aiLoading={aiLoading}
               onTriggerAI={handleTriggerAI}
               isTriggering={triggerAI.isPending}
-            />
-          </TabsContent>
-
-          <TabsContent value="documents" className="mt-0">
-            <DocumentsTab
-              applicationId={application.id}
               cvUrl={application.cv_url}
               discUrl={application.disc_url}
             />
