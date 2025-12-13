@@ -80,22 +80,24 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
   return (
     <Card className="shadow-young-sm hover-lift transition-all duration-200">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
-            <div className="flex items-center justify-between">
+        <CardHeader className="pb-3">
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 Documents
+              </CardTitle>
+              <div className="flex items-center gap-2">
                 {documentCount > 0 && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    {documentCount}
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {documentCount} uploaded
                   </span>
                 )}
-              </CardTitle>
-              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
             </div>
-          </CardHeader>
-        </CollapsibleTrigger>
+          </CollapsibleTrigger>
+        </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-4 pt-0">
             {/* CV Section */}
