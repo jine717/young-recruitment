@@ -318,10 +318,6 @@ export default function RecruiterJobsList() {
                                   <FileText className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/business-case`)}>
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  View Business Case
-                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
