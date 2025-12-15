@@ -32,7 +32,7 @@ import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
 import { LinkedInPostModal } from '@/components/recruiter/LinkedInPostModal';
 import { format } from 'date-fns';
@@ -192,8 +192,7 @@ export default function RecruiterJobsList() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
+    <DashboardLayout showDashboardLink>
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
@@ -384,6 +383,6 @@ export default function RecruiterJobsList() {
         onOpenChange={setLinkedInModalOpen}
         job={selectedJobForLinkedIn}
       />
-    </div>
+    </DashboardLayout>
   );
 }
