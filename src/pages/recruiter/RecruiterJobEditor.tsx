@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,10 +21,12 @@ import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll, MessageS
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import FixedInterviewQuestionsEditor, { FixedInterviewQuestion } from '@/components/recruiter/FixedInterviewQuestionsEditor';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { AITemplateSelector } from '@/components/recruiter/AITemplateSelector';
 import { SaveTemplateDialog } from '@/components/recruiter/SaveTemplateDialog';
 import { ManageTemplatesDialog } from '@/components/recruiter/ManageTemplatesDialog';
+import { JobEditorAIAssistant } from '@/components/recruiter/JobEditorAIAssistant';
+import { useToast } from '@/hooks/use-toast';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -70,8 +72,136 @@ export default function RecruiterJobEditor() {
   const [manageTemplatesOpen, setManageTemplatesOpen] = useState(false);
   const [hasLoadedBusinessCases, setHasLoadedBusinessCases] = useState(false);
   const [hasLoadedFixedQuestions, setHasLoadedFixedQuestions] = useState(false);
+  const { toast } = useToast();
 
-  // Load existing business cases when editing (only on initial load)
+  // Insert callbacks for AI Assistant
+  const handleInsertTitle = useCallback((title: string) => {
+    setFormData(prev => ({ ...prev, title }));
+    toast({ title: "Job title inserted" });
+  }, [toast]);
+
+  const handleInsertLocation = useCallback((location: string) => {
+    setFormData(prev => ({ ...prev, location }));
+    toast({ title: "Location inserted" });
+  }, [toast]);
+
+  const handleInsertJobType = useCallback((type: string) => {
+    const validTypes: JobType[] = ['full-time', 'part-time', 'contract', 'internship'];
+    const normalizedType = type.toLowerCase().replace(/\s+/g, '-') as JobType;
+    if (validTypes.includes(normalizedType)) {
+      setFormData(prev => ({ ...prev, type: normalizedType }));
+      toast({ title: "Job type inserted" });
+    } else {
+      toast({ title: "Invalid job type", description: "Must be full-time, part-time, contract, or internship", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleInsertDescription = useCallback((text: string) => {
+    setFormData(prev => ({ ...prev, description: text }));
+    toast({ title: "Description inserted" });
+  }, [toast]);
+
+  const handleInsertResponsibilities = useCallback((items: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      responsibilities: [...prev.responsibilities.filter(r => r.trim()), ...items]
+    }));
+    toast({ title: `Added ${items.length} responsibilities` });
+  }, [toast]);
+
+  const handleInsertRequirements = useCallback((items: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      requirements: [...prev.requirements.filter(r => r.trim()), ...items]
+    }));
+    toast({ title: `Added ${items.length} requirements` });
+  }, [toast]);
+
+  const handleInsertBenefits = useCallback((items: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      benefits: [...prev.benefits.filter(b => b.trim()), ...items]
+    }));
+    toast({ title: `Added ${items.length} benefits` });
+  }, [toast]);
+
+  const handleInsertTags = useCallback((items: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags.filter(t => t.trim()), ...items]
+    }));
+    toast({ title: `Added ${items.length} tags` });
+  }, [toast]);
+
+  const handleInsertAIPrompt = useCallback((prompt: string) => {
+    setFormData(prev => ({ ...prev, ai_system_prompt: prompt }));
+    toast({ title: "AI evaluation instructions inserted" });
+  }, [toast]);
+
+  const handleInsertInterviewPrompt = useCallback((prompt: string) => {
+    setFormData(prev => ({ ...prev, ai_interview_prompt: prompt }));
+    toast({ title: "AI interview instructions inserted" });
+  }, [toast]);
+
+  const handleInsertBusinessCaseQuestions = useCallback((questions: { title: string; description: string }[]) => {
+    const newQuestions: BusinessCaseQuestion[] = questions.map((q, idx) => ({
+      question_number: businessCaseQuestions.length + idx + 1,
+      question_title: q.title,
+      question_description: q.description,
+      has_text_response: true,
+      video_url: null,
+    }));
+    setBusinessCaseQuestions(prev => [...prev, ...newQuestions]);
+    toast({ title: `Added ${questions.length} business case questions` });
+  }, [businessCaseQuestions, toast]);
+
+  const handleInsertFixedInterviewQuestions = useCallback((questions: { text: string; category: string }[]) => {
+    const newQuestions: FixedInterviewQuestion[] = questions.map((q, idx) => ({
+      question_order: fixedInterviewQuestions.length + idx + 1,
+      question_text: q.text,
+      category: q.category || 'General',
+      priority: 1,
+    }));
+    setFixedInterviewQuestions(prev => [...prev, ...newQuestions]);
+    toast({ title: `Added ${questions.length} interview questions` });
+  }, [fixedInterviewQuestions, toast]);
+
+  // Job editor context for AI Assistant
+  const jobEditorContext = useMemo(() => ({
+    title: formData.title,
+    location: formData.location,
+    type: formData.type,
+    department: departments?.find(d => d.id === formData.department_id)?.name,
+    description: formData.description,
+    responsibilities: formData.responsibilities,
+    requirements: formData.requirements,
+    benefits: formData.benefits,
+    tags: formData.tags,
+    businessCaseQuestions: businessCaseQuestions.map(q => ({
+      title: q.question_title,
+      description: q.question_description
+    })),
+    fixedInterviewQuestions: fixedInterviewQuestions.map(q => ({
+      text: q.question_text,
+      category: q.category
+    })),
+    aiSystemPrompt: formData.ai_system_prompt,
+    aiInterviewPrompt: formData.ai_interview_prompt,
+    isEditing,
+    onInsertTitle: handleInsertTitle,
+    onInsertLocation: handleInsertLocation,
+    onInsertJobType: handleInsertJobType,
+    onInsertDescription: handleInsertDescription,
+    onInsertResponsibilities: handleInsertResponsibilities,
+    onInsertRequirements: handleInsertRequirements,
+    onInsertBenefits: handleInsertBenefits,
+    onInsertTags: handleInsertTags,
+    onInsertAIPrompt: handleInsertAIPrompt,
+    onInsertInterviewPrompt: handleInsertInterviewPrompt,
+    onInsertBusinessCaseQuestions: handleInsertBusinessCaseQuestions,
+    onInsertFixedInterviewQuestions: handleInsertFixedInterviewQuestions,
+  }), [formData, departments, businessCaseQuestions, fixedInterviewQuestions, isEditing, handleInsertTitle, handleInsertLocation, handleInsertJobType, handleInsertDescription, handleInsertResponsibilities, handleInsertRequirements, handleInsertBenefits, handleInsertTags, handleInsertAIPrompt, handleInsertInterviewPrompt, handleInsertBusinessCaseQuestions, handleInsertFixedInterviewQuestions]);
+
   useEffect(() => {
     if (existingBusinessCases && !businessCasesLoading && !hasLoadedBusinessCases) {
       setBusinessCaseQuestions(
@@ -303,8 +433,7 @@ export default function RecruiterJobEditor() {
   const isSubmitting = isSaving || createJob.isPending || updateJob.isPending;
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
+    <DashboardLayout showDashboardLink>
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
@@ -676,6 +805,9 @@ export default function RecruiterJobEditor() {
           </form>
         </div>
       </section>
-    </div>
+
+      {/* Young AI Assistant */}
+      <JobEditorAIAssistant jobEditorContext={jobEditorContext} />
+    </DashboardLayout>
   );
 }

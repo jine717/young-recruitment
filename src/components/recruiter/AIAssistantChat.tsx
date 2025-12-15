@@ -1,18 +1,412 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, User, ExternalLink } from 'lucide-react';
+import { Sparkles, User, ExternalLink, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import type { Message } from '@/hooks/useAIAssistant';
+import type { Message, JobEditorContext } from '@/hooks/useAIAssistant';
+import { useToast } from '@/hooks/use-toast';
 
 interface AIAssistantChatProps {
   messages: Message[];
   isLoading: boolean;
   candidateMap?: Map<string, { id: string; name: string }>;
+  jobEditorContext?: JobEditorContext;
 }
+
+// Parse insertable content blocks from AI response
+interface InsertableBlock {
+  field: 'title' | 'location' | 'jobType' | 'description' | 'responsibilities' | 'requirements' | 'benefits' | 'tags' | 'aiPrompt' | 'interviewPrompt' | 'businessCaseQuestions' | 'fixedInterviewQuestions';
+  content: string;
+  items?: string[];
+  structuredData?: any;
+}
+
+// Validate and clean business case questions structure - filters out empty/missing descriptions
+const validateBusinessCaseQuestions = (data: any): { title: string; description: string }[] => {
+  if (!Array.isArray(data)) return [];
+  const validated = data
+    .filter(q => q && q.title && q.description && String(q.description).trim().length > 0)
+    .map(q => ({
+      title: String(q.title).trim(),
+      description: String(q.description).trim()
+    }));
+  
+  if (validated.length < data.length) {
+    console.warn(`[AIAssistantChat] Filtered out ${data.length - validated.length} questions with missing/empty descriptions`);
+  }
+  return validated;
+};
+
+// Attempt to recover malformed JSON
+const attemptJsonRecovery = (content: string, field: string): any | null => {
+  let cleaned = content.trim();
+  
+  // Fix objects with title but no description: {"title": "Something..."} -> add empty description
+  // This pattern finds objects that have title but appear to end without description
+  cleaned = cleaned.replace(
+    /\{\s*"title"\s*:\s*"([^"]+)"\s*\}/g,
+    '{"title": "$1", "description": ""}'
+  );
+  
+  // Fix truncated objects like: {"title": "Text", "description": "Incomplete...
+  // If we see a title and partial description, try to close it
+  cleaned = cleaned.replace(
+    /\{\s*"title"\s*:\s*"([^"]+)"\s*,\s*"description"\s*:\s*"([^"]*)$/g,
+    '{"title": "$1", "description": "$2"}'
+  );
+  
+  // Count brackets to find imbalance
+  const openBrackets = (cleaned.match(/\[/g) || []).length;
+  const closeBrackets = (cleaned.match(/\]/g) || []).length;
+  
+  if (openBrackets > closeBrackets) {
+    cleaned += ']'.repeat(openBrackets - closeBrackets);
+  }
+  
+  // Count braces
+  const openBraces = (cleaned.match(/\{/g) || []).length;
+  const closeBraces = (cleaned.match(/\}/g) || []).length;
+  
+  if (openBraces > closeBraces) {
+    // Close any open strings and objects
+    // Check if we're in the middle of a string (odd number of unescaped quotes)
+    const quoteCount = (cleaned.match(/(?<!\\)"/g) || []).length;
+    if (quoteCount % 2 !== 0) {
+      cleaned += '"';
+    }
+    cleaned += '}'.repeat(openBraces - closeBraces);
+  }
+  
+  // If still unbalanced brackets after fixing braces
+  const finalOpenBrackets = (cleaned.match(/\[/g) || []).length;
+  const finalCloseBrackets = (cleaned.match(/\]/g) || []).length;
+  if (finalOpenBrackets > finalCloseBrackets) {
+    cleaned += ']'.repeat(finalOpenBrackets - finalCloseBrackets);
+  }
+  
+  try {
+    const parsed = JSON.parse(cleaned);
+    // Validate structure for business case questions
+    if (field === 'businessCaseQuestions' && Array.isArray(parsed)) {
+      return validateBusinessCaseQuestions(parsed);
+    }
+    return parsed;
+  } catch {
+    console.warn('[AIAssistantChat] JSON recovery failed for field:', field);
+    return null;
+  }
+};
+
+// Pre-process AI response to fix common formatting mistakes - COMPREHENSIVE MULTI-LAYER FIX
+const cleanAIResponse = (text: string): string => {
+  let cleaned = text;
+  
+  // Remove any internal status lines that leaked through
+  cleaned = cleaned.replace(/^.*(_TITLE|_DESC|_RESP|_REQS|_BENS|_BC|_IQ|TITLE_STATUS|DESCRIPTION_STATUS|RESPONSIBILITIES_COUNT|REQUIREMENTS_COUNT|BENEFITS_COUNT|BUSINESS_CASE_COUNT|INTERVIEW_QUESTIONS_COUNT).*$/gm, '');
+  cleaned = cleaned.replace(/<!-- SYSTEM_INTERNAL_STATE[\s\S]*?END SYSTEM_INTERNAL_STATE -->/g, '');
+  cleaned = cleaned.replace(/^.*[❌⏳✅].*(?:NOT_SET|SET|Needs more|NOT SET|minimum).*$/gm, '');
+  
+  // === LAYER 1: AGGRESSIVE DOUBLE BRACKET AND ORPHAN TAG CLEANUP ===
+  
+  // Remove "[[" at start of lines (orphan double brackets with nothing after)
+  cleaned = cleaned.replace(/^\[\[+\s*$/gm, '');
+  
+  // Remove "[[ " at start of lines followed by newlines (incomplete tag starts)
+  cleaned = cleaned.replace(/^\[\[\s*\n/gm, '\n');
+  
+  // Fix double brackets followed by INSERTABLE: "[[INSERTABLE" -> "[INSERTABLE"
+  cleaned = cleaned.replace(/\[\[+INSERTABLE/gi, '[INSERTABLE');
+  
+  // Fix any remaining double brackets not followed by INSERTABLE
+  cleaned = cleaned.replace(/\[\[(?!INSERTABLE)/g, '[');
+  
+  // === LAYER 2: REMOVE COMPLETELY ORPHAN INSERTABLE TAGS ===
+  // These have no field name at all - just "[[INSERTABLE" or "[INSERTABLE" on their own
+  const validFieldsPattern = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  
+  // Remove orphan INSERTABLE that doesn't have a valid field after it
+  // Pattern: "[INSERTABLE" or "[[INSERTABLE" NOT followed by :fieldname
+  const orphanInsertableRegex = new RegExp(`\\[\\[?INSERTABLE(?!\\s*:\\s*(${validFieldsPattern}))`, 'gi');
+  cleaned = cleaned.replace(orphanInsertableRegex, '');
+  
+  // Remove standalone incomplete tags on their own line
+  cleaned = cleaned.replace(/^\[\[?INSERTABLE\s*$/gm, '');
+  cleaned = cleaned.replace(/^INSERTABLE\s*$/gm, '');
+  
+  // === LAYER 3: FIX SPLIT TAGS ACROSS LINES ===
+  // Pattern: "[INSERTABLE" then newline then ":fieldname]" -> join them
+  const splitTagRegex = new RegExp(`\\[\\[?INSERTABLE\\s*[\\n\\r]+\\s*:?(${validFieldsPattern})`, 'gi');
+  cleaned = cleaned.replace(splitTagRegex, '[INSERTABLE:$1');
+  
+  // Pattern: "[[INSERTABLE\n\n:title]" -> "[INSERTABLE:title]"
+  const splitWithBracketRegex = new RegExp(`\\[\\[?INSERTABLE\\s*[\\n\\r]+\\s*:(${validFieldsPattern})\\]`, 'gi');
+  cleaned = cleaned.replace(splitWithBracketRegex, '[INSERTABLE:$1]');
+  
+  // === LAYER 4: FIX WORD-CORRUPTED TAGS ===
+  const validFields = validFieldsPattern;
+  
+  // PRIORITY 1: Fix hybrid corruptions where word + partial "INSERTABLE" + field
+  // Examples: "GotABLE:title]", "HereABLE:description]", "SoABLE:location]"
+  const hybridCorruptionPattern = new RegExp(`\\w{1,15}(?:ERT)?ABLE:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(hybridCorruptionPattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 2: Catch ANY text ending with "ABLE:field]" 
+  const anythingAblePattern = new RegExp(`\\S*ABLE:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(anythingAblePattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 3: Catch-all for anything ending with ":fieldname]" that looks like a corrupted tag
+  const catchAllPattern = new RegExp(`\\S*(?:INSERT|NSERT|SERT|ERT|ABLE)\\S*:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(catchAllPattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 4: Catch natural words followed by ":field]" 
+  // Examples: "Absolutely:requirements]", "Here:description]", "Certainly:benefits]"
+  const naturalWordPattern = new RegExp(`\\b\\w{2,15}:(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(naturalWordPattern, '[INSERTABLE:$1]');
+  
+  // PRIORITY 5: Catch patterns where comma/colon/space precedes bare field name with bracket
+  const punctuationFieldPattern = new RegExp(`[,:\\s]+(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(punctuationFieldPattern, ' [INSERTABLE:$1]');
+  
+  // Fix ANY 1-10 char prefix followed by field name and closing bracket
+  const prefixPattern = new RegExp(`\\w{1,10}(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(prefixPattern, '[INSERTABLE:$1]');
+  
+  // Fix corrupted "INSERTABLE" prefix variations
+  const corruptedInsertablePattern = new RegExp(`\\[?INSERT(?:ABLE?)?:?\\s*(${validFields})\\]`, 'gi');
+  cleaned = cleaned.replace(corruptedInsertablePattern, '[INSERTABLE:$1]');
+  
+  // Fix missing opening bracket entirely: "INSERTABLE:title]" -> "[INSERTABLE:title]"
+  const missingBracketPattern = new RegExp(`(?:^|\\s)(INSERTABLE:(${validFields}))`, 'gi');
+  cleaned = cleaned.replace(missingBracketPattern, ' [INSERTABLE:$2');
+  
+  // === LAYER 5: FIX SPACING ISSUES IN TAGS ===
+  // "[ INSERTABLE:field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[\s+INSERTABLE:/gi, '[INSERTABLE:');
+  
+  // "[INSERTABLE :field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[INSERTABLE\s+:/gi, '[INSERTABLE:');
+  
+  // "[INSERTABLE: field]" -> "[INSERTABLE:field]"
+  cleaned = cleaned.replace(/\[INSERTABLE:\s+/gi, '[INSERTABLE:');
+  
+  // "[ /INSERTABLE]" -> "[/INSERTABLE]"
+  cleaned = cleaned.replace(/\[\s*\/\s*INSERTABLE\s*\]/gi, '[/INSERTABLE]');
+  
+  // === LAYER 6: FIX BUTTON INSTRUCTION TEXT ===
+  cleaned = cleaned.replace(/👆\s*/g, '');
+  cleaned = cleaned.replace(/Click the "Insert" buttons? above/gi, 'Click the "Insert" buttons below');
+  cleaned = cleaned.replace(/buttons? above to add/gi, 'buttons below to add');
+  
+  // === LAYER 7: FIX TRUNCATED "NEXT STEPS" ===
+  cleaned = cleaned.replace(/^Next steps:\s*\w{0,5}$/gm, '');
+  
+  // === LAYER 8: FINAL CLEANUP ===
+  // Remove any remaining orphan "[[" or "[INSERTABLE" without valid continuation
+  cleaned = cleaned.replace(/\[\[(?!\w)/g, '');
+  cleaned = cleaned.replace(/\[INSERTABLE(?!:)/g, '');
+  
+  // Clean up empty lines left by removed content
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  
+  return cleaned.trim();
+};
+
+const parseInsertableBlocks = (text: string): { cleanText: string; blocks: InsertableBlock[] } => {
+  const blocks: InsertableBlock[] = [];
+  
+  // Pre-process to fix common AI formatting mistakes
+  let cleanText = cleanAIResponse(text);
+  
+  // Pattern: [INSERTABLE:field]content[/INSERTABLE]
+  const regex = /\[INSERTABLE:(title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions)\]([\s\S]*?)\[\/INSERTABLE\]/gi;
+  
+  let match;
+  while ((match = regex.exec(cleanText)) !== null) {
+    const field = match[1].toLowerCase() as InsertableBlock['field'];
+    const content = match[2].trim();
+    
+    // Parse list items for array fields
+    const listFields = ['responsibilities', 'requirements', 'benefits', 'tags'];
+    // Parse JSON for structured fields
+    const jsonFields = ['businessCaseQuestions', 'fixedInterviewQuestions'];
+    
+    if (jsonFields.includes(field)) {
+      try {
+        const structuredData = JSON.parse(content);
+        // Validate business case questions structure
+        if (field === 'businessCaseQuestions') {
+          const validated = validateBusinessCaseQuestions(structuredData);
+          blocks.push({ field, content, structuredData: validated });
+        } else {
+          blocks.push({ field, content, structuredData });
+        }
+      } catch {
+        // Attempt JSON recovery for incomplete/malformed JSON
+        console.warn('[AIAssistantChat] Failed to parse JSON for field:', field, '- attempting recovery');
+        const recoveredJson = attemptJsonRecovery(content, field);
+        if (recoveredJson) {
+          console.log('[AIAssistantChat] Successfully recovered JSON for field:', field);
+          blocks.push({ field, content: JSON.stringify(recoveredJson), structuredData: recoveredJson });
+        } else {
+          blocks.push({ field, content });
+        }
+      }
+    } else if (listFields.includes(field)) {
+      const items = content
+        .split('\n')
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(line => line.length > 0);
+      blocks.push({ field, content, items });
+    } else {
+      blocks.push({ field, content });
+    }
+  }
+  
+  // Remove all matched blocks from display text
+  cleanText = cleanText.replace(regex, '');
+  
+  // FALLBACK: Detect malformed blocks (closing tag without proper opening tag)
+  if (blocks.length === 0 && cleanText.includes('[/INSERTABLE]')) {
+    console.warn('[AIAssistantChat] Detected malformed INSERTABLE block - attempting recovery');
+    
+    // Strategy 1: Look for content that starts with "[ " (malformed opening bracket)
+    // Pattern: "[ Content...[/INSERTABLE]" where the AI used "[ " instead of "[INSERTABLE:field]"
+    const malformedPatterns = [
+      // Pattern: "[ Content..." before closing tag (AI started with bracket but no INSERTABLE)
+      /\[\s+([A-Z][^[\]]{50,}?)\[\/INSERTABLE\]/gi,
+      // Pattern: Just content before closing tag with no opening at all
+      /(?:^|\n\n)((?:[A-Z][^[\]]{100,}?))\[\/INSERTABLE\]/gi,
+    ];
+    
+    for (const pattern of malformedPatterns) {
+      const fallbackMatch = cleanText.match(pattern);
+      if (fallbackMatch) {
+        let potentialContent = fallbackMatch[1].trim();
+        // Clean up any malformed opening brackets
+        potentialContent = potentialContent.replace(/^\[\s*/, '');
+        
+        // Check if it looks like a description (has sentences, substantial length)
+        if (potentialContent.includes('.') && potentialContent.length > 100) {
+          console.log('[AIAssistantChat] Recovered malformed block as description');
+          blocks.push({ field: 'description', content: potentialContent });
+          cleanText = cleanText.replace(fallbackMatch[0], '');
+          break;
+        }
+      }
+    }
+    
+    // Strategy 2: If still no blocks, try to find any substantial content before [/INSERTABLE]
+    if (blocks.length === 0) {
+      const lastResortPattern = /([\s\S]{150,}?)\[\/INSERTABLE\]/;
+      const lastMatch = cleanText.match(lastResortPattern);
+      if (lastMatch) {
+        let content = lastMatch[1].trim();
+        // Remove any malformed brackets at the start
+        content = content.replace(/^\[\s*/, '');
+        
+        if (content.includes('.') && content.length > 100) {
+          console.log('[AIAssistantChat] Recovered block using last resort pattern');
+          blocks.push({ field: 'description', content });
+          cleanText = cleanText.replace(lastMatch[0], '');
+        }
+      }
+    }
+  }
+  
+  // FALLBACK: Detect raw JSON array that looks like business case questions without wrapper
+  if (blocks.length === 0 || !blocks.some(b => b.field === 'businessCaseQuestions')) {
+    // LENIENT pattern: Just needs title in any object - we validate description later
+    const rawJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"\s*:\s*"[^"]+[\s\S]*?\]\s*$/m;
+    let jsonMatch = cleanText.match(rawJsonPattern);
+    
+    // FALLBACK 2: If no complete array found, look for incomplete JSON starting with [{
+    if (!jsonMatch) {
+      const incompleteJsonPattern = /^\s*\[\s*\{[\s\S]*?"title"\s*:\s*"/m;
+      const incompleteMatch = cleanText.match(incompleteJsonPattern);
+      
+      if (incompleteMatch) {
+        // Extract from [ to the end of meaningful content
+        const startIdx = cleanText.indexOf('[');
+        if (startIdx !== -1) {
+          // Find the last } or ] to determine where JSON likely ends
+          let endIdx = cleanText.length;
+          const lastBrace = cleanText.lastIndexOf('}');
+          const lastBracket = cleanText.lastIndexOf(']');
+          if (lastBrace > startIdx || lastBracket > startIdx) {
+            endIdx = Math.max(lastBrace, lastBracket) + 1;
+          }
+          const potentialJson = cleanText.substring(startIdx, endIdx);
+          
+          // Try recovery on this incomplete JSON
+          const recoveredJson = attemptJsonRecovery(potentialJson, 'businessCaseQuestions');
+          if (recoveredJson && Array.isArray(recoveredJson) && recoveredJson.length > 0) {
+            console.log('[AIAssistantChat] Recovered incomplete JSON as businessCaseQuestions');
+            blocks.push({ 
+              field: 'businessCaseQuestions', 
+              content: JSON.stringify(recoveredJson),
+              structuredData: recoveredJson 
+            });
+            cleanText = cleanText.substring(0, startIdx) + cleanText.substring(endIdx);
+          }
+        }
+      }
+    }
+    
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.title) {
+          console.log('[AIAssistantChat] Recovered raw JSON as businessCaseQuestions');
+          const validated = validateBusinessCaseQuestions(parsed);
+          if (validated.length > 0) {
+            blocks.push({ 
+              field: 'businessCaseQuestions', 
+              content: jsonMatch[0],
+              structuredData: validated 
+            });
+            cleanText = cleanText.replace(jsonMatch[0], '');
+          }
+        }
+      } catch (e) {
+        console.warn('[AIAssistantChat] Found raw JSON but failed to parse:', e);
+        // Try recovery on the raw JSON
+        const recoveredJson = attemptJsonRecovery(jsonMatch[0], 'businessCaseQuestions');
+        if (recoveredJson && Array.isArray(recoveredJson) && recoveredJson.length > 0) {
+          console.log('[AIAssistantChat] Recovered malformed raw JSON as businessCaseQuestions');
+          blocks.push({ 
+            field: 'businessCaseQuestions', 
+            content: JSON.stringify(recoveredJson),
+            structuredData: recoveredJson 
+          });
+          cleanText = cleanText.replace(jsonMatch[0], '');
+        }
+      }
+    }
+  }
+  
+  // === FINAL DISPLAY CLEANUP - LAYER 3 ===
+  // Clean up orphan [/INSERTABLE] tags
+  cleanText = cleanText.replace(/\[\/INSERTABLE\]/g, '');
+  
+  // Remove any remaining orphan tags that leaked through all previous cleanup
+  // These should never appear in the UI
+  cleanText = cleanText.replace(/\[\[?INSERTABLE(?!:)/gi, '');  // Remove [INSERTABLE or [[INSERTABLE without :field
+  cleanText = cleanText.replace(/\[\[+/g, '');  // Remove any remaining [[
+  cleanText = cleanText.replace(/^\[+\s*$/gm, '');  // Remove lines that are just brackets
+  
+  // Clean up any leftover malformed patterns
+  const finalValidFields = 'title|location|jobType|description|responsibilities|requirements|benefits|tags|aiPrompt|interviewPrompt|businessCaseQuestions|fixedInterviewQuestions';
+  const leftoverMalformedRegex = new RegExp(`\\[\\[?INSERTABLE(?!\\s*:\\s*(${finalValidFields}))`, 'gi');
+  cleanText = cleanText.replace(leftoverMalformedRegex, '');
+  
+  // Final cleanup of empty lines
+  cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+  
+  return { cleanText: cleanText.trim(), blocks };
+};
 
 // Parse candidate names from text and create clickable links
 const parseCandidateReferences = (
@@ -74,17 +468,119 @@ const parseCandidateReferences = (
   return parts.length > 0 ? parts : null;
 };
 
-export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map() }: AIAssistantChatProps) => {
+export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map(), jobEditorContext }: AIAssistantChatProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  // Handle insert action
+  const handleInsert = (block: InsertableBlock) => {
+    if (!jobEditorContext) return;
+    
+    const fieldLabels: Record<string, string> = {
+      title: 'Job Title',
+      location: 'Location',
+      jobType: 'Job Type',
+      description: 'Description',
+      responsibilities: 'Responsibilities',
+      requirements: 'Requirements',
+      benefits: 'Benefits',
+      tags: 'Tags',
+      aiPrompt: 'AI Evaluation Instructions',
+      interviewPrompt: 'AI Interview Instructions',
+      businessCaseQuestions: 'Business Case Questions',
+      fixedInterviewQuestions: 'Interview Questions',
+    };
+    
+    switch (block.field) {
+      case 'title':
+        jobEditorContext.onInsertTitle?.(block.content);
+        break;
+      case 'location':
+        jobEditorContext.onInsertLocation?.(block.content);
+        break;
+      case 'jobType':
+        jobEditorContext.onInsertJobType?.(block.content);
+        break;
+      case 'description':
+        jobEditorContext.onInsertDescription?.(block.content);
+        break;
+      case 'responsibilities':
+        jobEditorContext.onInsertResponsibilities?.(block.items || []);
+        break;
+      case 'requirements':
+        jobEditorContext.onInsertRequirements?.(block.items || []);
+        break;
+      case 'benefits':
+        jobEditorContext.onInsertBenefits?.(block.items || []);
+        break;
+      case 'tags':
+        jobEditorContext.onInsertTags?.(block.items || []);
+        break;
+      case 'aiPrompt':
+        jobEditorContext.onInsertAIPrompt?.(block.content);
+        break;
+      case 'interviewPrompt':
+        jobEditorContext.onInsertInterviewPrompt?.(block.content);
+        break;
+      case 'businessCaseQuestions':
+        if (block.structuredData && Array.isArray(block.structuredData)) {
+          jobEditorContext.onInsertBusinessCaseQuestions?.(block.structuredData);
+        }
+        break;
+      case 'fixedInterviewQuestions':
+        if (block.structuredData && Array.isArray(block.structuredData)) {
+          jobEditorContext.onInsertFixedInterviewQuestions?.(block.structuredData);
+        }
+        break;
     }
-  }, [messages]);
+    
+    const getDescription = () => {
+      if (block.items) return `Added ${block.items.length} items`;
+      if (block.structuredData && Array.isArray(block.structuredData)) return `Added ${block.structuredData.length} questions`;
+      return 'Content added to form';
+    };
+    
+    toast({
+      title: `${fieldLabels[block.field]} inserted`,
+      description: getDescription(),
+    });
+  };
+
+  // Get last message for scroll dependencies (trigger during streaming)
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageContent = lastMessage?.content;
+  const isLastMessageStreaming = lastMessage?.isStreaming;
+
+  // Auto-scroll to bottom on new messages AND during streaming
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    
+    const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+    
+    const scrollToBottom = () => {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: isLastMessageStreaming ? 'auto' : 'smooth'
+      });
+    };
+    
+    if (isLastMessageStreaming) {
+      // During streaming: immediate scroll on each content update
+      requestAnimationFrame(scrollToBottom);
+    } else {
+      // After streaming or new messages: delay for Markdown render
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(scrollToBottom);
+        });
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages.length, lastMessageContent, isLastMessageStreaming]);
 
   const handleCandidateClick = (id: string) => {
     navigate(`/candidate/${id}`);
@@ -124,61 +620,135 @@ export const AIAssistantChat = ({ messages, isLoading, candidateMap = new Map() 
               )}
             >
               {message.role === 'assistant' ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown
-                    components={{
-                      h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2 first:mt-0">{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-sm font-bold mt-3 mb-1.5 first:mt-0">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h3>,
-                      p: ({ children }) => {
-                        // Try to parse candidate references in paragraphs
-                        if (typeof children === 'string' && candidateMap.size > 0) {
-                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
-                          if (parsed) {
-                            return <p className="mb-2 last:mb-0">{parsed}</p>;
-                          }
-                        }
-                        return <p className="mb-2 last:mb-0">{children}</p>;
-                      },
-                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                      li: ({ children }) => {
-                        // Try to parse candidate references in list items
-                        if (typeof children === 'string' && candidateMap.size > 0) {
-                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
-                          if (parsed) {
-                            return <li className="text-sm">{parsed}</li>;
-                          }
-                        }
-                        return <li className="text-sm">{children}</li>;
-                      },
-                      strong: ({ children }) => {
-                        // Parse candidate names in bold text
-                        if (typeof children === 'string' && candidateMap.size > 0) {
-                          const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
-                          if (parsed) {
-                            return <strong className="font-semibold">{parsed}</strong>;
-                          }
-                        }
-                        return <strong className="font-semibold">{children}</strong>;
-                      },
-                      em: ({ children }) => <em className="italic">{children}</em>,
-                      code: ({ children }) => (
-                        <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
-                      ),
-                      a: ({ href, children }) => (
-                        <a href={href} className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                  {message.isStreaming && (
-                    <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary animate-pulse rounded-sm" />
-                  )}
-                </div>
+                (() => {
+                  const { cleanText, blocks } = parseInsertableBlocks(message.content);
+                  const fieldLabels: Record<string, string> = {
+                    title: 'Title',
+                    location: 'Location',
+                    jobType: 'Job Type',
+                    description: 'Description',
+                    responsibilities: 'Responsibilities',
+                    requirements: 'Requirements',
+                    benefits: 'Benefits',
+                    tags: 'Tags',
+                    aiPrompt: 'AI Evaluation',
+                    interviewPrompt: 'Interview Instructions',
+                    businessCaseQuestions: 'Business Case Questions',
+                    fixedInterviewQuestions: 'Interview Questions',
+                  };
+                  
+                  return (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2 first:mt-0">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-sm font-bold mt-3 mb-1.5 first:mt-0">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h3>,
+                          p: ({ children }) => {
+                            if (typeof children === 'string' && candidateMap.size > 0) {
+                              const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                              if (parsed) {
+                                return <p className="mb-2 last:mb-0">{parsed}</p>;
+                              }
+                            }
+                            return <p className="mb-2 last:mb-0">{children}</p>;
+                          },
+                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                          li: ({ children }) => {
+                            if (typeof children === 'string' && candidateMap.size > 0) {
+                              const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                              if (parsed) {
+                                return <li className="text-sm">{parsed}</li>;
+                              }
+                            }
+                            return <li className="text-sm">{children}</li>;
+                          },
+                          strong: ({ children }) => {
+                            if (typeof children === 'string' && candidateMap.size > 0) {
+                              const parsed = parseCandidateReferences(children, candidateMap, handleCandidateClick);
+                              if (parsed) {
+                                return <strong className="font-semibold">{parsed}</strong>;
+                              }
+                            }
+                            return <strong className="font-semibold">{children}</strong>;
+                          },
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          code: ({ children }) => (
+                            <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                          ),
+                          a: ({ href, children }) => (
+                            <a href={href} className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {cleanText}
+                      </ReactMarkdown>
+                      
+                      {/* Insertable content cards */}
+                      {blocks.length > 0 && jobEditorContext && !message.isStreaming && (
+                        <div className="space-y-3 mt-4 pt-3 border-t border-border/50">
+                          {blocks.map((block, idx) => (
+                            <div 
+                              key={idx}
+                              className="rounded-lg border border-primary/30 bg-primary/5 p-3"
+                            >
+                              {/* Header */}
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                                  {fieldLabels[block.field]}
+                                </span>
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="text-sm text-foreground mb-3">
+                                {block.structuredData && Array.isArray(block.structuredData) ? (
+                                  <div className="space-y-2">
+                                    {block.structuredData.map((item: any, i: number) => (
+                                      <div key={i} className="p-2 bg-muted/50 rounded text-sm">
+                                        <strong className="block">{item.title || item.question_title || item.text || `Question ${i + 1}`}</strong>
+                                        {(item.description || item.question_description) && (
+                                          <p className="text-muted-foreground text-xs mt-1">
+                                            {item.description || item.question_description}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : block.items && block.items.length > 0 ? (
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    {block.items.map((item, i) => (
+                                      <li key={i}>{item}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="whitespace-pre-wrap">{block.content}</p>
+                                )}
+                              </div>
+                              
+                              {/* Insert button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 text-xs"
+                                onClick={() => handleInsert(block)}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                Insert {fieldLabels[block.field]}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {message.isStreaming && (
+                        <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary animate-pulse rounded-sm" />
+                      )}
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="whitespace-pre-wrap break-words">
                   {message.content}

@@ -45,6 +45,8 @@ interface CandidateHeaderProps {
   onScheduleInterview: () => void;
   onDelete: () => void;
   isDeleting: boolean;
+  // Editing permission
+  canEdit?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -189,6 +191,7 @@ export function CandidateHeader({
   onScheduleInterview,
   onDelete,
   isDeleting,
+  canEdit = true,
 }: CandidateHeaderProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
@@ -243,85 +246,94 @@ export function CandidateHeader({
 
         {/* Right: Status & Quick Actions */}
         <div className="flex flex-col gap-3">
-          {/* Status Selector */}
-          <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue>
-                <span className="flex items-center">
-                  {statusIcons[status]}
-                  {statusLabels[status] || status}
-                </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">
-                <span className="flex items-center">{statusIcons.pending} New</span>
-              </SelectItem>
-              <SelectItem value="under_review">
-                <span className="flex items-center">{statusIcons.under_review} Review</span>
-              </SelectItem>
-              <SelectItem value="interview">
-                <span className="flex items-center">{statusIcons.interview} Interview</span>
-              </SelectItem>
-              <SelectItem value="hired">
-                <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>
-              </SelectItem>
-              <SelectItem value="rejected">
-                <span className="flex items-center text-destructive">{statusIcons.rejected} Rejected</span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Status Selector - only editable for recruiters/admins */}
+          {canEdit ? (
+            <Select value={status} onValueChange={onStatusChange} disabled={isUpdating}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue>
+                  <span className="flex items-center">
+                    {statusIcons[status]}
+                    {statusLabels[status] || status}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">
+                  <span className="flex items-center">{statusIcons.pending} New</span>
+                </SelectItem>
+                <SelectItem value="under_review">
+                  <span className="flex items-center">{statusIcons.under_review} Review</span>
+                </SelectItem>
+                <SelectItem value="interview">
+                  <span className="flex items-center">{statusIcons.interview} Interview</span>
+                </SelectItem>
+                <SelectItem value="hired">
+                  <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>
+                </SelectItem>
+                <SelectItem value="rejected">
+                  <span className="flex items-center text-destructive">{statusIcons.rejected} Rejected</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-md border ${statusColors[status] || 'bg-muted'}`}>
+              {statusIcons[status]}
+              <span className="font-medium">{statusLabels[status] || status}</span>
+            </div>
+          )}
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Button 
-              onClick={onScheduleInterview} 
-              size="sm"
-              variant="outline"
-              className="gap-1"
-            >
-              <CalendarPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Schedule</span>
-            </Button>
-          
-          <InterviewEvaluationForm applicationId={applicationId} />
-          <HiringDecisionModal applicationId={applicationId} />
+          {/* Quick Actions - only for recruiters/admins */}
+          {canEdit && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button 
+                onClick={onScheduleInterview} 
+                size="sm"
+                variant="outline"
+                className="gap-1"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Schedule</span>
+              </Button>
             
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. The candidate will be permanently removed from the system.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={onDelete} 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            <InterviewEvaluationForm applicationId={applicationId} />
+            <HiringDecisionModal applicationId={applicationId} />
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    disabled={isDeleting}
                   >
-                    {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                    {isDeleting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. The candidate will be permanently removed from the system.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={onDelete} 
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
       </div>
     </div>

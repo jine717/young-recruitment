@@ -686,6 +686,7 @@ export type Database = {
           ai_system_prompt: string | null
           benefits: string[] | null
           created_at: string
+          created_by: string | null
           department_id: string | null
           description: string
           id: string
@@ -707,6 +708,7 @@ export type Database = {
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
+          created_by?: string | null
           department_id?: string | null
           description: string
           id?: string
@@ -728,6 +730,7 @@ export type Database = {
           ai_system_prompt?: string | null
           benefits?: string[] | null
           created_at?: string
+          created_by?: string | null
           department_id?: string | null
           description?: string
           id?: string
@@ -745,6 +748,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_department_id_fkey"
             columns: ["department_id"]
@@ -900,7 +910,7 @@ export type Database = {
     Enums: {
       ai_evaluation_status: "pending" | "processing" | "completed" | "failed"
       ai_recommendation: "proceed" | "review" | "reject"
-      app_role: "candidate" | "recruiter" | "admin"
+      app_role: "candidate" | "recruiter" | "admin" | "management"
       application_status:
         | "pending"
         | "under_review"
@@ -1046,7 +1056,7 @@ export const Constants = {
     Enums: {
       ai_evaluation_status: ["pending", "processing", "completed", "failed"],
       ai_recommendation: ["proceed", "review", "reject"],
-      app_role: ["candidate", "recruiter", "admin"],
+      app_role: ["candidate", "recruiter", "admin", "management"],
       application_status: [
         "pending",
         "under_review",

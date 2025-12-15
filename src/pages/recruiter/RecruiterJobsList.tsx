@@ -30,12 +30,12 @@ import {
 import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Users } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
 import { LinkedInPostModal } from '@/components/recruiter/LinkedInPostModal';
+import { format } from 'date-fns';
 
 interface DeleteJobInfo {
   id: string;
@@ -43,29 +43,10 @@ interface DeleteJobInfo {
   candidateCount: number;
 }
 
-function useApplicationCounts() {
-  return useQuery({
-    queryKey: ['application-counts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('applications')
-        .select('job_id');
-      
-      if (error) throw error;
-      
-      const counts: Record<string, number> = {};
-      data?.forEach(app => {
-        counts[app.job_id] = (counts[app.job_id] || 0) + 1;
-      });
-      return counts;
-    },
-  });
-}
 
 export default function RecruiterJobsList() {
   const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
   const { data: jobs, isLoading } = useAllJobs();
-  const { data: applicationCounts } = useApplicationCounts();
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
   const navigate = useNavigate();
@@ -211,8 +192,7 @@ export default function RecruiterJobsList() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
+    <DashboardLayout showDashboardLink>
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
@@ -255,32 +235,30 @@ export default function RecruiterJobsList() {
                       <TableHead>Title</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Candidates</TableHead>
+                      <TableHead>Created by</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>LinkedIn</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {jobs.map((job) => {
-                      const candidateCount = applicationCounts?.[job.id] || 0;
-                      return (
-                        <TableRow key={job.id}>
-                          <TableCell className="font-medium">{job.title}</TableCell>
-                          <TableCell>{job.departments?.name || '-'}</TableCell>
-                          <TableCell>{job.location}</TableCell>
-                          <TableCell className="capitalize">{job.type}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1.5">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className={candidateCount > 0 ? 'font-medium' : 'text-muted-foreground'}>
-                                {candidateCount}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{getStatusBadge(job.status)}</TableCell>
-                          <TableCell>{getLinkedInStatusBadge(job.linkedin_post_status, job.linkedin_posted_at)}</TableCell>
+                    {jobs.map((job: any) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">{job.title}</TableCell>
+                        <TableCell>{job.departments?.name || '-'}</TableCell>
+                        <TableCell>{job.location}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {job.creator?.email || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(job.created_at), 'dd MMM yyyy, HH:mm')}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(job.status)}</TableCell>
+                        <TableCell>{getLinkedInStatusBadge(job.linkedin_post_status, job.linkedin_posted_at)}</TableCell>
                           <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -326,9 +304,8 @@ export default function RecruiterJobsList() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                           </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               ) : (
@@ -406,6 +383,6 @@ export default function RecruiterJobsList() {
         onOpenChange={setLinkedInModalOpen}
         job={selectedJobForLinkedIn}
       />
-    </div>
+    </DashboardLayout>
   );
 }

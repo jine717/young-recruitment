@@ -46,11 +46,9 @@ export function AIEvaluationCard({ evaluation }: AIEvaluationCardProps) {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer group hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
+            <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded-md transition-colors">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-[hsl(var(--young-blue))]/15 group-hover:bg-[hsl(var(--young-blue))]/25 transition-colors">
-                  <Brain className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-                </div>
+                <Brain className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 AI Analysis
                 {evaluation.overall_score !== null && (
                   <span className="text-xs text-muted-foreground font-normal">

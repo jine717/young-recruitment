@@ -1,5 +1,6 @@
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
 import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
+import { DocumentsSection } from '@/components/candidate-profile/DocumentsSection';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Brain, Loader2 } from 'lucide-react';
@@ -11,6 +12,8 @@ interface OverviewTabProps {
   aiLoading: boolean;
   onTriggerAI: () => void;
   isTriggering: boolean;
+  cvUrl: string | null;
+  discUrl: string | null;
 }
 
 export function OverviewTab({ 
@@ -19,7 +22,9 @@ export function OverviewTab({
   aiEvaluation, 
   aiLoading, 
   onTriggerAI, 
-  isTriggering 
+  isTriggering,
+  cvUrl,
+  discUrl,
 }: OverviewTabProps) {
   return (
     <div className="space-y-4">
@@ -51,6 +56,13 @@ export function OverviewTab({
           </Button>
         </div>
       )}
+
+      {/* CV & DISC Documents with Analyses */}
+      <DocumentsSection
+        applicationId={applicationId}
+        cvUrl={cvUrl}
+        discUrl={discUrl}
+      />
 
       {/* Business Case Responses */}
       <BusinessCaseViewer applicationId={applicationId} jobId={jobId} />

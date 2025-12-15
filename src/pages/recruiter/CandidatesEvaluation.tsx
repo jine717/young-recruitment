@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -83,8 +83,7 @@ export default function CandidatesEvaluation() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} />
+    <DashboardLayout>
 
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="flex items-center gap-4 mb-8">
@@ -336,6 +335,6 @@ Example:
           jobTitle={historyJobTitle}
         />
       )}
-    </div>
+    </DashboardLayout>
   );
 }

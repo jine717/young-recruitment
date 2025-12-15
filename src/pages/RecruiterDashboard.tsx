@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle } from "lucide-react";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication, type ApplicationWithDetails } from "@/hooks/useApplications";
@@ -53,7 +53,7 @@ const RecruiterDashboard = () => {
     isLoading,
     error
   } = useApplications();
-  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading, isAdmin, isManagement, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
   const updateStatus = useUpdateApplicationStatus();
   const deleteApplication = useDeleteApplication();
   const queryClient = useQueryClient();
@@ -354,8 +354,7 @@ const RecruiterDashboard = () => {
         </Card>
       </div>;
   }
-  return <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} />
+  return <DashboardLayout>
 
       {/* Header - compact */}
       <section className="pt-24 pb-6 px-6 bg-background">
@@ -373,18 +372,22 @@ const RecruiterDashboard = () => {
                   Candidates Evaluation
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="hover-lift">
-                <Link to="/dashboard/analytics">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="hover-lift">
-                <Link to="/dashboard/jobs">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Manage Jobs
-                </Link>
-              </Button>
+              {(isManagement || isAdmin) && (
+                <Button asChild variant="outline" className="hover-lift">
+                  <Link to="/dashboard/analytics">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Link>
+                </Button>
+              )}
+              {canEdit && (
+                <Button asChild variant="outline" className="hover-lift">
+                  <Link to="/dashboard/jobs">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Manage Jobs
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -456,7 +459,7 @@ const RecruiterDashboard = () => {
         <div className="container mx-auto max-w-7xl">
           <Card>
             <CardContent className="p-0">
-              {selectedIds.size > 0 && (
+              {canEdit && selectedIds.size > 0 && (
                 <div className="p-4 border-b">
                   <BulkActionsToolbar
                     selectedCount={selectedIds.size}
@@ -498,22 +501,24 @@ const RecruiterDashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[40px]">
-                          <Checkbox
-                            checked={paginatedApplications.length > 0 && paginatedApplications.every(a => selectedIds.has(a.id))}
-                            onCheckedChange={() => {
-                              const pageIds = paginatedApplications.map(a => a.id);
-                              const allSelected = pageIds.every(id => selectedIds.has(id));
-                              if (allSelected) {
-                                setSelectedIds(prev => {
-                                  const newSet = new Set(prev);
-                                  pageIds.forEach(id => newSet.delete(id));
-                                  return newSet;
-                                });
-                              } else {
-                                setSelectedIds(prev => new Set([...prev, ...pageIds]));
-                              }
-                            }}
-                          />
+                          {canEdit && (
+                            <Checkbox
+                              checked={paginatedApplications.length > 0 && paginatedApplications.every(a => selectedIds.has(a.id))}
+                              onCheckedChange={() => {
+                                const pageIds = paginatedApplications.map(a => a.id);
+                                const allSelected = pageIds.every(id => selectedIds.has(id));
+                                if (allSelected) {
+                                  setSelectedIds(prev => {
+                                    const newSet = new Set(prev);
+                                    pageIds.forEach(id => newSet.delete(id));
+                                    return newSet;
+                                  });
+                                } else {
+                                  setSelectedIds(prev => new Set([...prev, ...pageIds]));
+                                }
+                              }}
+                            />
+                          )}
                         </TableHead>
                         <TableHead className="w-[80px]">
                           <DropdownMenu>
@@ -740,10 +745,12 @@ const RecruiterDashboard = () => {
                           <>
                             <TableRow className={`cursor-pointer hover:bg-muted/50 ${isSelected ? 'bg-primary/5' : ''}`} onClick={() => evaluation && toggleRow(app.id)}>
                               <TableCell onClick={e => e.stopPropagation()}>
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleSelection(app.id)}
-                                />
+                                {canEdit && (
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleSelection(app.id)}
+                                  />
+                                )}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -797,41 +804,47 @@ const RecruiterDashboard = () => {
                                 )}
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
-                                      {app.assigned_recruiter ? (
-                                        <>
-                                          <UserCircle className="h-3 w-3" />
-                                          {app.assigned_recruiter.full_name || app.assigned_recruiter.email?.split('@')[0] || 'Assigned'}
-                                        </>
-                                      ) : (
-                                        <span className="text-muted-foreground">Unassigned</span>
-                                      )}
-                                      <ChevronDown className="h-3 w-3 ml-1" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start" className="bg-popover">
-                                    <DropdownMenuItem 
-                                      onClick={() => handleAssignment(app.id, null)}
-                                      className="flex items-center justify-between"
-                                    >
-                                      Unassigned
-                                      {!app.assigned_to && <Check className="h-4 w-4 ml-2" />}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    {recruiters.map(recruiter => (
+                                {canEdit ? (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                                        {app.assigned_recruiter ? (
+                                          <>
+                                            <UserCircle className="h-3 w-3" />
+                                            {app.assigned_recruiter.full_name || app.assigned_recruiter.email?.split('@')[0] || 'Assigned'}
+                                          </>
+                                        ) : (
+                                          <span className="text-muted-foreground">Unassigned</span>
+                                        )}
+                                        <ChevronDown className="h-3 w-3 ml-1" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="bg-popover">
                                       <DropdownMenuItem 
-                                        key={recruiter.id} 
-                                        onClick={() => handleAssignment(app.id, recruiter.id)}
+                                        onClick={() => handleAssignment(app.id, null)}
                                         className="flex items-center justify-between"
                                       >
-                                        {recruiter.full_name || recruiter.email || 'Unknown'}
-                                        {app.assigned_to === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                        Unassigned
+                                        {!app.assigned_to && <Check className="h-4 w-4 ml-2" />}
                                       </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                      <DropdownMenuSeparator />
+                                      {recruiters.map(recruiter => (
+                                        <DropdownMenuItem 
+                                          key={recruiter.id} 
+                                          onClick={() => handleAssignment(app.id, recruiter.id)}
+                                          className="flex items-center justify-between"
+                                        >
+                                          {recruiter.full_name || recruiter.email || 'Unknown'}
+                                          {app.assigned_to === recruiter.id && <Check className="h-4 w-4 ml-2" />}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    {app.assigned_recruiter?.full_name || app.assigned_recruiter?.email?.split('@')[0] || 'Unassigned'}
+                                  </span>
+                                )}
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {format(new Date(app.created_at), "MMM d, yyyy 'at' HH:mm")}
@@ -850,27 +863,33 @@ const RecruiterDashboard = () => {
                                         View Full Profile
                                       </Link>
                                     </DropdownMenuItem>
-                                    {(app.ai_evaluation_status === 'failed' || app.business_case_completed && !app.ai_evaluation_status) && <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
-                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                        Run AI Analysis
-                                      </DropdownMenuItem>}
-                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
-                                      Mark Review
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
-                                      Move to Interview
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
-                                      Mark as Hired
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(app.id, "rejected")} className="text-destructive">
-                                      Reject
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setDeleteConfirmId(app.id)} className="text-destructive">
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
+                                    {canEdit && (
+                                      <>
+                                        {(app.ai_evaluation_status === 'failed' || app.business_case_completed && !app.ai_evaluation_status) && (
+                                          <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
+                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                            Run AI Analysis
+                                          </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
+                                          Mark Review
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
+                                          Move to Interview
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
+                                          Mark as Hired
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "rejected")} className="text-destructive">
+                                          Reject
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => setDeleteConfirmId(app.id)} className="text-destructive">
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </TableCell>
@@ -996,8 +1015,8 @@ const RecruiterDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* AI Assistant */}
-      <AIAssistant />
-    </div>;
+      {/* AI Assistant - only for recruiters/admins */}
+      {canEdit && <AIAssistant />}
+    </DashboardLayout>;
 };
 export default RecruiterDashboard;

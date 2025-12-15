@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -11,20 +10,13 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, ChevronDown, ChevronUp, Pencil, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Pencil, Trash2, ClipboardList, X, Check } from 'lucide-react';
 
 export interface FixedInterviewQuestion {
   id?: string;
@@ -91,44 +83,56 @@ export default function FixedInterviewQuestionsEditor({
   disabled = false,
 }: FixedInterviewQuestionsEditorProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<FixedInterviewQuestion | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newQuestion, setNewQuestion] = useState<FixedInterviewQuestion | null>(null);
 
   const handleAddQuestion = () => {
-    setEditingQuestion({
+    setNewQuestion({
       ...emptyQuestion,
       question_order: questions.length + 1,
     });
-    setIsCreating(true);
-    setIsDialogOpen(true);
-  };
-
-  const handleEditQuestion = (question: FixedInterviewQuestion) => {
-    setEditingQuestion({ ...question });
-    setIsCreating(false);
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveQuestion = () => {
-    if (!editingQuestion) return;
-
-    if (isCreating) {
-      onChange([...questions, editingQuestion]);
-    } else {
-      onChange(
-        questions.map((q) =>
-          q.question_order === editingQuestion.question_order ? editingQuestion : q
-        )
-      );
-    }
-    setIsDialogOpen(false);
+    setIsAddingNew(true);
+    setEditingIndex(null);
     setEditingQuestion(null);
+  };
+
+  const handleEditQuestion = (question: FixedInterviewQuestion, index: number) => {
+    setEditingQuestion({ ...question });
+    setEditingIndex(index);
+    setIsAddingNew(false);
+    setNewQuestion(null);
+  };
+
+  const handleSaveNewQuestion = () => {
+    if (!newQuestion) return;
+    onChange([...questions, newQuestion]);
+    setNewQuestion(null);
+    setIsAddingNew(false);
+  };
+
+  const handleSaveEditQuestion = () => {
+    if (!editingQuestion || editingIndex === null) return;
+    onChange(
+      questions.map((q, i) => (i === editingIndex ? editingQuestion : q))
+    );
+    setEditingIndex(null);
+    setEditingQuestion(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditingQuestion(null);
+  };
+
+  const handleCancelNew = () => {
+    setIsAddingNew(false);
+    setNewQuestion(null);
   };
 
   const handleDeleteQuestion = (questionOrder: number) => {
     const filtered = questions.filter((q) => q.question_order !== questionOrder);
-    // Renumber questions
     const renumbered = filtered.map((q, index) => ({
       ...q,
       question_order: index + 1,
@@ -140,7 +144,6 @@ export default function FixedInterviewQuestionsEditor({
     if (index === 0) return;
     const newQuestions = [...questions];
     [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
-    // Renumber
     const renumbered = newQuestions.map((q, i) => ({ ...q, question_order: i + 1 }));
     onChange(renumbered);
   };
@@ -149,42 +152,138 @@ export default function FixedInterviewQuestionsEditor({
     if (index === questions.length - 1) return;
     const newQuestions = [...questions];
     [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
-    // Renumber
     const renumbered = newQuestions.map((q, i) => ({ ...q, question_order: i + 1 }));
     onChange(renumbered);
   };
 
+  const renderQuestionForm = (
+    question: FixedInterviewQuestion,
+    onUpdate: (updated: FixedInterviewQuestion) => void,
+    onSave: () => void,
+    onCancel: () => void,
+    isNew: boolean
+  ) => (
+    <div className="p-4 border-2 border-[hsl(var(--young-gold))]/50 rounded-lg bg-[hsl(var(--young-gold))]/5 space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-[hsl(var(--young-gold))]">
+          {isNew ? 'New Fixed Question' : `Editing Q${question.question_order}`}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="h-8"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSave}
+            disabled={!question.question_text.trim()}
+            className="h-8"
+          >
+            <Check className="h-4 w-4 mr-1" />
+            {isNew ? 'Add' : 'Save'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`text-${question.question_order}`}>Question *</Label>
+        <Textarea
+          id={`text-${question.question_order}`}
+          value={question.question_text}
+          onChange={(e) => onUpdate({ ...question, question_text: e.target.value })}
+          placeholder="Enter your interview question..."
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor={`category-${question.question_order}`}>Category</Label>
+          <Select
+            value={question.category}
+            onValueChange={(value) => onUpdate({ ...question, category: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={`priority-${question.question_order}`}>Priority</Label>
+          <Select
+            value={question.priority.toString()}
+            onValueChange={(value) => onUpdate({ ...question, priority: parseInt(value) })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">{priorityLabels[1]}</SelectItem>
+              <SelectItem value="2">{priorityLabels[2]}</SelectItem>
+              <SelectItem value="3">{priorityLabels[3]}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <>
-      <Card>
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-[hsl(var(--young-gold))]" />
-                    Fixed Interview Questions
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {questions.length === 0
-                      ? 'No fixed questions configured yet'
-                      : `${questions.length} question${questions.length !== 1 ? 's' : ''} - same for all candidates`}
-                  </CardDescription>
-                </div>
-                {isOpen ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+    <Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-[hsl(var(--young-gold))]" />
+                  Fixed Interview Questions
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  {questions.length === 0
+                    ? 'No fixed questions configured yet'
+                    : `${questions.length} question${questions.length !== 1 ? 's' : ''} - same for all candidates`}
+                </CardDescription>
               </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-4">
-              {questions.length > 0 ? (
-                <div className="space-y-3">
-                  {questions.map((question, index) => (
+              {isOpen ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-4">
+            {questions.length > 0 ? (
+              <div className="space-y-3">
+                {questions.map((question, index) => (
+                  editingIndex === index && editingQuestion ? (
+                    <div key={question.id || `edit-${index}`}>
+                      {renderQuestionForm(
+                        editingQuestion,
+                        setEditingQuestion,
+                        handleSaveEditQuestion,
+                        handleCancelEdit,
+                        false
+                      )}
+                    </div>
+                  ) : (
                     <div
                       key={question.id || `new-${index}`}
                       className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30"
@@ -196,7 +295,7 @@ export default function FixedInterviewQuestionsEditor({
                           size="icon"
                           className="h-6 w-6"
                           onClick={() => handleMoveUp(index)}
-                          disabled={disabled || index === 0}
+                          disabled={disabled || index === 0 || editingIndex !== null || isAddingNew}
                         >
                           <ChevronUp className="h-4 w-4" />
                         </Button>
@@ -206,7 +305,7 @@ export default function FixedInterviewQuestionsEditor({
                           size="icon"
                           className="h-6 w-6"
                           onClick={() => handleMoveDown(index)}
-                          disabled={disabled || index === questions.length - 1}
+                          disabled={disabled || index === questions.length - 1 || editingIndex !== null || isAddingNew}
                         >
                           <ChevronDown className="h-4 w-4" />
                         </Button>
@@ -230,8 +329,8 @@ export default function FixedInterviewQuestionsEditor({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEditQuestion(question)}
-                          disabled={disabled}
+                          onClick={() => handleEditQuestion(question, index)}
+                          disabled={disabled || editingIndex !== null || isAddingNew}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -240,23 +339,37 @@ export default function FixedInterviewQuestionsEditor({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteQuestion(question.question_order)}
-                          disabled={disabled}
+                          disabled={disabled || editingIndex !== null || isAddingNew}
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No fixed interview questions yet</p>
-                  <p className="text-sm">Add standard questions that will be used for all candidates</p>
-                </div>
-              )}
+                  )
+                ))}
+              </div>
+            ) : !isAddingNew && (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No fixed interview questions yet</p>
+                <p className="text-sm">Add standard questions that will be used for all candidates</p>
+              </div>
+            )}
 
+            {isAddingNew && newQuestion && (
+              <div className="mt-3">
+                {renderQuestionForm(
+                  newQuestion,
+                  setNewQuestion,
+                  handleSaveNewQuestion,
+                  handleCancelNew,
+                  true
+                )}
+              </div>
+            )}
+
+            {!isAddingNew && editingIndex === null && (
               <Button
                 type="button"
                 variant="outline"
@@ -268,90 +381,10 @@ export default function FixedInterviewQuestionsEditor({
                 <Plus className="h-4 w-4 mr-2" />
                 Add Fixed Question
               </Button>
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {isCreating ? 'Add Fixed Question' : 'Edit Fixed Question'}
-            </DialogTitle>
-          </DialogHeader>
-          {editingQuestion && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="question_text">Question *</Label>
-                <Textarea
-                  id="question_text"
-                  value={editingQuestion.question_text}
-                  onChange={(e) =>
-                    setEditingQuestion({ ...editingQuestion, question_text: e.target.value })
-                  }
-                  placeholder="Enter your interview question..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={editingQuestion.category}
-                    onValueChange={(value) =>
-                      setEditingQuestion({ ...editingQuestion, category: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select
-                    value={editingQuestion.priority.toString()}
-                    onValueChange={(value) =>
-                      setEditingQuestion({ ...editingQuestion, priority: parseInt(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">{priorityLabels[1]}</SelectItem>
-                      <SelectItem value="2">{priorityLabels[2]}</SelectItem>
-                      <SelectItem value="3">{priorityLabels[3]}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSaveQuestion}
-              disabled={!editingQuestion?.question_text.trim()}
-            >
-              {isCreating ? 'Add Question' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }

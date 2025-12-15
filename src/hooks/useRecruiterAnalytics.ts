@@ -30,16 +30,21 @@ export interface AIScoreDistribution {
   label: string;
 }
 
+export interface TimeDuration {
+  hours: number;
+  minutes: number;
+}
+
 export interface TimeMetrics {
-  avgToReview: number;
-  avgToInterview: number;
-  avgToDecision: number;
+  avgToReview: TimeDuration;
+  avgToInterview: TimeDuration;
+  avgToDecision: TimeDuration;
 }
 
 export interface RecruiterAnalyticsData {
   totalApplications: number;
   conversionToInterview: number;
-  avgTimeToDecision: number;
+  avgTimeToDecision: TimeDuration;
   avgAIScore: number | null;
   funnelData: FunnelData[];
   applicationsTrend: TrendData[];
@@ -103,18 +108,27 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
     ? Math.round(appsWithScore.reduce((sum, app) => sum + (app.ai_score || 0), 0) / appsWithScore.length)
     : null;
 
-  // Time to decision (days)
-  const decisionsWithTime = decisions.map(d => {
-    const app = applications.find(a => a.id === d.application_id);
-    if (!app) return null;
-    const appDate = new Date(app.created_at);
-    const decDate = new Date(d.created_at);
-    return Math.ceil((decDate.getTime() - appDate.getTime()) / (1000 * 60 * 60 * 24));
-  }).filter(Boolean) as number[];
+  // Helper function to convert minutes to hours and minutes
+  const toHoursAndMinutes = (totalMinutes: number): TimeDuration => ({
+    hours: Math.floor(totalMinutes / 60),
+    minutes: Math.round(totalMinutes % 60),
+  });
+
+  // Time to decision - using applications with final status (hired/rejected)
+  const appsWithDecision = applications.filter(
+    a => a.status === 'hired' || a.status === 'rejected'
+  );
   
-  const avgTimeToDecision = decisionsWithTime.length > 0
-    ? Math.round(decisionsWithTime.reduce((a, b) => a + b, 0) / decisionsWithTime.length)
+  const decisionsWithTime = appsWithDecision.map(app => {
+    const created = new Date(app.created_at);
+    const updated = new Date(app.updated_at);
+    return (updated.getTime() - created.getTime()) / (1000 * 60); // minutes
+  });
+  
+  const avgTimeToDecisionMinutes = decisionsWithTime.length > 0
+    ? decisionsWithTime.reduce((a, b) => a + b, 0) / decisionsWithTime.length
     : 0;
+  const avgTimeToDecision = toHoursAndMinutes(avgTimeToDecisionMinutes);
 
   // Funnel Data
   const statusCounts = {
@@ -193,14 +207,14 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
     label,
   }));
 
-  // Time Metrics
+  // Time Metrics (in minutes for precision)
   const appsWithReview = applications.filter(a => a.status !== 'pending');
-  const avgToReview = appsWithReview.length > 0
-    ? Math.round(appsWithReview.reduce((sum, app) => {
+  const avgToReviewMinutes = appsWithReview.length > 0
+    ? appsWithReview.reduce((sum, app) => {
         const created = new Date(app.created_at);
         const updated = new Date(app.updated_at);
-        return sum + Math.ceil((updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-      }, 0) / appsWithReview.length)
+        return sum + (updated.getTime() - created.getTime()) / (1000 * 60); // minutes
+      }, 0) / appsWithReview.length
     : 0;
 
   const interviewsWithTime = interviews.map(int => {
@@ -208,16 +222,16 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
     if (!app) return null;
     const appDate = new Date(app.created_at);
     const intDate = new Date(int.created_at);
-    return Math.ceil((intDate.getTime() - appDate.getTime()) / (1000 * 60 * 60 * 24));
+    return (intDate.getTime() - appDate.getTime()) / (1000 * 60); // minutes
   }).filter(Boolean) as number[];
 
-  const avgToInterview = interviewsWithTime.length > 0
-    ? Math.round(interviewsWithTime.reduce((a, b) => a + b, 0) / interviewsWithTime.length)
+  const avgToInterviewMinutes = interviewsWithTime.length > 0
+    ? interviewsWithTime.reduce((a, b) => a + b, 0) / interviewsWithTime.length
     : 0;
 
   const timeMetrics: TimeMetrics = {
-    avgToReview,
-    avgToInterview,
+    avgToReview: toHoursAndMinutes(avgToReviewMinutes),
+    avgToInterview: toHoursAndMinutes(avgToInterviewMinutes),
     avgToDecision: avgTimeToDecision,
   };
 
