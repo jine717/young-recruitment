@@ -6,12 +6,12 @@ const Footer = () => {
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <Link 
           to="/" 
-          className="font-display text-2xl text-foreground hover:text-young-blue transition-colors duration-200"
+          className="font-display text-xl text-foreground hover:text-young-blue transition-colors duration-200"
         >
-          YOUNG.
+          YOUNG RECRUITMENT.
         </Link>
         <p className="text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Young. Unite to Disrupt.
+          © {new Date().getFullYear()} Young Recruitment. Unite to Disrupt.
         </p>
       </div>
     </footer>
