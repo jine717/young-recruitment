@@ -59,7 +59,7 @@ export default function CandidateProfile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { isAdmin, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
   const { toast } = useToast();
   const updateStatus = useUpdateApplicationStatus();
   const deleteApplication = useDeleteApplication();
@@ -418,6 +418,7 @@ export default function CandidateProfile() {
           onScheduleInterview={() => setShowScheduleModal(true)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
+          canEdit={canEdit}
         />
 
         {/* Schedule Interview Modal */}
@@ -477,8 +478,8 @@ export default function CandidateProfile() {
         </Tabs>
       </div>
 
-      {/* Context-Aware AI Assistant */}
-      {candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
+      {/* Context-Aware AI Assistant - only for recruiters/admins */}
+      {canEdit && candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
     </div>
   );
 }

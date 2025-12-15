@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'candidate' | 'recruiter' | 'admin';
+type AppRole = 'candidate' | 'recruiter' | 'admin' | 'management';
 
 interface RoleCheckResult {
   user: ReturnType<typeof useAuth>['user'];
@@ -11,6 +11,8 @@ interface RoleCheckResult {
   roles: AppRole[];
   isAdmin: boolean;
   isRecruiter: boolean;
+  isManagement: boolean;
+  canEdit: boolean;
 }
 
 export function useRoleCheck(allowedRoles: AppRole[]): RoleCheckResult {
@@ -50,12 +52,21 @@ export function useRoleCheck(allowedRoles: AppRole[]): RoleCheckResult {
     checkRoles();
   }, [user, allowedRoles.join(',')]);
 
+  const isAdmin = roles.includes('admin');
+  const isRecruiter = roles.includes('recruiter');
+  const isManagement = roles.includes('management');
+  
+  // canEdit is true only for recruiters and admins, NOT for management
+  const canEdit = isAdmin || isRecruiter;
+
   return {
     user,
     hasAccess,
     isLoading,
     roles,
-    isAdmin: roles.includes('admin'),
-    isRecruiter: roles.includes('recruiter'),
+    isAdmin,
+    isRecruiter,
+    isManagement,
+    canEdit,
   };
 }
