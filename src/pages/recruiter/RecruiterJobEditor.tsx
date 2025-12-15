@@ -17,7 +17,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { useJobBusinessCases, useCreateBusinessCase, useUpdateBusinessCase, useDeleteBusinessCase } from '@/hooks/useBusinessCasesMutation';
 import { useJobFixedQuestionsForEditor, useCreateJobFixedQuestion, useUpdateJobFixedQuestion, useDeleteJobFixedQuestion } from '@/hooks/useJobFixedQuestionsMutation';
-import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll, MessageSquareText } from 'lucide-react';
+import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll, MessageSquareText, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import FixedInterviewQuestionsEditor, { FixedInterviewQuestion } from '@/components/recruiter/FixedInterviewQuestionsEditor';
@@ -27,6 +27,7 @@ import { SaveTemplateDialog } from '@/components/recruiter/SaveTemplateDialog';
 import { ManageTemplatesDialog } from '@/components/recruiter/ManageTemplatesDialog';
 import { JobEditorAIAssistant } from '@/components/recruiter/JobEditorAIAssistant';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -35,7 +36,7 @@ export default function RecruiterJobEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
 
   const { data: departments } = useDepartments();
   const { data: existingBusinessCases, isLoading: businessCasesLoading } = useJobBusinessCases(id);
@@ -455,6 +456,16 @@ export default function RecruiterJobEditor() {
       {/* Form */}
       <section className="pb-20 px-6">
         <div className="container mx-auto max-w-4xl">
+          {/* View Only Banner for Management */}
+          {!canEdit && (
+            <Alert className="mb-6 border-young-gold/50 bg-young-gold/10">
+              <Eye className="h-4 w-4 text-young-gold" />
+              <AlertDescription className="text-foreground">
+                You are viewing this job in read-only mode. Only recruiters and admins can edit job details.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={(e) => handleSubmit(e, 'draft')}>
             <div className="space-y-6">
               <Card>
@@ -464,33 +475,36 @@ export default function RecruiterJobEditor() {
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="title">Job Title *</Label>
+                      <Label htmlFor="title">Job Title {canEdit && '*'}</Label>
                       <Input
                         id="title"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="e.g. Senior Software Engineer"
-                        required
+                        required={canEdit}
+                        disabled={!canEdit}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Location *</Label>
+                      <Label htmlFor="location">Location {canEdit && '*'}</Label>
                       <Input
                         id="location"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                         placeholder="e.g. Amsterdam, Netherlands"
-                        required
+                        required={canEdit}
+                        disabled={!canEdit}
                       />
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="type">Job Type *</Label>
+                      <Label htmlFor="type">Job Type {canEdit && '*'}</Label>
                       <Select
                         value={formData.type}
                         onValueChange={(value: JobType) => setFormData({ ...formData, type: value })}
+                        disabled={!canEdit}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -508,6 +522,7 @@ export default function RecruiterJobEditor() {
                       <Select
                         value={formData.department_id}
                         onValueChange={(value) => setFormData({ ...formData, department_id: value })}
+                        disabled={!canEdit}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select department" />
@@ -524,14 +539,15 @@ export default function RecruiterJobEditor() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description *</Label>
+                    <Label htmlFor="description">Description {canEdit && '*'}</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Job description..."
                       rows={5}
-                      required
+                      required={canEdit}
+                      disabled={!canEdit}
                     />
                   </div>
                 </CardContent>
@@ -548,26 +564,31 @@ export default function RecruiterJobEditor() {
                         value={item}
                         onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
                         placeholder="Add a responsibility..."
+                        disabled={!canEdit}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeArrayItem('responsibilities', index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeArrayItem('responsibilities', index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addArrayItem('responsibilities')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Responsibility
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addArrayItem('responsibilities')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Responsibility
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -582,26 +603,31 @@ export default function RecruiterJobEditor() {
                         value={item}
                         onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
                         placeholder="Add a requirement..."
+                        disabled={!canEdit}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeArrayItem('requirements', index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeArrayItem('requirements', index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addArrayItem('requirements')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Requirement
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addArrayItem('requirements')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Requirement
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -616,26 +642,31 @@ export default function RecruiterJobEditor() {
                         value={item}
                         onChange={(e) => handleArrayChange('benefits', index, e.target.value)}
                         placeholder="Add a benefit..."
+                        disabled={!canEdit}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeArrayItem('benefits', index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeArrayItem('benefits', index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addArrayItem('benefits')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Benefit
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addArrayItem('benefits')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Benefit
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -650,26 +681,31 @@ export default function RecruiterJobEditor() {
                         value={item}
                         onChange={(e) => handleArrayChange('tags', index, e.target.value)}
                         placeholder="Add a tag..."
+                        disabled={!canEdit}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeArrayItem('tags', index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeArrayItem('tags', index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addArrayItem('tags')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Tag
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addArrayItem('tags')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Tag
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -677,14 +713,14 @@ export default function RecruiterJobEditor() {
               <BusinessCaseQuestionsEditor
                 questions={businessCaseQuestions}
                 onChange={setBusinessCaseQuestions}
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
               />
 
               {/* Fixed Interview Questions Section */}
               <FixedInterviewQuestionsEditor
                 questions={fixedInterviewQuestions}
                 onChange={setFixedInterviewQuestions}
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
               />
 
               {/* AI Interview Questions Instructions */}
@@ -705,6 +741,7 @@ export default function RecruiterJobEditor() {
                     onChange={(e) => setFormData({ ...formData, ai_interview_prompt: e.target.value })}
                     placeholder="Example: Focus on technical problem-solving scenarios. Include questions about team collaboration. Ask about their experience with agile methodologies..."
                     rows={5}
+                    disabled={!canEdit}
                   />
                 </CardContent>
               </Card>
@@ -722,35 +759,38 @@ export default function RecruiterJobEditor() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <AITemplateSelector
-                      onSelect={(template) => {
-                        if (template) {
-                          setFormData({ ...formData, ai_system_prompt: template.prompt_content });
-                        }
-                      }}
-                      disabled={isSubmitting}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setManageTemplatesOpen(true)}
-                      className="shrink-0"
-                    >
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Manage Templates
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <AITemplateSelector
+                        onSelect={(template) => {
+                          if (template) {
+                            setFormData({ ...formData, ai_system_prompt: template.prompt_content });
+                          }
+                        }}
+                        disabled={isSubmitting}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setManageTemplatesOpen(true)}
+                        className="shrink-0"
+                      >
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Manage Templates
+                      </Button>
+                    </div>
+                  )}
 
                   <Textarea
                     value={formData.ai_system_prompt}
                     onChange={(e) => setFormData({ ...formData, ai_system_prompt: e.target.value })}
                     placeholder="Example: Focus on leadership experience and startup background. Pay special attention to communication skills. Prioritize candidates who demonstrate problem-solving abilities in their responses..."
                     rows={6}
+                    disabled={!canEdit}
                   />
 
-                  {formData.ai_system_prompt.trim() && (
+                  {canEdit && formData.ai_system_prompt.trim() && (
                     <Button
                       type="button"
                       variant="outline"
@@ -764,50 +804,58 @@ export default function RecruiterJobEditor() {
                 </CardContent>
               </Card>
 
-              <SaveTemplateDialog
-                open={saveTemplateOpen}
-                onOpenChange={setSaveTemplateOpen}
-                promptContent={formData.ai_system_prompt}
-              />
+              {canEdit && (
+                <>
+                  <SaveTemplateDialog
+                    open={saveTemplateOpen}
+                    onOpenChange={setSaveTemplateOpen}
+                    promptContent={formData.ai_system_prompt}
+                  />
 
-              <ManageTemplatesDialog
-                open={manageTemplatesOpen}
-                onOpenChange={setManageTemplatesOpen}
-              />
+                  <ManageTemplatesDialog
+                    open={manageTemplatesOpen}
+                    onOpenChange={setManageTemplatesOpen}
+                  />
+                </>
+              )}
 
               <div className="flex gap-4 justify-end">
                 <Button type="button" variant="outline" onClick={() => navigate('/dashboard/jobs')}>
-                  Cancel
+                  {canEdit ? 'Cancel' : 'Back'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={(e) => handleSubmit(e, 'draft')}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save as Draft
-                </Button>
-                <Button
-                  type="button"
-                  onClick={(e) => handleSubmit(e, 'published')}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {isEditing ? 'Update & Publish' : 'Publish'}
-                </Button>
+                {canEdit && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={(e) => handleSubmit(e, 'draft')}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save as Draft
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={(e) => handleSubmit(e, 'published')}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      {isEditing ? 'Update & Publish' : 'Publish'}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </form>
         </div>
       </section>
 
-      {/* Young AI Assistant */}
-      <JobEditorAIAssistant jobEditorContext={jobEditorContext} />
+      {/* Young AI Assistant - Only for recruiters/admins who can edit */}
+      {canEdit && <JobEditorAIAssistant jobEditorContext={jobEditorContext} />}
     </DashboardLayout>
   );
 }

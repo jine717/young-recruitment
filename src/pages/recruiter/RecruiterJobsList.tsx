@@ -45,7 +45,7 @@ interface DeleteJobInfo {
 
 
 export default function RecruiterJobsList() {
-  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
   const { data: jobs, isLoading } = useAllJobs();
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
@@ -209,12 +209,14 @@ export default function RecruiterJobsList() {
                 Create and manage job postings
               </p>
             </div>
-            <Button asChild>
-              <Link to="/dashboard/jobs/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Job
-              </Link>
-            </Button>
+            {canEdit && (
+              <Button asChild>
+                <Link to="/dashboard/jobs/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Job
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -260,49 +262,65 @@ export default function RecruiterJobsList() {
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
                         <TableCell>{getLinkedInStatusBadge(job.linkedin_post_status, job.linkedin_posted_at)}</TableCell>
                           <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/business-case`)}>
-                                <FileText className="h-4 w-4 mr-2" />
-                                Business Case
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleStatus(job)}>
-                                {job.status === 'published' ? (
-                                  <>
-                                    <EyeOff className="h-4 w-4 mr-2" />
-                                    Unpublish
-                                  </>
-                                ) : (
-                                  <>
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Publish
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleOpenLinkedInModal(job)}>
-                                <LinkedInIcon className="h-4 w-4 mr-2" />
-                                Post to LinkedIn
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDelete({ id: job.id, title: job.title })}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {canEdit ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/business-case`)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Business Case
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleStatus(job)}>
+                                  {job.status === 'published' ? (
+                                    <>
+                                      <EyeOff className="h-4 w-4 mr-2" />
+                                      Unpublish
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      Publish
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleOpenLinkedInModal(job)}>
+                                  <LinkedInIcon className="h-4 w-4 mr-2" />
+                                  Post to LinkedIn
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete({ id: job.id, title: job.title })}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                           </TableCell>
                       </TableRow>
                     ))}
