@@ -380,11 +380,20 @@ const RecruiterDashboard = () => {
                   </Link>
                 </Button>
               )}
-              {canEdit && (
+              {(canEdit || isManagement) && (
                 <Button asChild variant="outline" className="hover-lift">
                   <Link to="/dashboard/jobs">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Manage Jobs
+                    {canEdit ? (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Manage Jobs
+                      </>
+                    ) : (
+                      <>
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        View Jobs
+                      </>
+                    )}
                   </Link>
                 </Button>
               )}
