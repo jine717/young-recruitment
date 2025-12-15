@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Users, TrendingUp, Clock, Brain, Timer, CalendarCheck, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRecruiterAnalytics, TimeDuration } from '@/hooks/useRecruiterAnalytics';
 import { StatsCard } from '@/components/analytics/StatsCard';
@@ -50,8 +51,8 @@ export default function RecruiterAnalytics() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <DashboardLayout showDashboardLink>
+      <div className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -158,6 +159,6 @@ export default function RecruiterAnalytics() {
         {/* Job Performance Table */}
         <JobPerformanceTable data={analytics.jobPerformance} />
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

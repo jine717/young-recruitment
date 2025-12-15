@@ -21,7 +21,7 @@ import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
 import { ScheduleInterviewModal } from '@/components/candidate-profile/ScheduleInterviewModal';
 import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAIAssistant';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Briefcase, Users } from 'lucide-react';
@@ -394,9 +394,7 @@ export default function CandidateProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
-
+    <DashboardLayout showDashboardLink>
       <div className="max-w-7xl mx-auto p-6 pt-24 space-y-6">
         {/* Header with AI Score and Quick Actions */}
         <CandidateHeader
@@ -480,6 +478,6 @@ export default function CandidateProfile() {
 
       {/* Context-Aware AI Assistant - only for recruiters/admins */}
       {canEdit && candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
-    </div>
+    </DashboardLayout>
   );
 }

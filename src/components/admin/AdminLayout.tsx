@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, Building2, Users, LayoutDashboard, ArrowLeft, BarChart3 } from 'lucide-react';
+import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
@@ -72,7 +73,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -86,8 +87,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </header>
 
-      <div className="flex">
-        <nav className="w-64 border-r border-border bg-card min-h-[calc(100vh-73px)] p-4">
+      <div className="flex flex-1">
+        <nav className="w-64 border-r border-border bg-card p-4">
           <ul className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -118,6 +119,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </main>
       </div>
+      
+      <Footer />
     </div>
   );
 }

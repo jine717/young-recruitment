@@ -21,7 +21,7 @@ import { Plus, X, Save, ArrowLeft, Loader2, Brain, FolderOpen, SaveAll, MessageS
 import { supabase } from '@/integrations/supabase/client';
 import BusinessCaseQuestionsEditor, { BusinessCaseQuestion } from '@/components/recruiter/BusinessCaseQuestionsEditor';
 import FixedInterviewQuestionsEditor, { FixedInterviewQuestion } from '@/components/recruiter/FixedInterviewQuestionsEditor';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { AITemplateSelector } from '@/components/recruiter/AITemplateSelector';
 import { SaveTemplateDialog } from '@/components/recruiter/SaveTemplateDialog';
 import { ManageTemplatesDialog } from '@/components/recruiter/ManageTemplatesDialog';
@@ -433,8 +433,7 @@ export default function RecruiterJobEditor() {
   const isSubmitting = isSaving || createJob.isPending || updateJob.isPending;
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNavbar user={user} isAdmin={isAdmin} showDashboardLink />
+    <DashboardLayout showDashboardLink>
 
       {/* Header */}
       <section className="pt-32 pb-8 px-6">
@@ -809,6 +808,6 @@ export default function RecruiterJobEditor() {
 
       {/* Young AI Assistant */}
       <JobEditorAIAssistant jobEditorContext={jobEditorContext} />
-    </div>
+    </DashboardLayout>
   );
 }
