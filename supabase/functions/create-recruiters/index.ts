@@ -18,9 +18,7 @@ Deno.serve(async (req) => {
     );
 
     const recruiters = [
-      { email: "hiring@ytalents.nl", password: "Yrecruiter123!", name: "Hiring" },
-      { email: "careers@ytalents.nl", password: "Yrecruiter123!", name: "Careers" },
-      { email: "alejandra@young.com", password: "Ayoung123!", name: "Alejandra" },
+      { email: "management@ytalents.nl", password: "Ymanagement123!", name: "Management", role: "management" },
     ];
 
     const results = [];
@@ -48,10 +46,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Add recruiter role
+      // Add role (management or recruiter)
       const { error: roleError } = await supabaseAdmin
         .from("user_roles")
-        .insert({ user_id: userData.user.id, role: "recruiter" });
+        .insert({ user_id: userData.user.id, role: recruiter.role || "recruiter" });
 
       if (roleError) {
         results.push({ email: recruiter.email, status: "created but role failed", error: roleError.message });
