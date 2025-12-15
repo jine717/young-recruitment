@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { z } from 'zod';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const applicationSchema = z.object({
   candidateName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -483,6 +484,8 @@ export default function Apply() {
           </form>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
