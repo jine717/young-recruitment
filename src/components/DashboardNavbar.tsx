@@ -34,7 +34,7 @@ export function DashboardNavbar({ user, isAdmin = false, showDashboardLink = fal
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <Link 
           to="/" 
-          className="font-display text-2xl tracking-tight text-foreground hover:text-young-blue transition-colors duration-200"
+          className="font-display text-xl tracking-tight text-foreground hover:text-young-blue transition-colors duration-200"
         >
           YOUNG RECRUITMENT.
         </Link>
