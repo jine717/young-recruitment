@@ -307,7 +307,23 @@ export default function RecruiterJobsList() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           ) : (
-                            <span className="text-xs text-muted-foreground">View only</span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/business-case`)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  View Business Case
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                           </TableCell>
                       </TableRow>
