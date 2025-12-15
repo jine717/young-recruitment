@@ -89,8 +89,8 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center bg-background/80 backdrop-blur-sm border-b border-border">
-        <Link to="/" className="text-2xl font-bold tracking-tighter text-foreground">
-          YOUNG.
+        <Link to="/" className="font-display text-xl tracking-tight text-foreground hover:text-young-blue transition-colors duration-200">
+          YOUNG RECRUITMENT.
         </Link>
         <Link to="/jobs">
           <Button variant="outline" size="sm">
