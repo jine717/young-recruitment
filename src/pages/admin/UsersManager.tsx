@@ -18,18 +18,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUsersWithRoles, useAddUserRole, useRemoveUserRole } from '@/hooks/useUserRoles';
+import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, type AppRole } from '@/hooks/useUserRoles';
 import { Search, Plus, X } from 'lucide-react';
-
-type AppRole = 'candidate' | 'recruiter' | 'admin';
 
 const roleColors: Record<AppRole, string> = {
   admin: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   recruiter: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  candidate: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+  management: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
 };
 
-const allRoles: AppRole[] = ['admin', 'recruiter', 'candidate'];
+const allRoles: AppRole[] = ['admin', 'recruiter', 'management'];
 
 export default function UsersManager() {
   const { data: users, isLoading } = useUsersWithRoles();
