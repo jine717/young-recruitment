@@ -53,7 +53,7 @@ const RecruiterDashboard = () => {
     isLoading,
     error
   } = useApplications();
-  const { user, hasAccess, isLoading: roleLoading, isAdmin, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
+  const { user, hasAccess, isLoading: roleLoading, isAdmin, isManagement, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
   const updateStatus = useUpdateApplicationStatus();
   const deleteApplication = useDeleteApplication();
   const queryClient = useQueryClient();
@@ -373,12 +373,14 @@ const RecruiterDashboard = () => {
                   Candidates Evaluation
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="hover-lift">
-                <Link to="/dashboard/analytics">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
-                </Link>
-              </Button>
+              {(isManagement || isAdmin) && (
+                <Button asChild variant="outline" className="hover-lift">
+                  <Link to="/dashboard/analytics">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Link>
+                </Button>
+              )}
               {canEdit && (
                 <Button asChild variant="outline" className="hover-lift">
                   <Link to="/dashboard/jobs">

@@ -19,7 +19,7 @@ const formatDuration = (time: TimeDuration): string => {
 };
 
 export default function RecruiterAnalytics() {
-  const { hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
+  const { hasAccess, isLoading: roleLoading } = useRoleCheck(['management', 'admin']);
   const analytics = useRecruiterAnalytics();
 
   if (roleLoading || analytics.isLoading) {
