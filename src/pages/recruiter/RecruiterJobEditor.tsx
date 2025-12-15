@@ -35,7 +35,7 @@ export default function RecruiterJobEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
 
   const { data: departments } = useDepartments();
   const { data: existingBusinessCases, isLoading: businessCasesLoading } = useJobBusinessCases(id);
@@ -777,29 +777,33 @@ export default function RecruiterJobEditor() {
 
               <div className="flex gap-4 justify-end">
                 <Button type="button" variant="outline" onClick={() => navigate('/dashboard/jobs')}>
-                  Cancel
+                  {canEdit ? 'Cancel' : 'Back'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={(e) => handleSubmit(e, 'draft')}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save as Draft
-                </Button>
-                <Button
-                  type="button"
-                  onClick={(e) => handleSubmit(e, 'published')}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {isEditing ? 'Update & Publish' : 'Publish'}
-                </Button>
+                {canEdit && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={(e) => handleSubmit(e, 'draft')}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save as Draft
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={(e) => handleSubmit(e, 'published')}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      {isEditing ? 'Update & Publish' : 'Publish'}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </form>

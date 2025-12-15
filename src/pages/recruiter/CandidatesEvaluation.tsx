@@ -21,7 +21,7 @@ export default function CandidatesEvaluation() {
   const [historyJobId, setHistoryJobId] = useState<string | null>(null);
   const [historyJobTitle, setHistoryJobTitle] = useState('');
 
-  const { user, hasAccess, isLoading: roleLoading, isAdmin } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin', 'management']);
   const { data: jobs, isLoading: jobsLoading } = useJobsWithApplications();
   const { data: candidates, isLoading: candidatesLoading } = useJobCandidates(selectedJobId);
   const { compare, isComparing, result, reset } = useCompareCandidates();

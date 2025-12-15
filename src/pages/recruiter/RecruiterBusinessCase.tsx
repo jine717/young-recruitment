@@ -38,7 +38,7 @@ interface QuestionForm {
 export default function RecruiterBusinessCase() {
   const { id: jobId } = useParams();
   const navigate = useNavigate();
-  const { user, hasAccess, isLoading: roleLoading } = useRoleCheck(['recruiter', 'admin']);
+  const { user, hasAccess, isLoading: roleLoading, canEdit } = useRoleCheck(['recruiter', 'admin', 'management']);
 
   const { data: job } = useQuery({
     queryKey: ['recruiter-job', jobId],
@@ -230,36 +230,38 @@ export default function RecruiterBusinessCase() {
           {questions?.map((question, index) => (
             <Card key={question.id}>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Question {question.question_number}: {question.question_title}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleMoveQuestion(index, 'up')}
-                      disabled={index === 0}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleMoveQuestion(index, 'down')}
-                      disabled={index === questions.length - 1}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteQuestion(question.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">
+                      Question {question.question_number}: {question.question_title}
+                    </CardTitle>
+                    {canEdit && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveQuestion(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveQuestion(index, 'down')}
+                          disabled={index === questions.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteQuestion(question.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
               </CardHeader>
               <CardContent>
                 {editingQuestion?.id === question.id ? (
@@ -335,9 +337,11 @@ export default function RecruiterBusinessCase() {
                     <p className="text-sm">
                       {question.has_text_response ? '✓ Text response enabled' : 'Video response only'}
                     </p>
-                    <Button variant="outline" size="sm" onClick={() => startEdit(question)}>
-                      Edit
-                    </Button>
+                    {canEdit && (
+                      <Button variant="outline" size="sm" onClick={() => startEdit(question)}>
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -428,7 +432,7 @@ export default function RecruiterBusinessCase() {
             </Card>
           )}
 
-          {!isAddingNew && (
+          {!isAddingNew && canEdit && (
             <Button variant="outline" onClick={startAddNew}>
               <Plus className="h-4 w-4 mr-2" />
               Add Question
