@@ -910,7 +910,7 @@ export type Database = {
     Enums: {
       ai_evaluation_status: "pending" | "processing" | "completed" | "failed"
       ai_recommendation: "proceed" | "review" | "reject"
-      app_role: "candidate" | "recruiter" | "admin"
+      app_role: "candidate" | "recruiter" | "admin" | "management"
       application_status:
         | "pending"
         | "under_review"
@@ -1056,7 +1056,7 @@ export const Constants = {
     Enums: {
       ai_evaluation_status: ["pending", "processing", "completed", "failed"],
       ai_recommendation: ["proceed", "review", "reject"],
-      app_role: ["candidate", "recruiter", "admin"],
+      app_role: ["candidate", "recruiter", "admin", "management"],
       application_status: [
         "pending",
         "under_review",
