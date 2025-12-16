@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useUpdateInterview, Interview, InterviewType } from '@/hooks/useInterviews';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { useLogInterviewHistory } from '@/hooks/useInterviewHistory';
 
 interface RescheduleInterviewModalProps {
   open: boolean;
@@ -72,6 +73,7 @@ export function RescheduleInterviewModal({
 
   const updateInterview = useUpdateInterview();
   const sendNotification = useSendNotification();
+  const logHistory = useLogInterviewHistory();
 
   // Pre-populate form with existing interview data
   useEffect(() => {
@@ -95,6 +97,9 @@ export function RescheduleInterviewModal({
     const interviewDate = new Date(date);
     interviewDate.setHours(hours, minutes, 0, 0);
 
+    const previousDate = interview.interview_date;
+    const previousType = interview.interview_type;
+
     try {
       await updateInterview.mutateAsync({
         id: interview.id,
@@ -106,6 +111,16 @@ export function RescheduleInterviewModal({
         notes_for_candidate: notesForCandidate || undefined,
         internal_notes: internalNotes || undefined,
         status: 'rescheduled',
+      });
+
+      // Log the reschedule history
+      await logHistory.mutateAsync({
+        interviewId: interview.id,
+        changeType: 'rescheduled',
+        previousDate,
+        newDate: interviewDate.toISOString(),
+        previousType,
+        newType: interviewType,
       });
 
       // Send rescheduled notification to candidate
@@ -122,7 +137,7 @@ export function RescheduleInterviewModal({
     }
   };
 
-  const isSubmitting = updateInterview.isPending || sendNotification.isPending;
+  const isSubmitting = updateInterview.isPending || sendNotification.isPending || logHistory.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

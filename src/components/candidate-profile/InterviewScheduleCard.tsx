@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock } from 'lucide-react';
+import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock, History, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Interview, InterviewType, InterviewStatus, useCancelInterview, useUpdateInterview } from '@/hooks/useInterviews';
+import { useInterviewHistory, useLogInterviewHistory, InterviewHistoryEntry } from '@/hooks/useInterviewHistory';
 import { RescheduleInterviewModal } from './RescheduleInterviewModal';
 
 interface InterviewScheduleCardProps {
@@ -54,6 +60,100 @@ const statusConfig: Record<InterviewStatus, { className: string; label: string }
   },
 };
 
+const historyChangeTypeConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  scheduled: {
+    icon: <CalendarPlus className="h-3 w-3" />,
+    label: 'Scheduled',
+    color: 'text-[hsl(var(--young-blue))]',
+  },
+  rescheduled: {
+    icon: <CalendarClock className="h-3 w-3" />,
+    label: 'Rescheduled',
+    color: 'text-[hsl(var(--young-gold))]',
+  },
+  cancelled: {
+    icon: <XCircle className="h-3 w-3" />,
+    label: 'Cancelled',
+    color: 'text-destructive',
+  },
+  completed: {
+    icon: <CheckCircle className="h-3 w-3" />,
+    label: 'Completed',
+    color: 'text-[hsl(var(--young-blue))]',
+  },
+};
+
+function InterviewHistoryTimeline({ interviewId }: { interviewId: string }) {
+  const { data: history = [], isLoading } = useInterviewHistory(interviewId);
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="mt-3 pt-3 border-t border-dashed">
+        <div className="animate-pulse h-4 bg-muted rounded w-24" />
+      </div>
+    );
+  }
+
+  if (history.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3 pt-3 border-t border-dashed">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <History className="h-3 w-3" />
+          Schedule History ({history.length})
+          {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2">
+        <div className="relative pl-4 space-y-3">
+          {/* Timeline line */}
+          <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border" />
+          
+          {history.map((entry, index) => {
+            const config = historyChangeTypeConfig[entry.change_type] || historyChangeTypeConfig.scheduled;
+            const isLatest = index === history.length - 1;
+            
+            return (
+              <div key={entry.id} className="relative flex gap-3 items-start">
+                {/* Timeline dot */}
+                <div className={`absolute -left-4 w-3 h-3 rounded-full border-2 bg-background ${isLatest ? 'border-[hsl(var(--young-gold))]' : 'border-muted-foreground/30'}`} />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`flex items-center gap-1 text-xs font-medium ${config.color}`}>
+                      {config.icon}
+                      {config.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                    </span>
+                  </div>
+                  
+                  {entry.change_type === 'scheduled' && entry.new_date && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Scheduled for {format(new Date(entry.new_date), 'MMM d, yyyy h:mm a')}
+                    </p>
+                  )}
+                  
+                  {entry.change_type === 'rescheduled' && entry.previous_date && entry.new_date && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      <span className="line-through">{format(new Date(entry.previous_date), 'MMM d, h:mm a')}</span>
+                      {' → '}
+                      <span className="font-medium text-foreground">{format(new Date(entry.new_date), 'MMM d, h:mm a')}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export function InterviewScheduleCard({ 
   interviews, 
   isLoading, 
@@ -65,15 +165,28 @@ export function InterviewScheduleCard({
 }: InterviewScheduleCardProps) {
   const cancelInterview = useCancelInterview();
   const updateInterview = useUpdateInterview();
+  const logHistory = useLogInterviewHistory();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
 
-  const handleCancel = (id: string) => {
-    cancelInterview.mutate(id);
+  const handleCancel = async (interview: Interview) => {
+    await cancelInterview.mutateAsync(interview.id);
+    // Log cancellation
+    await logHistory.mutateAsync({
+      interviewId: interview.id,
+      changeType: 'cancelled',
+      previousDate: interview.interview_date,
+    });
   };
 
-  const handleMarkCompleted = (id: string) => {
-    updateInterview.mutate({ id, status: 'completed' });
+  const handleMarkCompleted = async (interview: Interview) => {
+    await updateInterview.mutateAsync({ id: interview.id, status: 'completed' });
+    // Log completion
+    await logHistory.mutateAsync({
+      interviewId: interview.id,
+      changeType: 'completed',
+      newDate: interview.interview_date,
+    });
   };
 
   const handleReschedule = (interview: Interview) => {
@@ -143,7 +256,7 @@ export function InterviewScheduleCard({
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
                         <Badge className={statusConfig[interview.status].className}>
                           {statusConfig[interview.status].label}
@@ -192,6 +305,9 @@ export function InterviewScheduleCard({
                           Note: {interview.internal_notes}
                         </p>
                       )}
+
+                      {/* Schedule History Timeline */}
+                      <InterviewHistoryTimeline interviewId={interview.id} />
                     </div>
 
                     {(interview.status === 'scheduled' || interview.status === 'rescheduled') && canEdit && (
@@ -202,7 +318,7 @@ export function InterviewScheduleCard({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleMarkCompleted(interview.id)}>
+                          <DropdownMenuItem onClick={() => handleMarkCompleted(interview)}>
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Mark as Completed
                           </DropdownMenuItem>
@@ -211,7 +327,7 @@ export function InterviewScheduleCard({
                             Reschedule
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleCancel(interview.id)}
+                            onClick={() => handleCancel(interview)}
                             className="text-destructive"
                           >
                             <XCircle className="mr-2 h-4 w-4" />

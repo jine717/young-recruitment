@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useScheduleInterview, InterviewType } from '@/hooks/useInterviews';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { useLogInterviewHistory } from '@/hooks/useInterviewHistory';
 
 interface ScheduleInterviewModalProps {
   open: boolean;
@@ -70,6 +71,7 @@ export function ScheduleInterviewModal({
 
   const scheduleInterview = useScheduleInterview();
   const sendNotification = useSendNotification();
+  const logHistory = useLogInterviewHistory();
 
   const handleSubmit = async () => {
     if (!date || !time) return;
@@ -79,7 +81,7 @@ export function ScheduleInterviewModal({
     interviewDate.setHours(hours, minutes, 0, 0);
 
     try {
-      await scheduleInterview.mutateAsync({
+      const interview = await scheduleInterview.mutateAsync({
         application_id: applicationId,
         interview_date: interviewDate.toISOString(),
         duration_minutes: duration,
@@ -88,6 +90,14 @@ export function ScheduleInterviewModal({
         meeting_link: meetingLink || undefined,
         notes_for_candidate: notesForCandidate || undefined,
         internal_notes: internalNotes || undefined,
+      });
+
+      // Log the schedule history
+      await logHistory.mutateAsync({
+        interviewId: interview.id,
+        changeType: 'scheduled',
+        newDate: interviewDate.toISOString(),
+        newType: interviewType,
       });
 
       // Send notification to candidate
@@ -116,7 +126,7 @@ export function ScheduleInterviewModal({
     setInternalNotes('');
   };
 
-  const isSubmitting = scheduleInterview.isPending || sendNotification.isPending;
+  const isSubmitting = scheduleInterview.isPending || sendNotification.isPending || logHistory.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
