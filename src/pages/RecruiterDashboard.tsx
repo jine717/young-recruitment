@@ -25,25 +25,31 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
-const statusColors: Record<ApplicationWithDetails['status'], string> = {
+const statusColors: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
+  reviewed: "bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border border-[hsl(var(--young-khaki))]/30",
   interview: "bg-muted text-muted-foreground",
+  interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
-const statusLabels: Record<ApplicationWithDetails['status'], string> = {
+const statusLabels: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
   pending: "New",
-  under_review: "Review",
+  under_review: "In Review",
+  reviewed: "Reviewed",
   interview: "Interview",
+  interviewed: "Interviewed",
   rejected: "Rejected",
   hired: "Hired"
 };
 
-const statusIcons: Record<ApplicationWithDetails['status'], React.ReactNode> = {
+const statusIcons: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
+  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
+  interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />
 };

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ import { useFixedQuestionNotes } from '@/hooks/useFixedQuestionNotes';
 import { useRecruiterNotes } from '@/hooks/useRecruiterNotes';
 import { useInterviewEvaluations } from '@/hooks/useInterviewEvaluations';
 import { useHiringDecisions } from '@/hooks/useHiringDecisions';
+import { useReviewProgress, useCreateReviewProgress, useUpdateReviewSection, isReviewComplete } from '@/hooks/useReviewProgress';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
@@ -130,10 +131,57 @@ export default function CandidateProfile() {
   // Hiring Decisions
   const { data: hiringDecisions = [] } = useHiringDecisions(applicationId);
 
+  // Review Progress
+  const { data: reviewProgress, isLoading: reviewProgressLoading } = useReviewProgress(applicationId);
+  const createReviewProgress = useCreateReviewProgress();
+  const updateReviewSection = useUpdateReviewSection();
+
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isCompletingReview, setIsCompletingReview] = useState(false);
+  
+  // Track if we've already auto-transitioned to prevent duplicate calls
+  const hasAutoTransitioned = useRef(false);
+
+  // Auto-transition: pending → under_review when profile opens
+  useEffect(() => {
+    if (
+      application?.status === 'pending' && 
+      canEdit && 
+      !hasAutoTransitioned.current
+    ) {
+      hasAutoTransitioned.current = true;
+      
+      // Auto-update status to under_review
+      updateStatus(application.id, 'under_review' as any)
+        .then(() => {
+          // Create review progress record
+          createReviewProgress.mutate(application.id);
+          queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+          queryClient.invalidateQueries({ queryKey: ['applications'] });
+        })
+        .catch(console.error);
+    }
+  }, [application?.id, application?.status, canEdit]);
+
+  // Handle completing review (all sections reviewed → status = reviewed)
+  const handleCompleteReview = async () => {
+    if (!application || !isReviewComplete(reviewProgress)) return;
+    
+    setIsCompletingReview(true);
+    try {
+      await updateStatus(application.id, 'reviewed' as any);
+      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({ title: 'Review completed', description: 'Candidate status updated to Reviewed' });
+    } catch (error) {
+      toast({ title: 'Error completing review', variant: 'destructive' });
+    } finally {
+      setIsCompletingReview(false);
+    }
+  };
 
   // Build comprehensive candidate context for AI Assistant
   const candidateContext: CandidateContext | null = useMemo(() => {
@@ -462,6 +510,15 @@ export default function CandidateProfile() {
               isTriggering={triggerAI.isPending}
               cvUrl={application.cv_url}
               discUrl={application.disc_url}
+              reviewProgress={reviewProgress}
+              reviewProgressLoading={reviewProgressLoading}
+              onReviewSection={(section, reviewed) => {
+                updateReviewSection.mutate({ applicationId: application.id, section, reviewed });
+              }}
+              onCompleteReview={handleCompleteReview}
+              isCompletingReview={isCompletingReview}
+              canEdit={canEdit}
+              applicationStatus={application.status}
             />
           </TabsContent>
 
