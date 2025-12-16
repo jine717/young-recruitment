@@ -482,7 +482,9 @@ export default function CandidateProfile() {
               <StickyNote className="w-4 h-4" />
               Notes
               {recruiterNotes && recruiterNotes.length > 0 && (
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="ml-1 px-1.5 py-0.5 text-xs font-medium bg-young-blue/20 text-young-blue rounded-full">
+                  {recruiterNotes.length}
+                </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
