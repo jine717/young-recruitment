@@ -25,7 +25,7 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Gavel } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle } from 'lucide-react';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
@@ -482,10 +482,16 @@ export default function CandidateProfile() {
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Briefcase className="w-4 h-4" />
               Overview
+              {isReviewComplete(reviewProgress) && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
             </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
+              {documentAnalyses?.some(d => (d.document_type as string) === 'interview' && d.status === 'completed') && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
             </TabsTrigger>
             
             {/* Decision button at the end of tabs bar */}
