@@ -166,6 +166,7 @@ export function ExecutiveReportModal({
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Share via Email - temporarily hidden
                 <Button 
                   onClick={() => setEmailDialogOpen(true)}
                   className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
@@ -173,6 +174,7 @@ export function ExecutiveReportModal({
                   <Mail className="w-4 h-4 mr-2" />
                   Share via Email
                 </Button>
+                */}
                 <Button 
                   onClick={handlePrint} 
                   className="bg-[#93B1FF] hover:bg-[#7a9ce8] text-[#100D0A] font-semibold shadow-md hover:shadow-lg transition-all"
