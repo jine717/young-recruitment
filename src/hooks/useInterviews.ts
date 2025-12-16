@@ -231,3 +231,36 @@ export function downloadICSFile(interview: Interview, jobTitle: string, candidat
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// Helper function to generate Google Calendar URL
+export function generateGoogleCalendarUrl(interview: Interview, jobTitle: string, candidateName: string): string {
+  const startDate = new Date(interview.interview_date);
+  const endDate = new Date(startDate.getTime() + interview.duration_minutes * 60000);
+
+  // Format: YYYYMMDDTHHMMSSZ
+  const formatDateForGoogle = (date: Date) => {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  };
+
+  const typeLabels: Record<InterviewType, string> = {
+    phone: 'Phone',
+    video: 'Video',
+    in_person: 'In-Person',
+  };
+
+  const title = `${typeLabels[interview.interview_type]} Interview - ${jobTitle} with ${candidateName}`;
+  const location = interview.meeting_link || interview.location || '';
+  const description = interview.notes_for_candidate 
+    ? `${interview.notes_for_candidate}\n\nInterview for ${jobTitle} position with ${candidateName}`
+    : `Interview for ${jobTitle} position with ${candidateName}`;
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatDateForGoogle(startDate)}/${formatDateForGoogle(endDate)}`,
+    details: description,
+    location: location,
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}

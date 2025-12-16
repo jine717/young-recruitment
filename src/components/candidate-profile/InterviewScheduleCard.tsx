@@ -15,9 +15,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Interview, InterviewType, InterviewStatus, useCancelInterview, useUpdateInterview } from '@/hooks/useInterviews';
+import { Interview, InterviewType, InterviewStatus, useCancelInterview, useUpdateInterview, generateGoogleCalendarUrl } from '@/hooks/useInterviews';
 import { useInterviewHistory, useLogInterviewHistory, InterviewHistoryEntry } from '@/hooks/useInterviewHistory';
 import { RescheduleInterviewModal } from './RescheduleInterviewModal';
+import { GoogleCalendarIcon } from '@/components/icons/GoogleCalendarIcon';
 
 interface InterviewScheduleCardProps {
   interviews: Interview[];
@@ -298,6 +299,18 @@ export function InterviewScheduleCard({
                           <MapPin className="h-3 w-3" />
                           {interview.location}
                         </p>
+                      )}
+
+                      {(interview.status === 'scheduled' || interview.status === 'rescheduled') && jobTitle && candidateName && (
+                        <a
+                          href={generateGoogleCalendarUrl(interview, jobTitle, candidateName)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-[#dadce0] bg-white hover:bg-[#f8f9fa] hover:border-[#d2d3d4] transition-colors text-[#3c4043] shadow-sm mt-1"
+                        >
+                          <GoogleCalendarIcon className="h-4 w-4" />
+                          Add to Google Calendar
+                        </a>
                       )}
 
                       {interview.internal_notes && (
