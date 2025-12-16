@@ -82,6 +82,22 @@ export function useScheduleInterview() {
         .single();
 
       if (error) throw error;
+
+      // Auto-transition: reviewed → interview when scheduling
+      // First check current application status
+      const { data: application } = await supabase
+        .from('applications')
+        .select('status')
+        .eq('id', data.application_id)
+        .single();
+
+      if (application && application.status === 'reviewed') {
+        await supabase
+          .from('applications')
+          .update({ status: 'interview' })
+          .eq('id', data.application_id);
+      }
+
       return interview as Interview;
     },
     onSuccess: (_, variables) => {
@@ -90,6 +106,8 @@ export function useScheduleInterview() {
         description: "The interview has been scheduled successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['interviews', variables.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['application-detail', variables.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
     },
     onError: (error: Error) => {
       toast({
@@ -212,4 +230,37 @@ export function downloadICSFile(interview: Interview, jobTitle: string, candidat
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+// Helper function to generate Google Calendar URL
+export function generateGoogleCalendarUrl(interview: Interview, jobTitle: string, candidateName: string): string {
+  const startDate = new Date(interview.interview_date);
+  const endDate = new Date(startDate.getTime() + interview.duration_minutes * 60000);
+
+  // Format: YYYYMMDDTHHMMSSZ
+  const formatDateForGoogle = (date: Date) => {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  };
+
+  const typeLabels: Record<InterviewType, string> = {
+    phone: 'Phone',
+    video: 'Video',
+    in_person: 'In-Person',
+  };
+
+  const title = `${typeLabels[interview.interview_type]} Interview - ${jobTitle} with ${candidateName}`;
+  const location = interview.meeting_link || interview.location || '';
+  const description = interview.notes_for_candidate 
+    ? `${interview.notes_for_candidate}\n\nInterview for ${jobTitle} position with ${candidateName}`
+    : `Interview for ${jobTitle} position with ${candidateName}`;
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatDateForGoogle(startDate)}/${formatDateForGoogle(endDate)}`,
+    details: description,
+    location: location,
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }

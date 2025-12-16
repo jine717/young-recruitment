@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon, Clock, Video, Phone, MapPin, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,13 +28,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useScheduleInterview, InterviewType } from '@/hooks/useInterviews';
+import { useUpdateInterview, Interview, InterviewType } from '@/hooks/useInterviews';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useLogInterviewHistory } from '@/hooks/useInterviewHistory';
 
-interface ScheduleInterviewModalProps {
+interface RescheduleInterviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  interview: Interview;
   applicationId: string;
   candidateName: string;
   jobTitle: string;
@@ -53,13 +54,14 @@ const durationOptions = [
   { value: 90, label: '1.5 hours' },
 ];
 
-export function ScheduleInterviewModal({
+export function RescheduleInterviewModal({
   open,
   onOpenChange,
+  interview,
   applicationId,
   candidateName,
   jobTitle,
-}: ScheduleInterviewModalProps) {
+}: RescheduleInterviewModalProps) {
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>('');
   const [duration, setDuration] = useState<number>(60);
@@ -69,9 +71,24 @@ export function ScheduleInterviewModal({
   const [notesForCandidate, setNotesForCandidate] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
 
-  const scheduleInterview = useScheduleInterview();
+  const updateInterview = useUpdateInterview();
   const sendNotification = useSendNotification();
   const logHistory = useLogInterviewHistory();
+
+  // Pre-populate form with existing interview data
+  useEffect(() => {
+    if (interview && open) {
+      const existingDate = new Date(interview.interview_date);
+      setDate(existingDate);
+      setTime(format(existingDate, 'HH:mm'));
+      setDuration(interview.duration_minutes);
+      setInterviewType(interview.interview_type);
+      setLocation(interview.location || '');
+      setMeetingLink(interview.meeting_link || '');
+      setNotesForCandidate(interview.notes_for_candidate || '');
+      setInternalNotes(interview.internal_notes || '');
+    }
+  }, [interview, open]);
 
   const handleSubmit = async () => {
     if (!date || !time) return;
@@ -80,9 +97,12 @@ export function ScheduleInterviewModal({
     const interviewDate = new Date(date);
     interviewDate.setHours(hours, minutes, 0, 0);
 
+    const previousDate = interview.interview_date;
+    const previousType = interview.interview_type;
+
     try {
-      const interview = await scheduleInterview.mutateAsync({
-        application_id: applicationId,
+      await updateInterview.mutateAsync({
+        id: interview.id,
         interview_date: interviewDate.toISOString(),
         duration_minutes: duration,
         interview_type: interviewType,
@@ -90,51 +110,42 @@ export function ScheduleInterviewModal({
         meeting_link: meetingLink || undefined,
         notes_for_candidate: notesForCandidate || undefined,
         internal_notes: internalNotes || undefined,
+        status: 'rescheduled',
       });
 
-      // Log the schedule history
+      // Log the reschedule history
       await logHistory.mutateAsync({
         interviewId: interview.id,
-        changeType: 'scheduled',
+        changeType: 'rescheduled',
+        previousDate,
         newDate: interviewDate.toISOString(),
+        previousType,
         newType: interviewType,
       });
 
-      // Send notification to candidate
+      // Send rescheduled notification to candidate
       await sendNotification.mutateAsync({
         applicationId,
-        type: 'interview_scheduled',
+        type: 'interview_rescheduled',
         interviewDate: format(interviewDate, 'MMMM d, yyyy'),
         interviewTime: format(interviewDate, 'h:mm a'),
       });
 
       onOpenChange(false);
-      resetForm();
     } catch (error) {
       // Error handled by mutation
     }
   };
 
-  const resetForm = () => {
-    setDate(undefined);
-    setTime('');
-    setDuration(60);
-    setInterviewType('video');
-    setLocation('');
-    setMeetingLink('');
-    setNotesForCandidate('');
-    setInternalNotes('');
-  };
-
-  const isSubmitting = scheduleInterview.isPending || sendNotification.isPending || logHistory.isPending;
+  const isSubmitting = updateInterview.isPending || sendNotification.isPending || logHistory.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Schedule Interview</DialogTitle>
+          <DialogTitle>Reschedule Interview</DialogTitle>
           <DialogDescription>
-            Schedule an interview with {candidateName} for the {jobTitle} position.
+            Reschedule the interview with {candidateName} for the {jobTitle} position.
           </DialogDescription>
         </DialogHeader>
 
@@ -219,20 +230,20 @@ export function ScheduleInterviewModal({
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="video" id="video" />
-                <Label htmlFor="video" className="flex items-center cursor-pointer">
+                <RadioGroupItem value="video" id="reschedule-video" />
+                <Label htmlFor="reschedule-video" className="flex items-center cursor-pointer">
                   <Video className="mr-1 h-4 w-4" /> Video
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="phone" id="phone" />
-                <Label htmlFor="phone" className="flex items-center cursor-pointer">
+                <RadioGroupItem value="phone" id="reschedule-phone" />
+                <Label htmlFor="reschedule-phone" className="flex items-center cursor-pointer">
                   <Phone className="mr-1 h-4 w-4" /> Phone
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="in_person" id="in_person" />
-                <Label htmlFor="in_person" className="flex items-center cursor-pointer">
+                <RadioGroupItem value="in_person" id="reschedule-in_person" />
+                <Label htmlFor="reschedule-in_person" className="flex items-center cursor-pointer">
                   <MapPin className="mr-1 h-4 w-4" /> In-Person
                 </Label>
               </div>
@@ -292,7 +303,7 @@ export function ScheduleInterviewModal({
             disabled={!date || !time || isSubmitting}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Schedule & Notify
+            Reschedule & Notify
           </Button>
         </DialogFooter>
       </DialogContent>

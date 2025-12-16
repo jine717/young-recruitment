@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ import { useFixedQuestionNotes } from '@/hooks/useFixedQuestionNotes';
 import { useRecruiterNotes } from '@/hooks/useRecruiterNotes';
 import { useInterviewEvaluations } from '@/hooks/useInterviewEvaluations';
 import { useHiringDecisions } from '@/hooks/useHiringDecisions';
+import { useReviewProgress, useCreateReviewProgress, useUpdateReviewSection, isReviewComplete } from '@/hooks/useReviewProgress';
 import { CandidateHeader } from '@/components/candidate-profile/CandidateHeader';
 import { OverviewTab } from '@/components/candidate-profile/OverviewTab';
 import { InterviewTab } from '@/components/candidate-profile/InterviewTab';
@@ -24,7 +25,9 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle, StickyNote } from 'lucide-react';
+import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
+import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
 
@@ -130,10 +133,57 @@ export default function CandidateProfile() {
   // Hiring Decisions
   const { data: hiringDecisions = [] } = useHiringDecisions(applicationId);
 
+  // Review Progress
+  const { data: reviewProgress, isLoading: reviewProgressLoading } = useReviewProgress(applicationId);
+  const createReviewProgress = useCreateReviewProgress();
+  const updateReviewSection = useUpdateReviewSection();
+
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isCompletingReview, setIsCompletingReview] = useState(false);
+  
+  // Track if we've already auto-transitioned to prevent duplicate calls
+  const hasAutoTransitioned = useRef(false);
+
+  // Auto-transition: pending → under_review when profile opens
+  useEffect(() => {
+    if (
+      application?.status === 'pending' && 
+      canEdit && 
+      !hasAutoTransitioned.current
+    ) {
+      hasAutoTransitioned.current = true;
+      
+      // Auto-update status to under_review
+      updateStatus(application.id, 'under_review' as any)
+        .then(() => {
+          // Create review progress record
+          createReviewProgress.mutate(application.id);
+          queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+          queryClient.invalidateQueries({ queryKey: ['applications'] });
+        })
+        .catch(console.error);
+    }
+  }, [application?.id, application?.status, canEdit]);
+
+  // Handle completing review (all sections reviewed → status = reviewed)
+  const handleCompleteReview = async () => {
+    if (!application || !isReviewComplete(reviewProgress)) return;
+    
+    setIsCompletingReview(true);
+    try {
+      await updateStatus(application.id, 'reviewed' as any);
+      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({ title: 'Review completed', description: 'Candidate status updated to Reviewed' });
+    } catch (error) {
+      toast({ title: 'Error completing review', variant: 'destructive' });
+    } finally {
+      setIsCompletingReview(false);
+    }
+  };
 
   // Build comprehensive candidate context for AI Assistant
   const candidateContext: CandidateContext | null = useMemo(() => {
@@ -413,9 +463,6 @@ export default function CandidateProfile() {
           initialScore={aiEvaluation?.initial_overall_score ?? null}
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
-          onScheduleInterview={() => setShowScheduleModal(true)}
-          onDelete={handleDelete}
-          isDeleting={isDeleting}
           canEdit={canEdit}
         />
 
@@ -431,26 +478,39 @@ export default function CandidateProfile() {
         {/* Full-width Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start mb-4 bg-muted/50 p-1 rounded-lg border border-border/50">
+            <TabsTrigger value="notes" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <StickyNote className="w-4 h-4" />
+              Notes
+              {recruiterNotes && recruiterNotes.length > 0 && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Briefcase className="w-4 h-4" />
               Overview
-              {application.ai_evaluation_status === 'pending' && (
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))] animate-pulse" />
-              )}
-              {aiEvaluation && (
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
+              {isReviewComplete(reviewProgress) && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
-              {interviews.length > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]">
-                  {interviews.length}
-                </span>
+              {documentAnalyses?.some(d => (d.document_type as string) === 'interview' && d.status === 'completed') && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
+            
+            {/* Decision button at the end of tabs bar */}
+            {canEdit && (
+              <div className="ml-auto">
+                <HiringDecisionModal applicationId={application.id} />
+              </div>
+            )}
           </TabsList>
+
+          <TabsContent value="notes" className="mt-0">
+            <RecruiterNotes applicationId={application.id} />
+          </TabsContent>
 
           <TabsContent value="overview" className="mt-0">
             <OverviewTab
@@ -462,6 +522,15 @@ export default function CandidateProfile() {
               isTriggering={triggerAI.isPending}
               cvUrl={application.cv_url}
               discUrl={application.disc_url}
+              reviewProgress={reviewProgress}
+              reviewProgressLoading={reviewProgressLoading}
+              onReviewSection={(section, reviewed) => {
+                updateReviewSection.mutate({ applicationId: application.id, section, reviewed });
+              }}
+              onCompleteReview={handleCompleteReview}
+              isCompletingReview={isCompletingReview}
+              canEdit={canEdit}
+              applicationStatus={application.status}
             />
           </TabsContent>
 
@@ -471,13 +540,19 @@ export default function CandidateProfile() {
               jobId={application.job_id}
               interviews={interviews}
               interviewsLoading={interviewsLoading}
+              applicationStatus={application.status}
+              canEdit={canEdit}
+              onScheduleInterview={() => setShowScheduleModal(true)}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              jobTitle={application.job.title}
             />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Context-Aware AI Assistant - only for recruiters/admins */}
+      {/* Context-Aware AI Assistant - temporarily hidden
       {canEdit && candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
+      */}
     </DashboardLayout>
   );
 }
