@@ -15,6 +15,7 @@ type NotificationType =
   | 'business_case_reminder'
   | 'status_update'
   | 'interview_scheduled'
+  | 'interview_rescheduled'
   | 'decision_offer'
   | 'decision_rejection';
 
@@ -272,6 +273,54 @@ function getEmailTemplate(
         ` : ''}
         <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
           <strong>How to Prepare:</strong>
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Review the job description and requirements</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Prepare examples of your relevant experience</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Think about questions you'd like to ask us</td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          We look forward to meeting you!<br/>
+          <strong>The Young Team</strong>
+        </p>
+      `,
+    },
+    interview_rescheduled: {
+      subject: `Interview Rescheduled - ${jobTitle}`,
+      preheader: `Your interview for ${jobTitle} has been rescheduled.`,
+      content: `
+        <h1 style="color: ${brandColors.gold}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Interview Rescheduled</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Your interview for the <strong>${jobTitle}</strong> position has been rescheduled. Please note the new date and time below.
+        </p>
+        ${interviewDate && interviewTime ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(184, 143, 94, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.gold};">
+              <p style="font-size: 18px; margin: 0 0 10px 0;"><strong>📅 New Date:</strong> ${interviewDate}</p>
+              <p style="font-size: 18px; margin: 0;"><strong>⏰ New Time:</strong> ${interviewTime}</p>
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        ${customMessage ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
+              ${customMessage}
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
+          <strong>Reminder - How to Prepare:</strong>
         </p>
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>

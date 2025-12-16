@@ -8,6 +8,7 @@ export type NotificationType =
   | 'business_case_reminder'
   | 'status_update'
   | 'interview_scheduled'
+  | 'interview_rescheduled'
   | 'decision_offer'
   | 'decision_rejection';
 
@@ -87,6 +88,7 @@ export const notificationTypeLabels: Record<NotificationType, string> = {
   business_case_reminder: "Business Case Reminder",
   status_update: "Status Update",
   interview_scheduled: "Interview Scheduled",
+  interview_rescheduled: "Interview Rescheduled",
   decision_offer: "Offer Letter",
   decision_rejection: "Rejection Letter",
 };

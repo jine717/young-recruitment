@@ -519,6 +519,8 @@ export default function CandidateProfile() {
               applicationStatus={application.status}
               canEdit={canEdit}
               onScheduleInterview={() => setShowScheduleModal(true)}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              jobTitle={application.job.title}
             />
           </TabsContent>
         </Tabs>
