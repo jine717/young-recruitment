@@ -306,7 +306,7 @@ export function InterviewScheduleCard({
                           href={generateGoogleCalendarUrl(interview, jobTitle, candidateName)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-[#dadce0] bg-white hover:bg-[#f8f9fa] hover:border-[#d2d3d4] transition-colors text-[#3c4043] shadow-sm mt-1"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-border bg-muted/50 hover:bg-muted hover:border-[hsl(var(--young-blue))]/30 transition-colors text-foreground shadow-sm mt-1"
                         >
                           <GoogleCalendarIcon className="h-4 w-4" />
                           Add to Google Calendar
