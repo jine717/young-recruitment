@@ -70,7 +70,6 @@ const RecruiterDashboard = () => {
   const sendNotification = useSendNotification();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
-  const [stageFilter, setStageFilter] = useState<string>("all");
   const [assignedFilter, setAssignedFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
   const [dateFilter, setDateFilter] = useState<string>("all");
@@ -99,14 +98,6 @@ const RecruiterDashboard = () => {
       if (assignedFilter === "unassigned" && app.assigned_to !== null) return false;
       if (assignedFilter === "me" && app.assigned_to !== user?.id) return false;
       if (assignedFilter !== "unassigned" && assignedFilter !== "me" && app.assigned_to !== assignedFilter) return false;
-    }
-    
-    // Stage filter
-    if (stageFilter !== "all") {
-      const evaluation = evaluationsMap.get(app.id);
-      const stage = evaluation?.evaluation_stage ?? 'initial';
-      if (stageFilter === "interviewed" && stage !== 'post_interview') return false;
-      if (stageFilter === "initial" && stage === 'post_interview') return false;
     }
     
     // Date filter
@@ -163,10 +154,6 @@ const RecruiterDashboard = () => {
     setCurrentPage(1);
   };
   
-  const handleStageFilterChange = (value: string) => {
-    setStageFilter(value);
-    setCurrentPage(1);
-  };
   
   const handleAssignedFilterChange = (value: string) => {
     setAssignedFilter(value);
@@ -177,12 +164,11 @@ const RecruiterDashboard = () => {
     assignApplication.mutate({ applicationId, assignedTo: recruiterId });
   };
   
-  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || stageFilter !== "all" || assignedFilter !== "all";
+  const hasActiveFilters = statusFilter !== "all" || jobFilter !== "all" || sortBy !== "date" || dateFilter !== "all" || assignedFilter !== "all";
   
   const clearAllFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
-    setStageFilter("all");
     setAssignedFilter("all");
     setSortBy("date");
     setDateFilter("all");
@@ -630,40 +616,6 @@ const RecruiterDashboard = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableHead>
-                        <TableHead className="w-[100px]">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
-                              Stage
-                              <ChevronDown className="h-3 w-3" />
-                              {stageFilter !== "all" && (
-                                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                                  <Filter className="h-3 w-3" />
-                                </Badge>
-                              )}
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="bg-popover">
-                              <DropdownMenuItem onClick={() => handleStageFilterChange("all")} className="flex items-center justify-between">
-                                All Stages
-                                {stageFilter === "all" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleStageFilterChange("initial")} className="flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                  <FileQuestion className="h-4 w-4" />
-                                  Initial
-                                </span>
-                                {stageFilter === "initial" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStageFilterChange("interviewed")} className="flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                  <FileCheck className="h-4 w-4 text-[hsl(var(--young-blue))]" />
-                                  Interviewed
-                                </span>
-                                {stageFilter === "interviewed" && <Check className="h-4 w-4 ml-2" />}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableHead>
                         <TableHead>
                           <DropdownMenu>
                             <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
@@ -804,19 +756,6 @@ const RecruiterDashboard = () => {
                                   {statusIcons[app.status]}
                                   {statusLabels[app.status]}
                                 </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {evaluation?.evaluation_stage === 'post_interview' ? (
-                                  <Badge className="bg-muted text-muted-foreground">
-                                    <FileCheck className="h-3 w-3 mr-1" />
-                                    Interviewed
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-muted-foreground">
-                                    <FileQuestion className="h-3 w-3 mr-1" />
-                                    Initial
-                                  </Badge>
-                                )}
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 {canEdit ? (
