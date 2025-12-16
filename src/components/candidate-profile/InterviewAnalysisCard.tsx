@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -144,7 +145,16 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                 Interview Analysis
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <CheckCircle2 className="w-4 h-4 text-green-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Analysis Completed</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Button
