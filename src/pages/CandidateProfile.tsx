@@ -476,8 +476,9 @@ export default function CandidateProfile() {
         </Tabs>
       </div>
 
-      {/* Context-Aware AI Assistant - only for recruiters/admins */}
+      {/* Context-Aware AI Assistant - temporarily hidden
       {canEdit && candidateContext && <CandidateAIAssistant candidateContext={candidateContext} />}
+      */}
     </DashboardLayout>
   );
 }
