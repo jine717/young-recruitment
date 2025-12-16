@@ -25,7 +25,8 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users, Gavel } from 'lucide-react';
+import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
 
@@ -486,6 +487,13 @@ export default function CandidateProfile() {
               <Users className="w-4 h-4" />
               Interview
             </TabsTrigger>
+            
+            {/* Decision button at the end of tabs bar */}
+            {canEdit && (
+              <div className="ml-auto">
+                <HiringDecisionModal applicationId={application.id} />
+              </div>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="mt-0">

@@ -20,8 +20,6 @@ import {
 import { ArrowLeft, Mail, Calendar, User, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { InterviewEvaluationForm } from './InterviewEvaluationForm';
-import { HiringDecisionModal } from './HiringDecisionModal';
 
 interface CandidateHeaderProps {
   candidateName: string;
@@ -295,9 +293,6 @@ export function CandidateHeader({
           {/* Quick Actions - only for recruiters/admins */}
           {canEdit && (
             <div className="flex flex-wrap items-center gap-2">
-            <InterviewEvaluationForm applicationId={applicationId} />
-            <HiringDecisionModal applicationId={applicationId} />
-              
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
