@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -6,18 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { ArrowLeft, Mail, Calendar, User, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -40,8 +28,6 @@ interface CandidateHeaderProps {
   evaluationStage: 'initial' | 'post_interview' | null;
   // Quick Actions props
   applicationId: string;
-  onDelete: () => void;
-  isDeleting: boolean;
   // Editing permission
   canEdit?: boolean;
 }
@@ -191,8 +177,6 @@ export function CandidateHeader({
   initialScore,
   evaluationStage,
   applicationId,
-  onDelete,
-  isDeleting,
   canEdit = true,
 }: CandidateHeaderProps) {
   return (
@@ -290,45 +274,6 @@ export function CandidateHeader({
             </div>
           )}
 
-          {/* Quick Actions - only for recruiters/admins */}
-          {canEdit && (
-            <div className="flex flex-wrap items-center gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this candidate?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. The candidate will be permanently removed from the system.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={onDelete} 
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
         </div>
       </div>
     </div>

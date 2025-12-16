@@ -462,8 +462,6 @@ export default function CandidateProfile() {
           initialScore={aiEvaluation?.initial_overall_score ?? null}
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
-          onDelete={handleDelete}
-          isDeleting={isDeleting}
           canEdit={canEdit}
         />
 
