@@ -24,15 +24,16 @@ export function InterviewProgressTracker({
   canEdit,
   applicationStatus,
 }: InterviewProgressTrackerProps) {
+  const isCompleted = hasCompletedInterview || applicationStatus === 'interviewed';
+  
   // Calculate progress: 0% (no interview), 50% (scheduled), 100% (completed)
   const getProgress = () => {
-    if (hasCompletedInterview) return 100;
+    if (isCompleted) return 100;
     if (hasScheduledInterview) return 50;
     return 0;
   };
 
   const progress = getProgress();
-  const isCompleted = hasCompletedInterview || applicationStatus === 'interviewed';
   const canMarkComplete = hasScheduledInterview && interviewConducted && !isCompleted && canEdit;
 
   return (
