@@ -14,6 +14,8 @@ interface InterviewTabProps {
   applicationStatus: string;
   canEdit: boolean;
   onScheduleInterview?: () => void;
+  candidateName?: string;
+  jobTitle?: string;
 }
 
 export function InterviewTab({ 
@@ -24,6 +26,8 @@ export function InterviewTab({
   applicationStatus,
   canEdit,
   onScheduleInterview,
+  candidateName,
+  jobTitle,
 }: InterviewTabProps) {
   const [interviewConducted, setInterviewConducted] = useState(false);
   const updateInterview = useUpdateInterview();
@@ -66,6 +70,9 @@ export function InterviewTab({
         isLoading={interviewsLoading} 
         onScheduleInterview={onScheduleInterview}
         canEdit={canEdit}
+        applicationId={applicationId}
+        candidateName={candidateName}
+        jobTitle={jobTitle}
       />
     </div>
   );
