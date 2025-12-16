@@ -854,8 +854,9 @@ export default function RecruiterJobEditor() {
         </div>
       </section>
 
-      {/* Young AI Assistant - Only for recruiters/admins who can edit */}
+      {/* Young AI Assistant - temporarily hidden
       {canEdit && <JobEditorAIAssistant jobEditorContext={jobEditorContext} />}
+      */}
     </DashboardLayout>
   );
 }

@@ -1024,8 +1024,9 @@ const RecruiterDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* AI Assistant - only for recruiters/admins */}
+      {/* AI Assistant - temporarily hidden
       {canEdit && <AIAssistant />}
+      */}
     </DashboardLayout>;
 };
 export default RecruiterDashboard;
