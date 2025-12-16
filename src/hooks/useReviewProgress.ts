@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface ReviewProgress {
   id: string;
@@ -77,7 +77,6 @@ export function useCreateReviewProgress() {
 
 export function useUpdateReviewSection() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -105,17 +104,12 @@ export function useUpdateReviewSection() {
       if (error) throw error;
       return data as ReviewProgress;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['review-progress', variables.applicationId] });
-      if (variables.reviewed) {
-        toast({ title: 'Section marked as reviewed' });
-      }
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to update review status',
+      toast.error('Failed to update review status', {
         description: error.message,
-        variant: 'destructive',
       });
     },
   });
