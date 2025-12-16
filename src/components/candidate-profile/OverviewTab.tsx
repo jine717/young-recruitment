@@ -75,8 +75,8 @@ export function OverviewTab({
   canEdit,
   applicationStatus,
 }: OverviewTabProps) {
-  // Only show review progress for under_review status
-  const showReviewProgress = applicationStatus === 'under_review' && canEdit;
+  // Show review progress for review stages (not pending, hired, rejected)
+  const showReviewProgress = ['under_review', 'reviewed', 'interview', 'interviewed'].includes(applicationStatus) && canEdit;
 
   return (
     <div className="space-y-4">
@@ -85,8 +85,7 @@ export function OverviewTab({
         <ReviewProgressTracker
           progress={reviewProgress}
           isLoading={reviewProgressLoading}
-          onCompleteReview={onCompleteReview}
-          isCompleting={isCompletingReview}
+          applicationStatus={applicationStatus}
         />
       )}
 

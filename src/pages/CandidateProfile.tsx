@@ -482,21 +482,10 @@ export default function CandidateProfile() {
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Briefcase className="w-4 h-4" />
               Overview
-              {application.ai_evaluation_status === 'pending' && (
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))] animate-pulse" />
-              )}
-              {aiEvaluation && (
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-blue))]" />
-              )}
             </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
-              {interviews.length > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]">
-                  {interviews.length}
-                </span>
-              )}
             </TabsTrigger>
           </TabsList>
 
@@ -528,6 +517,8 @@ export default function CandidateProfile() {
               jobId={application.job_id}
               interviews={interviews}
               interviewsLoading={interviewsLoading}
+              applicationStatus={application.status}
+              canEdit={canEdit}
             />
           </TabsContent>
         </Tabs>
