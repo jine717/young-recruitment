@@ -25,7 +25,8 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Gavel, CheckCircle } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle, StickyNote } from 'lucide-react';
+import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
@@ -477,6 +478,13 @@ export default function CandidateProfile() {
         {/* Full-width Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start mb-4 bg-muted/50 p-1 rounded-lg border border-border/50">
+            <TabsTrigger value="notes" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <StickyNote className="w-4 h-4" />
+              Notes
+              {recruiterNotes && recruiterNotes.length > 0 && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Briefcase className="w-4 h-4" />
               Overview
@@ -499,6 +507,10 @@ export default function CandidateProfile() {
               </div>
             )}
           </TabsList>
+
+          <TabsContent value="notes" className="mt-0">
+            <RecruiterNotes applicationId={application.id} />
+          </TabsContent>
 
           <TabsContent value="overview" className="mt-0">
             <OverviewTab
