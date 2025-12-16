@@ -583,6 +583,53 @@ export type Database = {
           },
         ]
       }
+      interview_schedule_history: {
+        Row: {
+          change_type: string
+          changed_by: string
+          created_at: string
+          id: string
+          interview_id: string
+          new_date: string | null
+          new_type: string | null
+          notes: string | null
+          previous_date: string | null
+          previous_type: string | null
+        }
+        Insert: {
+          change_type: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          interview_id: string
+          new_date?: string | null
+          new_type?: string | null
+          notes?: string | null
+          previous_date?: string | null
+          previous_type?: string | null
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          interview_id?: string
+          new_date?: string | null
+          new_type?: string | null
+          notes?: string | null
+          previous_date?: string | null
+          previous_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_schedule_history_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interviews: {
         Row: {
           application_id: string
