@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { InterviewEvaluationForm } from './InterviewEvaluationForm';
@@ -52,15 +52,19 @@ interface CandidateHeaderProps {
 const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   under_review: 'bg-muted text-muted-foreground',
+  reviewed: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/50',
   interview: 'bg-muted text-muted-foreground',
+  interviewed: 'bg-green-500/20 text-green-700 border-green-500/50',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
   rejected: 'bg-red-500/20 text-red-700 border-red-500/50',
 };
 
 const statusLabels: Record<string, string> = {
   pending: 'New',
-  under_review: 'Review',
+  under_review: 'In Review',
+  reviewed: 'Reviewed',
   interview: 'Interview',
+  interviewed: 'Interviewed',
   hired: 'Hired',
   rejected: 'Rejected',
 };
@@ -68,7 +72,9 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
+  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
+  interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
@@ -262,10 +268,16 @@ export function CandidateHeader({
                   <span className="flex items-center">{statusIcons.pending} New</span>
                 </SelectItem>
                 <SelectItem value="under_review">
-                  <span className="flex items-center">{statusIcons.under_review} Review</span>
+                  <span className="flex items-center">{statusIcons.under_review} In Review</span>
+                </SelectItem>
+                <SelectItem value="reviewed">
+                  <span className="flex items-center">{statusIcons.reviewed} Reviewed</span>
                 </SelectItem>
                 <SelectItem value="interview">
                   <span className="flex items-center">{statusIcons.interview} Interview</span>
+                </SelectItem>
+                <SelectItem value="interviewed">
+                  <span className="flex items-center text-green-700">{statusIcons.interviewed} Interviewed</span>
                 </SelectItem>
                 <SelectItem value="hired">
                   <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>

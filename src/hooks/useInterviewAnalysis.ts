@@ -65,6 +65,13 @@ export function useTriggerInterviewAnalysis() {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // Auto-transition: interview → interviewed after analysis
+      await supabase
+        .from('applications')
+        .update({ status: 'interviewed' })
+        .eq('id', applicationId);
+
       return data;
     },
     onSuccess: (_, applicationId) => {
@@ -73,6 +80,8 @@ export function useTriggerInterviewAnalysis() {
       queryClient.invalidateQueries({ queryKey: ['ai-evaluation', applicationId] });
       queryClient.invalidateQueries({ queryKey: ['document-analyses', applicationId] });
       queryClient.invalidateQueries({ queryKey: ['application', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
     },
   });
 }

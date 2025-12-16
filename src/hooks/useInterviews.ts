@@ -82,6 +82,22 @@ export function useScheduleInterview() {
         .single();
 
       if (error) throw error;
+
+      // Auto-transition: reviewed → interview when scheduling
+      // First check current application status
+      const { data: application } = await supabase
+        .from('applications')
+        .select('status')
+        .eq('id', data.application_id)
+        .single();
+
+      if (application && application.status === 'reviewed') {
+        await supabase
+          .from('applications')
+          .update({ status: 'interview' })
+          .eq('id', data.application_id);
+      }
+
       return interview as Interview;
     },
     onSuccess: (_, variables) => {
@@ -90,6 +106,8 @@ export function useScheduleInterview() {
         description: "The interview has been scheduled successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['interviews', variables.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['application-detail', variables.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
     },
     onError: (error: Error) => {
       toast({

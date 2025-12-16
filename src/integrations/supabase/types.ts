@@ -873,6 +873,50 @@ export type Database = {
           },
         ]
       }
+      review_progress: {
+        Row: {
+          ai_analysis_reviewed: boolean
+          application_id: string
+          business_case_reviewed: boolean
+          created_at: string
+          cv_analysis_reviewed: boolean
+          disc_analysis_reviewed: boolean
+          id: string
+          recruiter_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_analysis_reviewed?: boolean
+          application_id: string
+          business_case_reviewed?: boolean
+          created_at?: string
+          cv_analysis_reviewed?: boolean
+          disc_analysis_reviewed?: boolean
+          id?: string
+          recruiter_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_analysis_reviewed?: boolean
+          application_id?: string
+          business_case_reviewed?: boolean
+          created_at?: string
+          cv_analysis_reviewed?: boolean
+          disc_analysis_reviewed?: boolean
+          id?: string
+          recruiter_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_progress_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -917,6 +961,8 @@ export type Database = {
         | "interview"
         | "rejected"
         | "hired"
+        | "reviewed"
+        | "interviewed"
       hiring_decision_type: "hired" | "rejected" | "on_hold"
       interview_recommendation:
         | "strong_hire"
@@ -1063,6 +1109,8 @@ export const Constants = {
         "interview",
         "rejected",
         "hired",
+        "reviewed",
+        "interviewed",
       ],
       hiring_decision_type: ["hired", "rejected", "on_hold"],
       interview_recommendation: [
