@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Mail, Calendar, User, CalendarPlus, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, Trash2, Loader2, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { InterviewEvaluationForm } from './InterviewEvaluationForm';
@@ -42,7 +42,6 @@ interface CandidateHeaderProps {
   evaluationStage: 'initial' | 'post_interview' | null;
   // Quick Actions props
   applicationId: string;
-  onScheduleInterview: () => void;
   onDelete: () => void;
   isDeleting: boolean;
   // Editing permission
@@ -194,7 +193,6 @@ export function CandidateHeader({
   initialScore,
   evaluationStage,
   applicationId,
-  onScheduleInterview,
   onDelete,
   isDeleting,
   canEdit = true,
@@ -297,16 +295,6 @@ export function CandidateHeader({
           {/* Quick Actions - only for recruiters/admins */}
           {canEdit && (
             <div className="flex flex-wrap items-center gap-2">
-              <Button 
-                onClick={onScheduleInterview} 
-                size="sm"
-                variant="outline"
-                className="gap-1"
-              >
-                <CalendarPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Schedule</span>
-              </Button>
-            
             <InterviewEvaluationForm applicationId={applicationId} />
             <HiringDecisionModal applicationId={applicationId} />
               

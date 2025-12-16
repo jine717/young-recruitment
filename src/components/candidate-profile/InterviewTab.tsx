@@ -13,6 +13,7 @@ interface InterviewTabProps {
   interviewsLoading: boolean;
   applicationStatus: string;
   canEdit: boolean;
+  onScheduleInterview?: () => void;
 }
 
 export function InterviewTab({ 
@@ -22,6 +23,7 @@ export function InterviewTab({
   interviewsLoading,
   applicationStatus,
   canEdit,
+  onScheduleInterview,
 }: InterviewTabProps) {
   const [interviewConducted, setInterviewConducted] = useState(false);
   const updateInterview = useUpdateInterview();
@@ -59,7 +61,12 @@ export function InterviewTab({
       />
       <InterviewQuestionsSection applicationId={applicationId} jobId={jobId} />
       <InterviewAnalysisCard applicationId={applicationId} />
-      <InterviewScheduleCard interviews={interviews} isLoading={interviewsLoading} />
+      <InterviewScheduleCard 
+        interviews={interviews} 
+        isLoading={interviewsLoading} 
+        onScheduleInterview={onScheduleInterview}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

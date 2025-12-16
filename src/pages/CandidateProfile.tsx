@@ -461,7 +461,6 @@ export default function CandidateProfile() {
           initialScore={aiEvaluation?.initial_overall_score ?? null}
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
-          onScheduleInterview={() => setShowScheduleModal(true)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
           canEdit={canEdit}
@@ -519,6 +518,7 @@ export default function CandidateProfile() {
               interviewsLoading={interviewsLoading}
               applicationStatus={application.status}
               canEdit={canEdit}
+              onScheduleInterview={() => setShowScheduleModal(true)}
             />
           </TabsContent>
         </Tabs>
