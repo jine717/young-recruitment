@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { Interview, InterviewType, InterviewStatus, useCancelInterview, useUpdat
 interface InterviewScheduleCardProps {
   interviews: Interview[];
   isLoading?: boolean;
+  onScheduleInterview?: () => void;
+  canEdit?: boolean;
 }
 
 const typeIcons: Record<InterviewType, React.ReactNode> = {
@@ -47,7 +49,7 @@ const statusConfig: Record<InterviewStatus, { className: string; label: string }
   },
 };
 
-export function InterviewScheduleCard({ interviews, isLoading }: InterviewScheduleCardProps) {
+export function InterviewScheduleCard({ interviews, isLoading, onScheduleInterview, canEdit }: InterviewScheduleCardProps) {
   const cancelInterview = useCancelInterview();
   const updateInterview = useUpdateInterview();
 
@@ -81,7 +83,7 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
 
   return (
     <Card className="shadow-young-sm hover-lift transition-all duration-200">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
           Scheduled Interviews
@@ -89,6 +91,17 @@ export function InterviewScheduleCard({ interviews, isLoading }: InterviewSchedu
             <Badge variant="secondary">{activeInterviews.length}</Badge>
           )}
         </CardTitle>
+        {canEdit && onScheduleInterview && (
+          <Button 
+            onClick={onScheduleInterview} 
+            size="sm"
+            variant="outline"
+            className="gap-1"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            Schedule
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {interviews.length === 0 ? (
