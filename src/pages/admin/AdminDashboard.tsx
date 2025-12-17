@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, useUpdateUserProfile, useCreateUser, AppRole, UserWithRole } from '@/hooks/useUserRoles';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,8 @@ export default function AdminDashboard() {
   const removeRole = useRemoveUserRole();
   const updateProfile = useUpdateUserProfile();
   const createUser = useCreateUser();
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Edit modal state
@@ -113,6 +117,31 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async () => {
     if (!deletingUser) return;
+    
+    // Safety check: Prevent self-deletion
+    if (deletingUser.id === currentUser?.id) {
+      toast({
+        title: 'Cannot remove your own access',
+        description: 'You cannot remove access from your own account',
+        variant: 'destructive'
+      });
+      setDeletingUser(null);
+      return;
+    }
+    
+    // Safety check: Prevent removing last admin
+    if (deletingUser.roles.includes('admin')) {
+      const adminCount = users?.filter(u => u.roles.includes('admin')).length || 0;
+      if (adminCount <= 1) {
+        toast({
+          title: 'Cannot remove last admin',
+          description: 'At least one admin must exist in the system',
+          variant: 'destructive'
+        });
+        setDeletingUser(null);
+        return;
+      }
+    }
     
     // Remove all roles (soft delete - user remains but has no access)
     try {
@@ -320,14 +349,18 @@ export default function AdminDashboard() {
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit user
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => setDeletingUser(user)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Remove access
-                              </DropdownMenuItem>
+                              {user.id !== currentUser?.id && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeletingUser(user)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Remove access
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -548,9 +581,10 @@ export default function AdminDashboard() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove user access?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove all roles from {deletingUser?.full_name || deletingUser?.email}. 
-              They will no longer be able to access the platform.
+            <AlertDialogDescription className="space-y-2">
+              <p>You are about to remove all access for:</p>
+              <p className="font-semibold text-foreground">{deletingUser?.email}</p>
+              <p className="text-sm">This action will remove all roles from {deletingUser?.full_name || 'this user'}. They will no longer be able to access the platform.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
