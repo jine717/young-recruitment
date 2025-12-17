@@ -93,3 +93,26 @@ export function useRemoveUserRole() {
     },
   });
 }
+
+export function useUpdateUserProfile() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, fullName }: { userId: string; fullName: string }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({ title: 'User profile updated' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to update profile', description: error.message, variant: 'destructive' });
+    },
+  });
+}
