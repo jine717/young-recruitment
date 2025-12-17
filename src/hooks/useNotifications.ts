@@ -59,6 +59,7 @@ export function useSendNotification() {
       interviewType,
       interviewDateISO,
       durationMinutes,
+      silent,
     }: {
       applicationId: string;
       type: NotificationType;
@@ -70,6 +71,7 @@ export function useSendNotification() {
       interviewType?: 'video' | 'phone' | 'in_person';
       interviewDateISO?: string;
       durationMinutes?: number;
+      silent?: boolean;
     }) => {
       const { data, error } = await supabase.functions.invoke('send-notification', {
         body: { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType, interviewDateISO, durationMinutes },
@@ -81,10 +83,12 @@ export function useSendNotification() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['notification-logs', variables.applicationId] });
-      toast({
-        title: "Email Sent",
-        description: "Notification sent successfully.",
-      });
+      if (!variables.silent) {
+        toast({
+          title: "Email Sent",
+          description: "Notification sent successfully.",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
