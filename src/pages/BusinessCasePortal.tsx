@@ -113,17 +113,17 @@ export default function BusinessCasePortal() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="max-w-2xl mx-auto px-3 sm:px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="font-display text-xl text-foreground">YOUNG RECRUITMENT.</h1>
-                <p className="text-sm text-muted-foreground">Business Case Assessment</p>
+                <h1 className="font-display text-lg sm:text-xl text-foreground">YOUNG RECRUITMENT.</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Business Case Assessment</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-xs sm:text-sm font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
                   {application?.candidate_name}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">
                   {application?.job?.title}
                 </p>
               </div>
@@ -132,8 +132,8 @@ export default function BusinessCasePortal() {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-4 py-8">
-          <div className="space-y-8">
+        <main className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Progress Bar */}
             <BCQProgressBar
               currentQuestion={currentQuestionIndex}
@@ -186,9 +186,9 @@ export default function BusinessCasePortal() {
 
         {/* Footer */}
         <footer className="border-t border-border mt-auto">
-          <div className="max-w-4xl mx-auto px-4 py-4 text-center">
+          <div className="max-w-2xl mx-auto px-3 sm:px-4 py-3 text-center">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} YOUNG RECRUITMENT. All rights reserved.
+              © {new Date().getFullYear()} YOUNG RECRUITMENT.
             </p>
           </div>
         </footer>

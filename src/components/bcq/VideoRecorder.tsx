@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Video, Square, RotateCcw, Check, Camera, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface VideoRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
@@ -44,8 +43,6 @@ export function VideoRecorder({
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        await videoRef.current.play();
       }
       
       setStatus('preview');
@@ -109,8 +106,6 @@ export function VideoRecorder({
     // Restart camera preview
     if (videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
-      videoRef.current.muted = true;
-      videoRef.current.play();
     }
   }, []);
 
@@ -142,13 +137,13 @@ export function VideoRecorder({
 
   if (hasPermission === false) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-muted/30 rounded-lg border border-border">
-        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">Camera Access Required</h3>
-        <p className="text-muted-foreground text-center mb-4">
-          Please enable camera and microphone access in your browser settings to record your response.
+      <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-muted/30 rounded-lg border border-border">
+        <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-destructive mb-3" />
+        <h3 className="text-base font-semibold text-foreground mb-2">Camera Access Required</h3>
+        <p className="text-sm text-muted-foreground text-center mb-3">
+          Please enable camera and microphone access in your browser settings.
         </p>
-        <Button onClick={startCamera} variant="outline">
+        <Button onClick={startCamera} variant="outline" size="sm">
           Try Again
         </Button>
       </div>
@@ -157,18 +152,16 @@ export function VideoRecorder({
 
   if (status === 'idle') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-muted/30 rounded-lg border border-border">
-        <Camera className="w-16 h-16 text-primary mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Record</h3>
-        <p className="text-muted-foreground text-center mb-2">
-          Click the button below to start your camera
-        </p>
-        <p className="text-sm text-muted-foreground mb-4">
-          Maximum recording time: <span className="font-medium text-foreground">3 minutes</span>
+      <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-muted/30 rounded-lg border border-border">
+        <Camera className="w-10 h-10 sm:w-12 sm:h-12 text-primary mb-3" />
+        <h3 className="text-base font-semibold text-foreground mb-1">Ready to Record</h3>
+        <p className="text-sm text-muted-foreground text-center mb-3">
+          Max recording time: <span className="font-medium text-foreground">3 minutes</span>
         </p>
         <Button 
           onClick={startCamera} 
           disabled={disabled}
+          size="sm"
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Camera className="w-4 h-4 mr-2" />
@@ -179,44 +172,50 @@ export function VideoRecorder({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Video Preview/Playback */}
-      <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+    <div className="flex flex-col gap-3">
+      {/* Video Preview/Playback - Responsive height */}
+      <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-h-[200px] sm:max-h-[240px] md:max-h-[280px]">
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
           playsInline
+          autoPlay
+          muted
+          onLoadedMetadata={() => {
+            videoRef.current?.play().catch(console.error);
+          }}
         />
         
         {/* Recording indicator */}
         {isRecording && (
-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive/90 text-destructive-foreground px-3 py-1.5 rounded-full">
-            <span className="w-3 h-3 bg-white rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Recording...</span>
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground px-2 py-1 rounded-full">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <span className="text-xs font-medium">Recording</span>
           </div>
         )}
         
         {/* Max time reminder during recording */}
         {isRecording && (
-          <div className="absolute bottom-4 left-4 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-            <span className="text-xs text-muted-foreground">Max 3 minutes</span>
+          <div className="absolute bottom-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+            <span className="text-xs text-muted-foreground">Max 3 min</span>
           </div>
         )}
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2 flex-wrap">
         {status === 'preview' && (
           <>
-            <p className="text-sm text-muted-foreground mr-4">
-              Maximum recording time: <span className="font-medium text-foreground">3 minutes</span>
-            </p>
+            <span className="text-xs text-muted-foreground">
+              Max: <span className="font-medium text-foreground">3 min</span>
+            </span>
             <Button
               onClick={startRecording}
               disabled={disabled}
+              size="sm"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              <Video className="w-4 h-4 mr-2" />
+              <Video className="w-4 h-4 mr-1.5" />
               Start Recording
             </Button>
           </>
@@ -226,9 +225,10 @@ export function VideoRecorder({
           <Button
             onClick={stopRecording}
             variant="outline"
+            size="sm"
             className="border-destructive text-destructive hover:bg-destructive/10"
           >
-            <Square className="w-4 h-4 mr-2" />
+            <Square className="w-4 h-4 mr-1.5" />
             Stop Recording
           </Button>
         )}
@@ -238,17 +238,18 @@ export function VideoRecorder({
             <Button
               onClick={resetRecording}
               variant="outline"
-              className="border-muted-foreground"
+              size="sm"
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
+              <RotateCcw className="w-4 h-4 mr-1.5" />
               Re-record
             </Button>
             <Button
               onClick={confirmRecording}
+              size="sm"
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Submit Response
+              <Check className="w-4 h-4 mr-1.5" />
+              Submit
             </Button>
           </>
         )}
