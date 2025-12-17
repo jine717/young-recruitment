@@ -12,12 +12,6 @@ import Apply from "./pages/Apply";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import CandidateProfile from "./pages/CandidateProfile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import JobsList from "./pages/admin/JobsList";
-import JobEditor from "./pages/admin/JobEditor";
-import BusinessCaseEditor from "./pages/admin/BusinessCaseEditor";
-import DepartmentsManager from "./pages/admin/DepartmentsManager";
-import UsersManager from "./pages/admin/UsersManager";
-import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 import RecruiterJobsList from "./pages/recruiter/RecruiterJobsList";
 import RecruiterJobEditor from "./pages/recruiter/RecruiterJobEditor";
 import RecruiterBusinessCase from "./pages/recruiter/RecruiterBusinessCase";
@@ -52,13 +46,6 @@ const App = () => (
             <Route path="/dashboard/evaluate" element={<CandidatesEvaluation />} />
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/jobs" element={<JobsList />} />
-            <Route path="/admin/jobs/new" element={<JobEditor />} />
-            <Route path="/admin/jobs/:id/edit" element={<JobEditor />} />
-            <Route path="/admin/jobs/:id/business-case" element={<BusinessCaseEditor />} />
-            <Route path="/admin/departments" element={<DepartmentsManager />} />
-            <Route path="/admin/users" element={<UsersManager />} />
-            <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
             {/* Sales & Marketing Routes */}
             <Route path="/pitch" element={<PitchDeck />} />
             <Route path="/pitch/:slideNumber" element={<PitchDeck />} />
