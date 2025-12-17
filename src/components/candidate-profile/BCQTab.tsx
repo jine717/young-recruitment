@@ -232,61 +232,43 @@ export function BCQTab({
                 </div>
               )}
 
-              {/* Sent or Completed State - Horizontal Timeline */}
+              {/* Sent or Completed State - Compact Horizontal Timeline */}
               {(status === 'sent' || status === 'completed') && (
-                <div className="space-y-4">
-                  {/* Horizontal 2-column Timeline */}
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  {/* Compact Horizontal Timeline */}
+                  <div className="grid grid-cols-2 gap-3">
                     {/* Column 1: Invitation Sent */}
-                    <div className="bg-muted/30 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <Send className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-                        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Invitation Sent
-                        </span>
-                      </div>
-                      <p className="font-medium text-sm">
-                        {format(new Date(bcqInvitationSentAt!), 'MMM d, yyyy')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(bcqInvitationSentAt!), 'HH:mm')}
-                      </p>
-                      <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mx-auto mt-2" />
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] shrink-0" />
+                      <span className="text-muted-foreground">Invitation Sent:</span>
+                      <span className="font-medium">
+                        {format(new Date(bcqInvitationSentAt!), 'MMM d, HH:mm')}
+                      </span>
                     </div>
                     
                     {/* Column 2: BCQ Completed */}
-                    <div className="bg-muted/30 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <CheckCircle className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          BCQ Completed
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
                       {businessCaseCompletedAt ? (
-                        <>
-                          <p className="font-medium text-sm">
-                            {format(new Date(businessCaseCompletedAt), 'MMM d, yyyy')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(businessCaseCompletedAt), 'HH:mm')}
-                          </p>
-                          <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mx-auto mt-2" />
-                        </>
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] shrink-0" />
                       ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground">Not yet</p>
-                          <Clock className="w-4 h-4 text-[hsl(var(--young-khaki))] mx-auto mt-2" />
-                        </>
+                        <Clock className="w-4 h-4 text-[hsl(var(--young-khaki))] shrink-0" />
+                      )}
+                      <span className="text-muted-foreground">BCQ Completed:</span>
+                      {businessCaseCompletedAt ? (
+                        <span className="font-medium">
+                          {format(new Date(businessCaseCompletedAt), 'MMM d, HH:mm')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Not yet</span>
                       )}
                     </div>
                   </div>
 
                   {/* Response Time (only when completed) */}
                   {status === 'completed' && bcqResponseTimeMinutes !== null && (
-                    <div className="flex items-center justify-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">Response Time:</span>
-                      <span className={bcqDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Response Time:</span>
+                      <span className={bcqDelayed ? 'text-destructive font-medium' : 'font-medium'}>
                         {formatResponseTime(bcqResponseTimeMinutes)}
                         {bcqDelayed && ' (> 24h)'}
                       </span>
@@ -295,17 +277,15 @@ export function BCQTab({
 
                   {/* Resend Invitation (only when not completed) */}
                   {status === 'sent' && canEdit && bcqAccessToken && (
-                    <div className="flex justify-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSendInvitation}
-                        disabled={sendBCQInvitation.isPending}
-                      >
-                        <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
-                        Resend Invitation
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendInvitation}
+                      disabled={sendBCQInvitation.isPending}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
+                      Resend Invitation
+                    </Button>
                   )}
                 </div>
               )}
