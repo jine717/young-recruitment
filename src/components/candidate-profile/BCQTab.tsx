@@ -1,0 +1,428 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  FileVideo, 
+  Send, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle,
+  ExternalLink,
+  ChevronDown,
+  Eye,
+  Play,
+  RefreshCw
+} from 'lucide-react';
+import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
+import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
+import { format, formatDistanceToNow } from 'date-fns';
+
+interface BCQTabProps {
+  applicationId: string;
+  jobId: string;
+  candidateName: string;
+  candidateEmail: string;
+  canEdit: boolean;
+  bcqAccessToken: string | null;
+  bcqInvitationSentAt: string | null;
+  bcqLinkOpenedAt: string | null;
+  bcqStartedAt: string | null;
+  businessCaseCompleted: boolean;
+  businessCaseCompletedAt: string | null;
+  bcqResponseTimeMinutes: number | null;
+  bcqDelayed: boolean | null;
+}
+
+export function BCQTab({
+  applicationId,
+  jobId,
+  candidateName,
+  candidateEmail,
+  canEdit,
+  bcqAccessToken,
+  bcqInvitationSentAt,
+  bcqLinkOpenedAt,
+  bcqStartedAt,
+  businessCaseCompleted,
+  businessCaseCompletedAt,
+  bcqResponseTimeMinutes,
+  bcqDelayed,
+}: BCQTabProps) {
+  const sendBCQInvitation = useSendBCQInvitation();
+  const { data: businessCases = [] } = useBusinessCases(jobId);
+  const { data: responses = [] } = useBusinessCaseResponses(applicationId);
+
+  const handleSendInvitation = () => {
+    if (!bcqAccessToken) return;
+    
+    sendBCQInvitation.mutate({
+      applicationId,
+      bcqAccessToken,
+      candidateEmail,
+      candidateName,
+      jobTitle: '', // Will be fetched by edge function
+    });
+  };
+
+  const formatResponseTime = (minutes: number | null) => {
+    if (!minutes) return 'N/A';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  // Determine current status
+  const getStatus = () => {
+    if (businessCaseCompleted) return 'completed';
+    if (bcqStartedAt) return 'in_progress';
+    if (bcqLinkOpenedAt) return 'opened';
+    if (bcqInvitationSentAt) return 'sent';
+    return 'not_sent';
+  };
+
+  const status = getStatus();
+
+  // Status badge component
+  const StatusBadge = () => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge className={bcqDelayed 
+            ? 'bg-destructive/20 text-destructive border-destructive/30' 
+            : 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30'
+          }>
+            {bcqDelayed ? (
+              <>
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Completed (Delayed)
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Completed
+              </>
+            )}
+          </Badge>
+        );
+      case 'in_progress':
+        return (
+          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30">
+            <Play className="w-3 h-3 mr-1" />
+            In Progress
+          </Badge>
+        );
+      case 'opened':
+        return (
+          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30">
+            <Eye className="w-3 h-3 mr-1" />
+            Link Opened
+          </Badge>
+        );
+      case 'sent':
+        return (
+          <Badge className="bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/30">
+            <Clock className="w-3 h-3 mr-1" />
+            Awaiting Response
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // No business cases configured
+  if (businessCases.length === 0) {
+    return (
+      <Card className="shadow-young-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <FileVideo className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+            Business Case Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <FileVideo className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">No BCQ Configured</p>
+            <p className="text-xs mt-1">This job has no business case questions set up.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Status Card */}
+      <Card className="shadow-young-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <FileVideo className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+              Business Case Questions
+            </CardTitle>
+            <StatusBadge />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Not Sent State */}
+          {status === 'not_sent' && (
+            <div className="text-center py-6">
+              <Send className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-blue))] opacity-70" />
+              <p className="text-sm font-medium mb-1">BCQ Not Sent</p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Send the business case assessment to this candidate via email.
+              </p>
+              {canEdit && bcqAccessToken && (
+                <Button
+                  onClick={handleSendInvitation}
+                  disabled={sendBCQInvitation.isPending}
+                  className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-bold-black))]"
+                >
+                  {sendBCQInvitation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send BCQ Invitation
+                    </>
+                  )}
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground mt-4">
+                {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
+              </p>
+            </div>
+          )}
+
+          {/* Sent / Waiting State */}
+          {(status === 'sent' || status === 'opened' || status === 'in_progress') && (
+            <div className="space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Send className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">Invitation Sent:</span>
+                  <span className="text-muted-foreground">
+                    {bcqInvitationSentAt 
+                      ? format(new Date(bcqInvitationSentAt), 'MMM d, yyyy HH:mm')
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+                
+                {bcqLinkOpenedAt && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">Link Opened:</span>
+                    <span className="text-muted-foreground">
+                      {format(new Date(bcqLinkOpenedAt), 'MMM d, yyyy HH:mm')}
+                    </span>
+                  </div>
+                )}
+                
+                {bcqStartedAt && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Play className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">Started Answering:</span>
+                    <span className="text-muted-foreground">
+                      {format(new Date(bcqStartedAt), 'MMM d, yyyy HH:mm')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Progress indicator */}
+                <div className="pt-2 border-t border-border">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">
+                      {responses.filter(r => r.completed_at).length} / {businessCases.length} answered
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[hsl(var(--young-blue))] transition-all duration-300"
+                      style={{ 
+                        width: `${(responses.filter(r => r.completed_at).length / businessCases.length) * 100}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {canEdit && bcqAccessToken && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendInvitation}
+                  disabled={sendBCQInvitation.isPending}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
+                  Resend Invitation
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Completed State */}
+          {status === 'completed' && (
+            <div className="space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
+                  <span className="font-medium">Completed:</span>
+                  <span className="text-muted-foreground">
+                    {businessCaseCompletedAt 
+                      ? format(new Date(businessCaseCompletedAt), 'MMM d, yyyy HH:mm')
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">Response Time:</span>
+                  <span className={bcqDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                    {formatResponseTime(bcqResponseTimeMinutes)}
+                    {bcqDelayed && ' (> 24h)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Video Responses (only show when there are responses) */}
+      {responses.length > 0 && (
+        <Card className="shadow-young-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Play className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+              Video Responses
+              <Badge variant="secondary" className="ml-auto">
+                {responses.filter(r => r.completed_at).length}/{businessCases.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {businessCases.map((bc) => {
+              const response = responses.find(r => r.business_case_id === bc.id);
+              const isCompleted = !!response?.completed_at;
+
+              return (
+                <ResponseCard
+                  key={bc.id}
+                  questionNumber={bc.question_number}
+                  questionTitle={bc.question_title}
+                  questionDescription={bc.question_description}
+                  videoUrl={response?.video_url}
+                  transcription={(response as any)?.transcription}
+                  isCompleted={isCompleted}
+                />
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Response Card Component
+interface ResponseCardProps {
+  questionNumber: number;
+  questionTitle: string;
+  questionDescription: string;
+  videoUrl?: string | null;
+  transcription?: string | null;
+  isCompleted: boolean;
+}
+
+function ResponseCard({
+  questionNumber,
+  questionTitle,
+  questionDescription,
+  videoUrl,
+  transcription,
+  isCompleted,
+}: ResponseCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="border border-border rounded-lg overflow-hidden">
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                isCompleted 
+                  ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]' 
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {questionNumber}
+              </div>
+              <div>
+                <h4 className="font-medium text-sm">{questionTitle}</h4>
+                <p className="text-xs text-muted-foreground line-clamp-1">{questionDescription}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isCompleted ? (
+                <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
+              ) : (
+                <Clock className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+              )}
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="border-t border-border p-4 space-y-4">
+            {videoUrl ? (
+              <>
+                {/* Video Player */}
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video 
+                    src={videoUrl} 
+                    controls 
+                    className="w-full h-full"
+                    preload="metadata"
+                  />
+                </div>
+                
+                {/* Transcription */}
+                {transcription && (
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileVideo className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Transcription
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {transcription}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No response recorded yet</p>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
