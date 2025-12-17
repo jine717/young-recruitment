@@ -1,151 +1,220 @@
+import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, AppRole } from '@/hooks/useUserRoles';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAllJobs } from '@/hooks/useJobsMutation';
-import { useDepartments } from '@/hooks/useDepartments';
-import { useUsersWithRoles } from '@/hooks/useUserRoles';
-import { Briefcase, Building2, Users, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Users, ShieldCheck, UserCheck, Crown, Search, Plus, X } from 'lucide-react';
+
+const roleColors: Record<AppRole, string> = {
+  recruiter: 'bg-[hsl(var(--young-blue))]/15 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30',
+  admin: 'bg-destructive/15 text-destructive border-destructive/30',
+  management: 'bg-[hsl(var(--young-gold))]/15 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30',
+};
+
+const allRoles: AppRole[] = ['recruiter', 'admin', 'management'];
 
 export default function AdminDashboard() {
-  const { data: jobs, isLoading: jobsLoading } = useAllJobs();
-  const { data: departments, isLoading: deptsLoading } = useDepartments();
-  const { data: users, isLoading: usersLoading } = useUsersWithRoles();
+  const { data: users, isLoading } = useUsersWithRoles();
+  const addRole = useAddUserRole();
+  const removeRole = useRemoveUserRole();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const publishedJobs = jobs?.filter((j) => j.status === 'published').length || 0;
-  const draftJobs = jobs?.filter((j) => j.status === 'draft').length || 0;
-  const adminCount = users?.filter((u) => u.roles.includes('admin')).length || 0;
-  const recruiterCount = users?.filter((u) => u.roles.includes('recruiter')).length || 0;
+  const filteredUsers = users?.filter(user =>
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleAddRole = (userId: string, role: AppRole) => {
+    addRole.mutate({ userId, role });
+  };
+
+  const handleRemoveRole = (userId: string, role: AppRole) => {
+    removeRole.mutate({ userId, role });
+  };
+
+  const getAvailableRoles = (userRoles: AppRole[]) => {
+    return allRoles.filter(role => !userRoles.includes(role));
+  };
+
+  // Calculate stats
+  const totalUsers = users?.length || 0;
+  const adminCount = users?.filter(u => u.roles.includes('admin')).length || 0;
+  const recruiterCount = users?.filter(u => u.roles.includes('recruiter')).length || 0;
+  const managementCount = users?.filter(u => u.roles.includes('management')).length || 0;
 
   const stats = [
     {
-      title: 'Total Jobs',
-      value: jobsLoading ? '...' : jobs?.length || 0,
-      subtitle: `${publishedJobs} published, ${draftJobs} draft`,
-      icon: Briefcase,
-      href: '/admin/jobs',
-    },
-    {
-      title: 'Departments',
-      value: deptsLoading ? '...' : departments?.length || 0,
-      subtitle: 'Active departments',
-      icon: Building2,
-      href: '/admin/departments',
-    },
-    {
-      title: 'Users',
-      value: usersLoading ? '...' : users?.length || 0,
-      subtitle: `${adminCount} admins, ${recruiterCount} recruiters`,
+      title: 'Total Users',
+      value: totalUsers,
       icon: Users,
-      href: '/admin/users',
+      colorClass: 'bg-[hsl(var(--young-blue))]/15 text-[hsl(var(--young-blue))]',
+    },
+    {
+      title: 'Admins',
+      value: adminCount,
+      icon: ShieldCheck,
+      colorClass: 'bg-destructive/15 text-destructive',
+    },
+    {
+      title: 'Recruiters',
+      value: recruiterCount,
+      icon: UserCheck,
+      colorClass: 'bg-[hsl(var(--young-blue))]/15 text-[hsl(var(--young-blue))]',
+    },
+    {
+      title: 'Management',
+      value: managementCount,
+      icon: Crown,
+      colorClass: 'bg-[hsl(var(--young-gold))]/15 text-[hsl(var(--young-gold))]',
     },
   ];
 
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
-          <p className="text-muted-foreground">Manage your recruitment platform</p>
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+            ADMIN PANEL
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage users and roles
+          </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Link key={stat.title} to={stat.href}>
-                <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
-                    </CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {stats.map((stat, index) => (
+            <Card 
+              key={stat.title} 
+              className="shadow-young-sm hover-lift animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${stat.colorClass}`}>
+                    <stat.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.title}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link
-                to="/admin/jobs/new"
-                className="block p-3 rounded-md bg-accent hover:bg-accent/80 transition-colors"
-              >
-                <div className="font-medium">Create New Job</div>
-                <div className="text-sm text-muted-foreground">
-                  Add a new job posting to the platform
-                </div>
-              </Link>
-              <Link
-                to="/admin/departments"
-                className="block p-3 rounded-md bg-accent hover:bg-accent/80 transition-colors"
-              >
-                <div className="font-medium">Manage Departments</div>
-                <div className="text-sm text-muted-foreground">
-                  Add or edit department categories
-                </div>
-              </Link>
-              <Link
-                to="/admin/users"
-                className="block p-3 rounded-md bg-accent hover:bg-accent/80 transition-colors"
-              >
-                <div className="font-medium">Manage User Roles</div>
-                <div className="text-sm text-muted-foreground">
-                  Assign admin or recruiter roles to users
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
+        {/* Users Table */}
+        <Card className="shadow-young-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              User Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users by email or name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Jobs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {jobsLoading ? (
-                <p className="text-muted-foreground">Loading...</p>
-              ) : jobs && jobs.length > 0 ? (
-                <ul className="space-y-2">
-                  {jobs.slice(0, 5).map((job) => (
-                    <li key={job.id}>
-                      <Link
-                        to={`/admin/jobs/${job.id}/edit`}
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors"
-                      >
-                        <span className="font-medium">{job.title}</span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            job.status === 'published'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : job.status === 'draft'
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted-foreground">No jobs yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            {/* Table */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredUsers && filteredUsers.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Roles</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-muted/40">
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {user.full_name || 'No name'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {user.email}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1.5">
+                            {user.roles.length > 0 ? (
+                              user.roles.map((role) => (
+                                <Badge
+                                  key={role}
+                                  variant="outline"
+                                  className={`${roleColors[role]} flex items-center gap-1`}
+                                >
+                                  {role}
+                                  <button
+                                    onClick={() => handleRemoveRole(user.id, role)}
+                                    className="ml-0.5 hover:opacity-70 transition-opacity"
+                                    title={`Remove ${role} role`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-sm text-muted-foreground">No roles</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {getAvailableRoles(user.roles).length > 0 && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add Role
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {getAvailableRoles(user.roles).map((role) => (
+                                  <DropdownMenuItem
+                                    key={role}
+                                    onClick={() => handleAddRole(user.id, role)}
+                                  >
+                                    Add {role}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
