@@ -148,10 +148,11 @@ export default function Apply() {
 
       if (appError) throw appError;
 
-      // Send application received notification
+      // Send application received notification (silent - page already shows confirmation)
       sendNotification.mutate({ 
         applicationId: applicationId, 
-        type: 'application_received' 
+        type: 'application_received',
+        silent: true,
       });
 
       // Note: AI analysis will be triggered after BCQ completion, not here
