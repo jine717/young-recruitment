@@ -128,6 +128,12 @@ export type Database = {
             | null
           ai_score: number | null
           assigned_to: string | null
+          bcq_access_token: string | null
+          bcq_delayed: boolean | null
+          bcq_invitation_sent_at: string | null
+          bcq_link_opened_at: string | null
+          bcq_response_time_minutes: number | null
+          bcq_started_at: string | null
           business_case_completed: boolean
           business_case_completed_at: string | null
           candidate_email: string | null
@@ -147,6 +153,12 @@ export type Database = {
             | null
           ai_score?: number | null
           assigned_to?: string | null
+          bcq_access_token?: string | null
+          bcq_delayed?: boolean | null
+          bcq_invitation_sent_at?: string | null
+          bcq_link_opened_at?: string | null
+          bcq_response_time_minutes?: number | null
+          bcq_started_at?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -166,6 +178,12 @@ export type Database = {
             | null
           ai_score?: number | null
           assigned_to?: string | null
+          bcq_access_token?: string | null
+          bcq_delayed?: boolean | null
+          bcq_invitation_sent_at?: string | null
+          bcq_link_opened_at?: string | null
+          bcq_response_time_minutes?: number | null
+          bcq_started_at?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -204,6 +222,7 @@ export type Database = {
           created_at: string
           id: string
           text_response: string | null
+          transcription: string | null
           video_url: string | null
         }
         Insert: {
@@ -213,6 +232,7 @@ export type Database = {
           created_at?: string
           id?: string
           text_response?: string | null
+          transcription?: string | null
           video_url?: string | null
         }
         Update: {
@@ -222,6 +242,7 @@ export type Database = {
           created_at?: string
           id?: string
           text_response?: string | null
+          transcription?: string | null
           video_url?: string | null
         }
         Relationships: [

@@ -67,45 +67,34 @@ Modificar `src/pages/Apply.tsx` para:
 
 ---
 
-## **FASE 3: Nueva Página de Respuesta BCQ en Video**
+## **FASE 3: Nueva Página de Respuesta BCQ en Video** ✅ COMPLETED
 **Duración estimada: 4-5 días**
 
-### 3.1 Nueva Ruta y Página
-Crear `src/pages/BusinessCasePortal.tsx`:
-- Ruta: `/bcq/:applicationId/:token`
-- Validar token antes de mostrar contenido
-- Registrar `bcq_link_opened_at` al cargar
+### Files Created:
+- `src/pages/BusinessCasePortal.tsx` - Main portal page
+- `src/components/bcq/VideoRecorder.tsx` - Video recording (no countdown, "Max 3 min" message)
+- `src/components/bcq/QuestionCard.tsx` - Question display with explainer video support
+- `src/components/bcq/BCQProgressBar.tsx` - Progress indicator with checkmarks
+- `src/components/bcq/CompletionScreen.tsx` - Success screen with stats
+- `src/hooks/useBCQPortal.ts` - Hook with portal logic
 
-### 3.2 Interfaz de Preguntas (1 por 1)
-- Mostrar una pregunta a la vez
-- Navegación: Anterior / Siguiente
-- Progress bar visual
-- **Registrar** `bcq_started_at` al iniciar primera respuesta
+### Database Migration Completed:
+- Added `bcq_access_token`, `bcq_link_opened_at`, `bcq_started_at`, `bcq_response_time_minutes`, `bcq_delayed` to applications
+- Added `transcription` column to business_case_responses
+- Added RLS policies for anonymous BCQ portal access
 
-### 3.3 Componente de Grabación de Video
-Crear `src/components/bcq/VideoRecorder.tsx`:
-- Captura de video desde cámara
-- Límite de tiempo por pregunta (ej: 3 minutos)
-- Preview antes de confirmar
-- Botón "Re-grabar" si no satisfecho
+### Route: `/bcq/:applicationId/:token`
 
-### 3.4 Upload de Video
-- Subir a bucket `business-case-videos`
-- Mostrar progreso de upload
-- Guardar URL en `business_case_responses.video_url`
+### Features Implemented:
+1. **Token Validation** - Verifies token matches `bcq_access_token`
+2. **Progressive Question Display** - One question at a time with visual progress
+3. **Video Recording (No Pressure)** - Static "Max 3 min" message, auto-stop, no countdown
+4. **Time Tracking** - Records link opened, started, and completion times
+5. **Upload to Storage** - Files saved as `{applicationId}/{questionId}.webm`
+6. **Automatic Transcription** - Calls `transcribe-video` edge function
 
-### 3.5 Transcripción Automática
-Al guardar cada respuesta:
-1. Enviar video a `transcribe-video` edge function
-2. Guardar transcripción en `business_case_responses.text_response`
-3. Idioma forzado: `language: 'en'` (inglés)
-
-### 3.6 Finalización
-Al completar todas las preguntas:
-1. Calcular `bcq_response_time_minutes` (desde `bcq_link_opened_at`)
-2. Marcar `business_case_completed: true`
-3. Guardar `bcq_completed_at`
-4. Mostrar pantalla de confirmación
+### Testing URL: `/bcq/{applicationId}/{bcq_access_token}`
+(Get token from database until Phase 2 email is implemented)
 
 ---
 
@@ -321,9 +310,9 @@ AI Score = weighted average of:
 
 | Fase | Duración | Dependencias | Estado |
 |------|----------|--------------|--------|
-| Fase 1 | 1-2 días | - | ✅ IN PROGRESS |
+| Fase 1 | 1-2 días | - | ✅ COMPLETED |
 | Fase 2 | 2-3 días | Fase 1 | ⏳ Pending |
-| Fase 3 | 4-5 días | Fase 2 | ⏳ Pending |
+| Fase 3 | 4-5 días | Fase 2 | ✅ COMPLETED |
 | Fase 4 | 1-2 días | Fase 3 | ⏳ Pending |
 | Fase 5 | 1 día | Fase 3 | ⏳ Pending |
 | Fase 6 | 2-3 días | Fase 1 | ⏳ Pending |
