@@ -10,7 +10,6 @@ import {
   CheckCircle, 
   AlertTriangle,
   ChevronDown,
-  Eye,
   Play,
   RefreshCw,
   Lock
@@ -45,14 +44,13 @@ export function BCQTab({
   canEdit,
   bcqAccessToken,
   bcqInvitationSentAt,
-  bcqLinkOpenedAt,
-  bcqStartedAt,
   businessCaseCompleted,
   businessCaseCompletedAt,
   bcqResponseTimeMinutes,
   bcqDelayed,
   reviewProgress,
 }: BCQTabProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const sendBCQInvitation = useSendBCQInvitation();
   const { data: businessCases = [] } = useBusinessCases(jobId);
   const { data: responses = [] } = useBusinessCaseResponses(applicationId);
@@ -71,7 +69,7 @@ export function BCQTab({
       bcqAccessToken,
       candidateEmail,
       candidateName,
-      jobTitle: '', // Will be fetched by edge function
+      jobTitle: '',
     });
   };
 
@@ -88,8 +86,6 @@ export function BCQTab({
   // Determine current status
   const getStatus = () => {
     if (businessCaseCompleted) return 'completed';
-    if (bcqStartedAt) return 'in_progress';
-    if (bcqLinkOpenedAt) return 'opened';
     if (bcqInvitationSentAt) return 'sent';
     return 'not_sent';
   };
@@ -118,20 +114,6 @@ export function BCQTab({
             )}
           </Badge>
         );
-      case 'in_progress':
-        return (
-          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30">
-            <Play className="w-3 h-3 mr-1" />
-            In Progress
-          </Badge>
-        );
-      case 'opened':
-        return (
-          <Badge className="bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30">
-            <Eye className="w-3 h-3 mr-1" />
-            Link Opened
-          </Badge>
-        );
       case 'sent':
         return (
           <Badge className="bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/30">
@@ -140,7 +122,11 @@ export function BCQTab({
           </Badge>
         );
       default:
-        return null;
+        return (
+          <Badge variant="outline" className="text-muted-foreground">
+            Not Sent
+          </Badge>
+        );
     }
   };
 
@@ -167,174 +153,165 @@ export function BCQTab({
 
   return (
     <div className="space-y-4">
-      {/* Status Card */}
+      {/* Main BCQ Card - Collapsible */}
       <Card className="shadow-young-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <FileVideo className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
-              Business Case Questions
-            </CardTitle>
-            <StatusBadge />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Not Sent State - with Review Gate */}
-          {status === 'not_sent' && (
-            <div className="text-center py-6">
-              {!canSendBCQ ? (
-                // Gate: Review not complete - show locked state
-                <>
-                  <Lock className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-khaki))] opacity-70" />
-                  <p className="text-sm font-medium mb-1">Complete Initial Review First</p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Review AI Analysis, CV, and DISC before sending the BCQ invitation.
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2 mb-4">
-                    {!reviewProgress?.ai_analysis_reviewed && (
-                      <Badge variant="outline" className="text-xs">AI Analysis pending</Badge>
-                    )}
-                    {!reviewProgress?.cv_analysis_reviewed && (
-                      <Badge variant="outline" className="text-xs">CV Analysis pending</Badge>
-                    )}
-                    {!reviewProgress?.disc_analysis_reviewed && (
-                      <Badge variant="outline" className="text-xs">DISC Analysis pending</Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
-                  </p>
-                </>
-              ) : (
-                // Gate passed - show send button
-                <>
-                  <Send className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-blue))] opacity-70" />
-                  <p className="text-sm font-medium mb-1">Ready to Send BCQ</p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Send the business case assessment to this candidate via email.
-                  </p>
-                  {canEdit && bcqAccessToken && (
-                    <Button
-                      onClick={handleSendInvitation}
-                      disabled={sendBCQInvitation.isPending}
-                      className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-bold-black))]"
-                    >
-                      {sendBCQInvitation.isPending ? (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3">
+              <CardTitle className="text-base font-medium flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <FileVideo className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+                  Business Case Questions
+                </span>
+                <div className="flex items-center gap-2">
+                  <StatusBadge />
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              {/* Not Sent State - with Review Gate */}
+              {status === 'not_sent' && (
+                <div className="text-center py-6">
+                  {!canSendBCQ ? (
+                    <>
+                      <Lock className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-khaki))] opacity-70" />
+                      <p className="text-sm font-medium mb-1">Complete Initial Review First</p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Review AI Analysis, CV, and DISC before sending the BCQ invitation.
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2 mb-4">
+                        {!reviewProgress?.ai_analysis_reviewed && (
+                          <Badge variant="outline" className="text-xs">AI Analysis pending</Badge>
+                        )}
+                        {!reviewProgress?.cv_analysis_reviewed && (
+                          <Badge variant="outline" className="text-xs">CV Analysis pending</Badge>
+                        )}
+                        {!reviewProgress?.disc_analysis_reviewed && (
+                          <Badge variant="outline" className="text-xs">DISC Analysis pending</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-blue))] opacity-70" />
+                      <p className="text-sm font-medium mb-1">Ready to Send BCQ</p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Send the business case assessment to this candidate via email.
+                      </p>
+                      {canEdit && bcqAccessToken && (
+                        <Button
+                          onClick={handleSendInvitation}
+                          disabled={sendBCQInvitation.isPending}
+                          className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-bold-black))]"
+                        >
+                          {sendBCQInvitation.isPending ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4 mr-2" />
+                              Send BCQ Invitation
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-4">
+                        {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Sent or Completed State - Horizontal Timeline */}
+              {(status === 'sent' || status === 'completed') && (
+                <div className="space-y-4">
+                  {/* Horizontal 2-column Timeline */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Column 1: Invitation Sent */}
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Send className="w-4 h-4 text-[hsl(var(--young-blue))]" />
+                        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Invitation Sent
+                        </span>
+                      </div>
+                      <p className="font-medium text-sm">
+                        {format(new Date(bcqInvitationSentAt!), 'MMM d, yyyy')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(bcqInvitationSentAt!), 'HH:mm')}
+                      </p>
+                      <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mx-auto mt-2" />
+                    </div>
+                    
+                    {/* Column 2: BCQ Completed */}
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <CheckCircle className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          BCQ Completed
+                        </span>
+                      </div>
+                      {businessCaseCompletedAt ? (
                         <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Sending...
+                          <p className="font-medium text-sm">
+                            {format(new Date(businessCaseCompletedAt), 'MMM d, yyyy')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(businessCaseCompletedAt), 'HH:mm')}
+                          </p>
+                          <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mx-auto mt-2" />
                         </>
                       ) : (
                         <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Send BCQ Invitation
+                          <p className="text-sm text-muted-foreground">Not yet</p>
+                          <Clock className="w-4 h-4 text-[hsl(var(--young-khaki))] mx-auto mt-2" />
                         </>
                       )}
-                    </Button>
+                    </div>
+                  </div>
+
+                  {/* Response Time (only when completed) */}
+                  {status === 'completed' && bcqResponseTimeMinutes !== null && (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">Response Time:</span>
+                      <span className={bcqDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                        {formatResponseTime(bcqResponseTimeMinutes)}
+                        {bcqDelayed && ' (> 24h)'}
+                      </span>
+                    </div>
                   )}
-                  <p className="text-xs text-muted-foreground mt-4">
-                    {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
-                  </p>
-                </>
+
+                  {/* Resend Invitation (only when not completed) */}
+                  {status === 'sent' && canEdit && bcqAccessToken && (
+                    <div className="flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendInvitation}
+                        disabled={sendBCQInvitation.isPending}
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
+                        Resend Invitation
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
-          )}
-
-          {/* Sent / Waiting State */}
-          {(status === 'sent' || status === 'opened' || status === 'in_progress') && (
-            <div className="space-y-4">
-              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Send className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Invitation Sent:</span>
-                  <span className="text-muted-foreground">
-                    {bcqInvitationSentAt 
-                      ? format(new Date(bcqInvitationSentAt), 'MMM d, yyyy HH:mm')
-                      : 'N/A'
-                    }
-                  </span>
-                </div>
-                
-                {bcqLinkOpenedAt && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">Link Opened:</span>
-                    <span className="text-muted-foreground">
-                      {format(new Date(bcqLinkOpenedAt), 'MMM d, yyyy HH:mm')}
-                    </span>
-                  </div>
-                )}
-                
-                {bcqStartedAt && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Play className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">Started Answering:</span>
-                    <span className="text-muted-foreground">
-                      {format(new Date(bcqStartedAt), 'MMM d, yyyy HH:mm')}
-                    </span>
-                  </div>
-                )}
-
-                {/* Progress indicator */}
-                <div className="pt-2 border-t border-border">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">
-                      {responses.filter(r => r.completed_at).length} / {businessCases.length} answered
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[hsl(var(--young-blue))] transition-all duration-300"
-                      style={{ 
-                        width: `${(responses.filter(r => r.completed_at).length / businessCases.length) * 100}%` 
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {canEdit && bcqAccessToken && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSendInvitation}
-                  disabled={sendBCQInvitation.isPending}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
-                  Resend Invitation
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Completed State */}
-          {status === 'completed' && (
-            <div className="space-y-4">
-              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-                  <span className="font-medium">Completed:</span>
-                  <span className="text-muted-foreground">
-                    {businessCaseCompletedAt 
-                      ? format(new Date(businessCaseCompletedAt), 'MMM d, yyyy HH:mm')
-                      : 'N/A'
-                    }
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Response Time:</span>
-                  <span className={bcqDelayed ? 'text-destructive font-medium' : 'text-muted-foreground'}>
-                    {formatResponseTime(bcqResponseTimeMinutes)}
-                    {bcqDelayed && ' (> 24h)'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       {/* Video Responses (only show when there are responses) */}
@@ -426,7 +403,6 @@ function ResponseCard({
           <div className="border-t border-border p-4 space-y-4">
             {videoUrl ? (
               <>
-                {/* Video Player */}
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
                   <video 
                     src={videoUrl} 
@@ -436,7 +412,6 @@ function ResponseCard({
                   />
                 </div>
                 
-                {/* Transcription */}
                 {transcription && (
                   <div className="bg-muted/30 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
