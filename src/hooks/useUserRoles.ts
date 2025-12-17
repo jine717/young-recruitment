@@ -116,3 +116,42 @@ export function useUpdateUserProfile() {
     },
   });
 }
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: {
+      email: string;
+      fullName: string;
+      password?: string;
+      sendInvite: boolean;
+      roles: AppRole[];
+    }) => {
+      const { data: result, error } = await supabase.functions.invoke('create-user', {
+        body: data
+      });
+
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({ 
+        title: 'User created',
+        description: variables.sendInvite 
+          ? `Invitation sent to ${variables.email}`
+          : `User ${variables.email} created successfully`
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Failed to create user', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    },
+  });
+}

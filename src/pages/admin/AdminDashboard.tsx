@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, useUpdateUserProfile, AppRole, UserWithRole } from '@/hooks/useUserRoles';
+import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, useUpdateUserProfile, useCreateUser, AppRole, UserWithRole } from '@/hooks/useUserRoles';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Users, ShieldCheck, UserCheck, Crown, Search, MoreVertical, Pencil, Trash2, Lock } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Users, ShieldCheck, UserCheck, Crown, Search, MoreVertical, Pencil, Trash2, Lock, Plus, Eye, EyeOff, Mail, KeyRound } from 'lucide-react';
 
 const roleColors: Record<AppRole, string> = {
   recruiter: 'bg-[hsl(var(--young-blue))]/15 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30',
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
   const addRole = useAddUserRole();
   const removeRole = useRemoveUserRole();
   const updateProfile = useUpdateUserProfile();
+  const createUser = useCreateUser();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Edit modal state
@@ -35,6 +37,18 @@ export default function AdminDashboard() {
   
   // Delete confirmation state
   const [deletingUser, setDeletingUser] = useState<UserWithRole | null>(null);
+
+  // Create user modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    fullName: '',
+    email: '',
+    authMethod: 'invite' as 'invite' | 'password',
+    password: '',
+    roles: [] as AppRole[]
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const filteredUsers = users?.filter(user =>
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,6 +102,15 @@ export default function AdminDashboard() {
     }));
   };
 
+  const handleCreateRoleToggle = (role: AppRole, checked: boolean) => {
+    setCreateForm(prev => ({
+      ...prev,
+      roles: checked 
+        ? [...prev.roles, role]
+        : prev.roles.filter(r => r !== role)
+    }));
+  };
+
   const handleDeleteUser = async () => {
     if (!deletingUser) return;
     
@@ -100,6 +123,51 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Failed to remove user roles:', error);
     }
+  };
+
+  const handleCreateUser = async () => {
+    // Validation
+    if (!createForm.email || !createForm.email.includes('@')) {
+      return;
+    }
+    if (createForm.roles.length === 0) {
+      return;
+    }
+    if (createForm.authMethod === 'password' && createForm.password.length < 6) {
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await createUser.mutateAsync({
+        email: createForm.email,
+        fullName: createForm.fullName,
+        password: createForm.authMethod === 'password' ? createForm.password : undefined,
+        sendInvite: createForm.authMethod === 'invite',
+        roles: createForm.roles
+      });
+      
+      // Reset form and close modal
+      setCreateForm({
+        fullName: '',
+        email: '',
+        authMethod: 'invite',
+        password: '',
+        roles: []
+      });
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('Failed to create user:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const isCreateFormValid = () => {
+    if (!createForm.email || !createForm.email.includes('@')) return false;
+    if (createForm.roles.length === 0) return false;
+    if (createForm.authMethod === 'password' && createForm.password.length < 6) return false;
+    return true;
   };
 
   // Calculate stats
@@ -173,11 +241,15 @@ export default function AdminDashboard() {
 
         {/* Users Table */}
         <Card className="shadow-young-sm">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Users className="h-4 w-4" />
               User Management
             </CardTitle>
+            <Button size="sm" onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
           </CardHeader>
           <CardContent>
             {/* Search */}
@@ -336,6 +408,136 @@ export default function AdminDashboard() {
             </Button>
             <Button onClick={handleSaveUser} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the platform
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-fullName">Full Name</Label>
+              <Input
+                id="create-fullName"
+                value={createForm.fullName}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, fullName: e.target.value }))}
+                placeholder="Enter full name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create-email">Email *</Label>
+              <Input
+                id="create-email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="user@example.com"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Authentication Method</Label>
+              <RadioGroup
+                value={createForm.authMethod}
+                onValueChange={(value) => setCreateForm(prev => ({ ...prev, authMethod: value as 'invite' | 'password' }))}
+                className="space-y-3"
+              >
+                <div className="flex items-start space-x-3 p-3 rounded-lg border bg-muted/30">
+                  <RadioGroupItem value="invite" id="auth-invite" className="mt-0.5" />
+                  <div className="space-y-1">
+                    <label htmlFor="auth-invite" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                      <Mail className="h-4 w-4" />
+                      Send email invitation
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      User will receive an email to set their password
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 p-3 rounded-lg border bg-muted/30">
+                  <RadioGroupItem value="password" id="auth-password" className="mt-0.5" />
+                  <div className="space-y-1">
+                    <label htmlFor="auth-password" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                      <KeyRound className="h-4 w-4" />
+                      Assign password
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Set password manually (no email sent)
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {createForm.authMethod === 'password' && (
+              <div className="space-y-2">
+                <Label htmlFor="create-password">Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="create-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Minimum 6 characters"
+                    className="pr-9"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {createForm.password && createForm.password.length < 6 && (
+                  <p className="text-xs text-destructive">Password must be at least 6 characters</p>
+                )}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>Roles *</Label>
+              <div className="space-y-2">
+                {allRoles.map((role) => (
+                  <div key={role} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`create-role-${role}`}
+                      checked={createForm.roles.includes(role)}
+                      onCheckedChange={(checked) => handleCreateRoleToggle(role, !!checked)}
+                    />
+                    <label
+                      htmlFor={`create-role-${role}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
+                    >
+                      {role}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {createForm.roles.length === 0 && (
+                <p className="text-xs text-muted-foreground">Select at least one role</p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateUser} disabled={isCreating || !isCreateFormValid()}>
+              {isCreating ? 'Creating...' : 'Create User'}
             </Button>
           </DialogFooter>
         </DialogContent>
