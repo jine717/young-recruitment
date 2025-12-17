@@ -201,7 +201,7 @@ const RecruiterDashboard = () => {
       case 'rejected':
         return 'decision_rejection';
       case 'under_review':
-        return 'status_update';
+        return 'status_in_review';
       default:
         return null;
     }
