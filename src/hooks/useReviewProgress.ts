@@ -93,6 +93,38 @@ export function useUpdateReviewSection() {
 
       const columnName = `${section}_reviewed`;
 
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from('review_progress')
+        .select('id')
+        .eq('application_id', applicationId)
+        .eq('recruiter_id', userData.user.id)
+        .maybeSingle();
+
+      // If doesn't exist, create it first
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from('review_progress')
+          .insert({
+            application_id: applicationId,
+            recruiter_id: userData.user.id,
+            [columnName]: reviewed,
+          });
+        
+        if (insertError) throw insertError;
+        
+        const { data: newRecord, error: fetchError } = await supabase
+          .from('review_progress')
+          .select('*')
+          .eq('application_id', applicationId)
+          .eq('recruiter_id', userData.user.id)
+          .single();
+          
+        if (fetchError) throw fetchError;
+        return newRecord as ReviewProgress;
+      }
+
+      // If exists, update normally
       const { data, error } = await supabase
         .from('review_progress')
         .update({ [columnName]: reviewed })
