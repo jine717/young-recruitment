@@ -46,7 +46,7 @@ export function NotificationCard({ applicationId, candidateName, hasBusinessCase
   const notificationOptions: { value: NotificationType; label: string }[] = [
     { value: 'application_received', label: 'Application Received' },
     { value: 'status_in_review', label: 'In Review' },
-    { value: 'status_reviewed', label: 'Review Complete' },
+    { value: 'bcq_invitation', label: 'BCQ Invitation' },
     { value: 'interview_scheduled', label: 'Interview Scheduled' },
     { value: 'decision_offer', label: 'Offer Letter' },
     { value: 'decision_rejection', label: 'Rejection Letter' },

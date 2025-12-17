@@ -34,10 +34,13 @@ export function useSendBCQInvitation() {
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      // Update bcq_invitation_sent_at timestamp
+      // Update bcq_invitation_sent_at timestamp and status to bcq_sent
       const { error: updateError } = await supabase
         .from('applications')
-        .update({ bcq_invitation_sent_at: new Date().toISOString() })
+        .update({ 
+          bcq_invitation_sent_at: new Date().toISOString(),
+          status: 'bcq_sent'
+        })
         .eq('id', applicationId);
 
       if (updateError) throw updateError;

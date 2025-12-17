@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle, Send } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -25,29 +25,29 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
-const statusColors: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
+const statusColors: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
-  reviewed: "bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border border-[hsl(var(--young-khaki))]/30",
+  bcq_sent: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
   interview: "bg-muted text-muted-foreground",
   interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
-const statusLabels: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
+const statusLabels: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', string> = {
   pending: "New",
   under_review: "In Review",
-  reviewed: "Reviewed",
+  bcq_sent: "BCQ Sent",
   interview: "Interview",
   interviewed: "Interviewed",
   rejected: "Rejected",
   hired: "Hired"
 };
 
-const statusIcons: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', React.ReactNode> = {
+const statusIcons: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
-  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
+  bcq_sent: <Send className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
@@ -598,6 +598,10 @@ const RecruiterDashboard = () => {
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("under_review")} className="flex items-center justify-between">
                                 Review
                                 {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("bcq_sent")} className="flex items-center justify-between">
+                                BCQ Sent
+                                {statusFilter === "bcq_sent" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">
                                 Interview

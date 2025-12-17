@@ -18,7 +18,7 @@ export function ReviewProgressTracker({
   const percentage = (completed / total) * 100;
   
   // Review is considered done when status moved past under_review
-  const isReviewCompleted = ['reviewed', 'interview', 'interviewed', 'hired', 'rejected'].includes(applicationStatus);
+  const isReviewCompleted = ['bcq_sent', 'interview', 'interviewed', 'hired', 'rejected'].includes(applicationStatus);
 
   if (isLoading) {
     return (

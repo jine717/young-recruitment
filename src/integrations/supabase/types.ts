@@ -1031,6 +1031,7 @@ export type Database = {
         | "hired"
         | "reviewed"
         | "interviewed"
+        | "bcq_sent"
       hiring_decision_type: "hired" | "rejected" | "on_hold"
       interview_recommendation:
         | "strong_hire"
@@ -1179,6 +1180,7 @@ export const Constants = {
         "hired",
         "reviewed",
         "interviewed",
+        "bcq_sent",
       ],
       hiring_decision_type: ["hired", "rejected", "on_hold"],
       interview_recommendation: [
