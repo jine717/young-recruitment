@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, useUpdateUserProfile, useCreateUser, AppRole, UserWithRole } from '@/hooks/useUserRoles';
+import { useUsersWithRoles, useAddUserRole, useRemoveUserRole, useUpdateUserProfile, useCreateUser, useDeleteUser, AppRole, UserWithRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const removeRole = useRemoveUserRole();
   const updateProfile = useUpdateUserProfile();
   const createUser = useCreateUser();
+  const deleteUser = useDeleteUser();
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,20 +122,20 @@ export default function AdminDashboard() {
     // Safety check: Prevent self-deletion
     if (deletingUser.id === currentUser?.id) {
       toast({
-        title: 'Cannot remove your own access',
-        description: 'You cannot remove access from your own account',
+        title: 'Cannot delete your own account',
+        description: 'You cannot delete your own account',
         variant: 'destructive'
       });
       setDeletingUser(null);
       return;
     }
     
-    // Safety check: Prevent removing last admin
+    // Safety check: Prevent deleting last admin
     if (deletingUser.roles.includes('admin')) {
       const adminCount = users?.filter(u => u.roles.includes('admin')).length || 0;
       if (adminCount <= 1) {
         toast({
-          title: 'Cannot remove last admin',
+          title: 'Cannot delete last admin',
           description: 'At least one admin must exist in the system',
           variant: 'destructive'
         });
@@ -143,14 +144,12 @@ export default function AdminDashboard() {
       }
     }
     
-    // Remove all roles (soft delete - user remains but has no access)
+    // Permanently delete user
     try {
-      for (const role of deletingUser.roles) {
-        await removeRole.mutateAsync({ userId: deletingUser.id, role });
-      }
+      await deleteUser.mutateAsync(deletingUser.id);
       setDeletingUser(null);
     } catch (error) {
-      console.error('Failed to remove user roles:', error);
+      console.error('Failed to delete user:', error);
     }
   };
 
@@ -352,12 +351,12 @@ export default function AdminDashboard() {
                               {user.id !== currentUser?.id && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
+                              <DropdownMenuItem 
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => setDeletingUser(user)}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
-                                    Remove access
+                                    Delete user
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -580,11 +579,11 @@ export default function AdminDashboard() {
       <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove user access?</AlertDialogTitle>
+            <AlertDialogTitle>Delete user permanently?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>You are about to remove all access for:</p>
+              <p>You are about to permanently delete:</p>
               <p className="font-semibold text-foreground">{deletingUser?.email}</p>
-              <p className="text-sm">This action will remove all roles from {deletingUser?.full_name || 'this user'}. They will no longer be able to access the platform.</p>
+              <p className="text-sm text-destructive">This will permanently delete this user and all their data. This action cannot be undone.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -593,7 +592,7 @@ export default function AdminDashboard() {
               onClick={handleDeleteUser}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove Access
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
