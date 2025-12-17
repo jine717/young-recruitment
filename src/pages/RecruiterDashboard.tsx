@@ -25,18 +25,20 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
-const statusColors: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', string> = {
+const statusColors: Record<ApplicationWithDetails['status'], string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
+  reviewed: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
   bcq_sent: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
   interview: "bg-muted text-muted-foreground",
   interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
-const statusLabels: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', string> = {
+const statusLabels: Record<ApplicationWithDetails['status'], string> = {
   pending: "New",
   under_review: "In Review",
+  reviewed: "Reviewed",
   bcq_sent: "BCQ Sent",
   interview: "Interview",
   interviewed: "Interviewed",
@@ -44,9 +46,10 @@ const statusLabels: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'inte
   hired: "Hired"
 };
 
-const statusIcons: Record<ApplicationWithDetails['status'] | 'bcq_sent' | 'interviewed', React.ReactNode> = {
+const statusIcons: Record<ApplicationWithDetails['status'], React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
+  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
   bcq_sent: <Send className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
@@ -739,9 +742,16 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
-                                    {app.candidate_name || app.profiles?.full_name || "Unknown"}
-                                  </Link>
+                                  <div className="flex items-center gap-1.5">
+                                    <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
+                                      {app.candidate_name || app.profiles?.full_name || "Unknown"}
+                                    </Link>
+                                    {app.bcq_delayed && (
+                                      <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 h-5">
+                                        D
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <p className="text-sm text-muted-foreground">{app.candidate_email || app.profiles?.email}</p>
                                 </div>
                               </TableCell>

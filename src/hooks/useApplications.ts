@@ -7,7 +7,7 @@ export interface ApplicationWithDetails {
   candidate_name: string | null;
   candidate_email: string | null;
   job_id: string;
-  status: 'pending' | 'under_review' | 'interview' | 'rejected' | 'hired';
+  status: 'pending' | 'under_review' | 'interview' | 'rejected' | 'hired' | 'bcq_sent' | 'interviewed' | 'reviewed';
   cv_url: string | null;
   disc_url: string | null;
   business_case_completed: boolean;
@@ -17,6 +17,10 @@ export interface ApplicationWithDetails {
   created_at: string;
   updated_at: string;
   assigned_to: string | null;
+  // BCQ tracking fields
+  bcq_delayed: boolean | null;
+  bcq_invitation_sent_at: string | null;
+  bcq_response_time_minutes: number | null;
   jobs: {
     title: string;
     departments: {

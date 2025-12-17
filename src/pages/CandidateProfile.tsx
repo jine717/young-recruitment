@@ -455,6 +455,7 @@ export default function CandidateProfile() {
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
           canEdit={canEdit}
+          bcqDelayed={application.bcq_delayed}
         />
 
         {/* Schedule Interview Modal */}

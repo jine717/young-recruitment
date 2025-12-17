@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -30,6 +31,8 @@ interface CandidateHeaderProps {
   applicationId: string;
   // Editing permission
   canEdit?: boolean;
+  // BCQ Delayed indicator
+  bcqDelayed?: boolean | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -167,6 +170,7 @@ export function CandidateHeader({
   evaluationStage,
   applicationId,
   canEdit = true,
+  bcqDelayed,
 }: CandidateHeaderProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
@@ -183,9 +187,16 @@ export function CandidateHeader({
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         {/* Left: Candidate info */}
         <div className="flex-1">
-          {/* Name + AI Score inline */}
+          {/* Name + Delayed Badge + AI Score inline */}
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold">{candidateName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{candidateName}</h1>
+              {bcqDelayed && (
+                <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5">
+                  D
+                </Badge>
+              )}
+            </div>
             <AIScoreBadge 
               score={aiScore} 
               recommendation={aiRecommendation} 
