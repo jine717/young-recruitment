@@ -9,7 +9,8 @@ export type NotificationType =
   | 'interview_scheduled'
   | 'interview_rescheduled'
   | 'decision_offer'
-  | 'decision_rejection';
+  | 'decision_rejection'
+  | 'bcq_invitation';
 
 export interface NotificationLog {
   id: string;
@@ -103,4 +104,5 @@ export const notificationTypeLabels: Record<NotificationType, string> = {
   interview_rescheduled: "Interview Rescheduled",
   decision_offer: "Offer Letter",
   decision_rejection: "Rejection Letter",
+  bcq_invitation: "BCQ Invitation",
 };

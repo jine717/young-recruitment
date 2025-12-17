@@ -16,7 +16,8 @@ type NotificationType =
   | 'interview_scheduled'
   | 'interview_rescheduled'
   | 'decision_offer'
-  | 'decision_rejection';
+  | 'decision_rejection'
+  | 'bcq_invitation';
 
 interface NotificationRequest {
   applicationId: string;
@@ -29,6 +30,7 @@ interface NotificationRequest {
   interviewType?: 'video' | 'phone' | 'in_person';
   interviewDateISO?: string;
   durationMinutes?: number;
+  bcqPortalUrl?: string;
 }
 
 // Young brand colors
@@ -481,6 +483,58 @@ function getEmailTemplate(
         </p>
         <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
           Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
+      `,
+    },
+    bcq_invitation: {
+      subject: `Complete Your Business Case Assessment - ${jobTitle}`,
+      preheader: `Next step: Complete your video assessment for ${jobTitle} at Young.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Business Case Assessment</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Congratulations! Your application for the <strong>${jobTitle}</strong> position has been reviewed and we'd like to invite you to complete the next stage: the Business Case Assessment.
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.15); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.youngBlue};">
+              <p style="font-size: 16px; margin: 0 0 10px 0; font-weight: 600; color: ${brandColors.boldBlack};">📹 What to Expect</p>
+              <p style="font-size: 14px; margin: 0 0 8px 0; color: ${brandColors.khaki};">
+                You'll answer a series of business case questions via <strong>video recording</strong> in English.
+              </p>
+              <p style="font-size: 14px; margin: 0; color: ${brandColors.khaki};">
+                Each response has a maximum duration of <strong>3 minutes</strong>.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
+          <tr>
+            <td align="center">
+              <a href="${customMessage || '#'}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px;">Start Assessment</a>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
+          <strong>Tips for Success:</strong>
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Find a quiet, well-lit space</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Ensure stable internet connection</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Speak clearly and at a natural pace</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Structure your answers concisely</td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          We look forward to seeing your responses!<br/>
           <strong>The Young Team</strong>
         </p>
       `,

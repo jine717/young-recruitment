@@ -25,7 +25,8 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Gavel, CheckCircle, StickyNote } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle, StickyNote, FileVideo } from 'lucide-react';
+import { BCQTab } from '@/components/candidate-profile/BCQTab';
 import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
 import { useToast } from '@/hooks/use-toast';
@@ -41,8 +42,16 @@ interface ApplicationDetail {
   cv_url: string | null;
   disc_url: string | null;
   business_case_completed: boolean;
+  business_case_completed_at: string | null;
   ai_evaluation_status: string | null;
   created_at: string;
+  // BCQ fields
+  bcq_access_token: string | null;
+  bcq_invitation_sent_at: string | null;
+  bcq_link_opened_at: string | null;
+  bcq_started_at: string | null;
+  bcq_response_time_minutes: number | null;
+  bcq_delayed: boolean | null;
   job: {
     id: string;
     title: string;
@@ -494,6 +503,15 @@ export default function CandidateProfile() {
                 <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
+            <TabsTrigger value="bcq" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <FileVideo className="w-4 h-4" />
+              BCQ
+              {application.business_case_completed ? (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              ) : application.bcq_invitation_sent_at ? (
+                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))]" />
+              ) : null}
+            </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
@@ -533,6 +551,24 @@ export default function CandidateProfile() {
               isCompletingReview={isCompletingReview}
               canEdit={canEdit}
               applicationStatus={application.status}
+            />
+          </TabsContent>
+
+          <TabsContent value="bcq" className="mt-0">
+            <BCQTab
+              applicationId={application.id}
+              jobId={application.job_id}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              candidateEmail={application.candidate_email || application.profile.email || ''}
+              canEdit={canEdit}
+              bcqAccessToken={application.bcq_access_token}
+              bcqInvitationSentAt={application.bcq_invitation_sent_at}
+              bcqLinkOpenedAt={application.bcq_link_opened_at}
+              bcqStartedAt={application.bcq_started_at}
+              businessCaseCompleted={application.business_case_completed}
+              businessCaseCompletedAt={application.business_case_completed_at}
+              bcqResponseTimeMinutes={application.bcq_response_time_minutes}
+              bcqDelayed={application.bcq_delayed}
             />
           </TabsContent>
 
