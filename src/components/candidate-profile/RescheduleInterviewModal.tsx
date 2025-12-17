@@ -132,6 +132,8 @@ export function RescheduleInterviewModal({
         meetingLink: meetingLink || undefined,
         location: location || undefined,
         interviewType,
+        interviewDateISO: interviewDate.toISOString(),
+        durationMinutes: duration,
       });
 
       onOpenChange(false);
