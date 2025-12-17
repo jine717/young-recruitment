@@ -216,6 +216,53 @@ const testEmails = [
     `,
   },
   {
+    type: "interview_rescheduled",
+    subject: `Interview Rescheduled - ${jobTitle}`,
+    preheader: `Your interview for ${jobTitle} has been rescheduled.`,
+    content: `
+      <h1 style="color: ${brandColors.gold}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Interview Rescheduled</h1>
+      <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+      <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+        Your interview for the <strong>${jobTitle}</strong> position has been rescheduled. Please note the new date and time below.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+        <tr>
+          <td style="background: rgba(184, 143, 94, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.gold};">
+            <p style="font-size: 18px; margin: 0 0 10px 0;"><strong>📅 New Date:</strong> December 22, 2025</p>
+            <p style="font-size: 18px; margin: 0;"><strong>⏰ New Time:</strong> 3:00 PM</p>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td style="background: rgba(147, 177, 255, 0.1); padding: 15px; border-radius: 8px;">
+            <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">📹 Video Call</p>
+            <p style="font-size: 14px; margin: 0 0 12px 0; color: ${brandColors.khaki}; word-break: break-all;">${meetingLink}</p>
+            <a href="${meetingLink}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Join Meeting</a>
+          </td>
+        </tr>
+      </table>
+      <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
+        <strong>Reminder - How to Prepare:</strong>
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Review the job description and requirements</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Prepare examples of your relevant experience</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Think about questions you'd like to ask us</td>
+        </tr>
+      </table>
+      <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+        We look forward to meeting you!<br/>
+        <strong>The Young Team</strong>
+      </p>
+    `,
+  },
+  {
     type: "decision_rejection",
     subject: `Update on Your Application - ${jobTitle}`,
     preheader: `Thank you for your interest in ${jobTitle} at Young.`,
@@ -268,7 +315,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, types } = await req.json();
 
     if (!email) {
       return new Response(
@@ -277,22 +324,27 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`Sending 6 test emails to: ${email}`);
+    // Filter emails by types if provided
+    const emailsToSend = types && types.length > 0 
+      ? testEmails.filter(e => types.includes(e.type))
+      : testEmails;
+
+    console.log(`Sending ${emailsToSend.length} test emails to: ${email}`);
 
     const results = [];
 
     // Send all test emails with small delays to ensure they arrive in order
-    for (let i = 0; i < testEmails.length; i++) {
-      const testEmail = testEmails[i];
+    for (let i = 0; i < emailsToSend.length; i++) {
+      const testEmail = emailsToSend[i];
       
-      console.log(`Sending email ${i + 1}/6: ${testEmail.type}`);
+      console.log(`Sending email ${i + 1}/${emailsToSend.length}: ${testEmail.type}`);
       
       const html = wrapInEmailTemplate(testEmail.content, testEmail.preheader);
       
       const { data, error } = await resend.emails.send({
         from: "Young Recruitment <onboarding@resend.dev>",
         to: [email],
-        subject: `[TEST ${i + 1}/6] ${testEmail.subject}`,
+        subject: `[TEST ${i + 1}/${emailsToSend.length}] ${testEmail.subject}`,
         html,
       });
 
@@ -305,7 +357,7 @@ serve(async (req: Request) => {
       }
 
       // Small delay between emails to ensure order
-      if (i < testEmails.length - 1) {
+      if (i < emailsToSend.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -313,7 +365,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Sent 6 test emails to ${email}`,
+        message: `Sent ${emailsToSend.length} test emails to ${email}`,
         results 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
