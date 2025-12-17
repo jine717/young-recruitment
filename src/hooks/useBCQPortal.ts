@@ -29,6 +29,12 @@ interface BCQResponse {
   business_case_id: string;
   video_url: string | null;
   text_response: string | null;
+  fluency_pronunciation_score: number | null;
+  fluency_pace_score: number | null;
+  fluency_hesitation_score: number | null;
+  fluency_grammar_score: number | null;
+  fluency_overall_score: number | null;
+  fluency_notes: string | null;
 }
 
 export function useBCQPortal(applicationId: string | undefined, token: string | undefined) {
@@ -250,20 +256,39 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         if (transcriptionError) {
           console.error('Transcription error:', transcriptionError);
         } else if (transcriptionData?.text) {
-          // Update response with transcription
+          // Build update data with transcription and fluency analysis
+          const updateData: Record<string, unknown> = { 
+            text_response: transcriptionData.text 
+          };
+          
+          // Add fluency analysis if available
+          if (transcriptionData.fluency_analysis) {
+            updateData.fluency_pronunciation_score = transcriptionData.fluency_analysis.pronunciation_score;
+            updateData.fluency_pace_score = transcriptionData.fluency_analysis.pace_rhythm_score;
+            updateData.fluency_hesitation_score = transcriptionData.fluency_analysis.hesitation_score;
+            updateData.fluency_grammar_score = transcriptionData.fluency_analysis.grammar_score;
+            updateData.fluency_overall_score = transcriptionData.fluency_analysis.overall_fluency_score;
+            updateData.fluency_notes = transcriptionData.fluency_analysis.fluency_notes;
+          }
+
+          // Update response with transcription and fluency data
           await supabase
             .from('business_case_responses')
-            .update({ 
-              text_response: transcriptionData.text 
-            })
+            .update(updateData)
             .eq('id', respData.id);
 
-          // Update local state
+          // Update local state with all fluency data
           setResponses(prev => ({
             ...prev,
             [questionId]: {
               ...respData,
-              text_response: transcriptionData.text
+              text_response: transcriptionData.text,
+              fluency_pronunciation_score: transcriptionData.fluency_analysis?.pronunciation_score ?? null,
+              fluency_pace_score: transcriptionData.fluency_analysis?.pace_rhythm_score ?? null,
+              fluency_hesitation_score: transcriptionData.fluency_analysis?.hesitation_score ?? null,
+              fluency_grammar_score: transcriptionData.fluency_analysis?.grammar_score ?? null,
+              fluency_overall_score: transcriptionData.fluency_analysis?.overall_fluency_score ?? null,
+              fluency_notes: transcriptionData.fluency_analysis?.fluency_notes ?? null
             }
           }));
         }

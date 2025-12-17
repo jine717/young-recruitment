@@ -220,6 +220,12 @@ export type Database = {
           business_case_id: string
           completed_at: string | null
           created_at: string
+          fluency_grammar_score: number | null
+          fluency_hesitation_score: number | null
+          fluency_notes: string | null
+          fluency_overall_score: number | null
+          fluency_pace_score: number | null
+          fluency_pronunciation_score: number | null
           id: string
           text_response: string | null
           transcription: string | null
@@ -230,6 +236,12 @@ export type Database = {
           business_case_id: string
           completed_at?: string | null
           created_at?: string
+          fluency_grammar_score?: number | null
+          fluency_hesitation_score?: number | null
+          fluency_notes?: string | null
+          fluency_overall_score?: number | null
+          fluency_pace_score?: number | null
+          fluency_pronunciation_score?: number | null
           id?: string
           text_response?: string | null
           transcription?: string | null
@@ -240,6 +252,12 @@ export type Database = {
           business_case_id?: string
           completed_at?: string | null
           created_at?: string
+          fluency_grammar_score?: number | null
+          fluency_hesitation_score?: number | null
+          fluency_notes?: string | null
+          fluency_overall_score?: number | null
+          fluency_pace_score?: number | null
+          fluency_pronunciation_score?: number | null
           id?: string
           text_response?: string | null
           transcription?: string | null
