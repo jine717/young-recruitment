@@ -1,5 +1,4 @@
 import { AIEvaluationCard } from '@/components/recruiter/AIEvaluationCard';
-import { BusinessCaseViewer } from '@/components/candidate-profile/BusinessCaseViewer';
 import { DocumentsSection } from '@/components/candidate-profile/DocumentsSection';
 import { ReviewProgressTracker } from '@/components/candidate-profile/ReviewProgressTracker';
 import { Button } from '@/components/ui/button';
@@ -140,31 +139,18 @@ export function OverviewTab({
         {showReviewProgress && (
           <div className="grid grid-cols-2 gap-2">
             <ReviewCheckbox
-              label="CV"
+              label="CV Analysis"
               checked={reviewProgress?.cv_analysis_reviewed ?? false}
               onCheckedChange={(checked) => onReviewSection('cv_analysis', checked)}
               disabled={!canEdit || reviewProgress?.cv_analysis_reviewed === true}
             />
             <ReviewCheckbox
-              label="DISC"
+              label="DISC Analysis"
               checked={reviewProgress?.disc_analysis_reviewed ?? false}
               onCheckedChange={(checked) => onReviewSection('disc_analysis', checked)}
               disabled={!canEdit || reviewProgress?.disc_analysis_reviewed === true}
             />
           </div>
-        )}
-      </div>
-
-      {/* Business Case Responses */}
-      <div className="space-y-2">
-        <BusinessCaseViewer applicationId={applicationId} jobId={jobId} />
-        {showReviewProgress && (
-          <ReviewCheckbox
-            label="Business Case"
-            checked={reviewProgress?.business_case_reviewed ?? false}
-            onCheckedChange={(checked) => onReviewSection('business_case', checked)}
-            disabled={!canEdit || reviewProgress?.business_case_reviewed === true}
-          />
         )}
       </div>
     </div>

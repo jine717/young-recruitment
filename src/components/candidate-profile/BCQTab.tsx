@@ -9,15 +9,16 @@ import {
   Clock, 
   CheckCircle, 
   AlertTriangle,
-  ExternalLink,
   ChevronDown,
   Eye,
   Play,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
+import { type ReviewProgress } from '@/hooks/useReviewProgress';
 
 interface BCQTabProps {
   applicationId: string;
@@ -33,6 +34,7 @@ interface BCQTabProps {
   businessCaseCompletedAt: string | null;
   bcqResponseTimeMinutes: number | null;
   bcqDelayed: boolean | null;
+  reviewProgress: ReviewProgress | null;
 }
 
 export function BCQTab({
@@ -49,13 +51,20 @@ export function BCQTab({
   businessCaseCompletedAt,
   bcqResponseTimeMinutes,
   bcqDelayed,
+  reviewProgress,
 }: BCQTabProps) {
   const sendBCQInvitation = useSendBCQInvitation();
   const { data: businessCases = [] } = useBusinessCases(jobId);
   const { data: responses = [] } = useBusinessCaseResponses(applicationId);
 
+  // Gate: Check if all 3 review sections are completed
+  const canSendBCQ = reviewProgress && 
+    reviewProgress.ai_analysis_reviewed &&
+    reviewProgress.cv_analysis_reviewed &&
+    reviewProgress.disc_analysis_reviewed;
+
   const handleSendInvitation = () => {
-    if (!bcqAccessToken) return;
+    if (!bcqAccessToken || !canSendBCQ) return;
     
     sendBCQInvitation.mutate({
       applicationId,
@@ -170,36 +179,64 @@ export function BCQTab({
           </div>
         </CardHeader>
         <CardContent>
-          {/* Not Sent State */}
+          {/* Not Sent State - with Review Gate */}
           {status === 'not_sent' && (
             <div className="text-center py-6">
-              <Send className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-blue))] opacity-70" />
-              <p className="text-sm font-medium mb-1">BCQ Not Sent</p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Send the business case assessment to this candidate via email.
-              </p>
-              {canEdit && bcqAccessToken && (
-                <Button
-                  onClick={handleSendInvitation}
-                  disabled={sendBCQInvitation.isPending}
-                  className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-bold-black))]"
-                >
-                  {sendBCQInvitation.isPending ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send BCQ Invitation
-                    </>
+              {!canSendBCQ ? (
+                // Gate: Review not complete - show locked state
+                <>
+                  <Lock className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-khaki))] opacity-70" />
+                  <p className="text-sm font-medium mb-1">Complete Initial Review First</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Review AI Analysis, CV, and DISC before sending the BCQ invitation.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2 mb-4">
+                    {!reviewProgress?.ai_analysis_reviewed && (
+                      <Badge variant="outline" className="text-xs">AI Analysis pending</Badge>
+                    )}
+                    {!reviewProgress?.cv_analysis_reviewed && (
+                      <Badge variant="outline" className="text-xs">CV Analysis pending</Badge>
+                    )}
+                    {!reviewProgress?.disc_analysis_reviewed && (
+                      <Badge variant="outline" className="text-xs">DISC Analysis pending</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
+                  </p>
+                </>
+              ) : (
+                // Gate passed - show send button
+                <>
+                  <Send className="h-10 w-10 mx-auto mb-3 text-[hsl(var(--young-blue))] opacity-70" />
+                  <p className="text-sm font-medium mb-1">Ready to Send BCQ</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Send the business case assessment to this candidate via email.
+                  </p>
+                  {canEdit && bcqAccessToken && (
+                    <Button
+                      onClick={handleSendInvitation}
+                      disabled={sendBCQInvitation.isPending}
+                      className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-[hsl(var(--young-bold-black))]"
+                    >
+                      {sendBCQInvitation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Send BCQ Invitation
+                        </>
+                      )}
+                    </Button>
                   )}
-                </Button>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
+                  </p>
+                </>
               )}
-              <p className="text-xs text-muted-foreground mt-4">
-                {businessCases.length} question{businessCases.length !== 1 ? 's' : ''} configured
-              </p>
             </div>
           )}
 
