@@ -40,17 +40,20 @@ export function VideoRecorder({
       
       streamRef.current = stream;
       setHasPermission(true);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      
-      setStatus('preview');
+      setStatus('preview'); // Video element renders after this, useEffect will assign stream
     } catch (err) {
       console.error('Camera access denied:', err);
       setHasPermission(false);
     }
   }, []);
+
+  // Assign stream to video element when in preview/recording mode
+  useEffect(() => {
+    if ((status === 'preview' || status === 'recording') && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(console.error);
+    }
+  }, [status]);
 
   const startRecording = useCallback(() => {
     if (!streamRef.current) return;
@@ -101,12 +104,13 @@ export function VideoRecorder({
 
   const resetRecording = useCallback(() => {
     setRecordedBlob(null);
-    setStatus('preview');
-    
-    // Restart camera preview
-    if (videoRef.current && streamRef.current) {
+    if (videoRef.current) {
+      videoRef.current.src = '';
       videoRef.current.srcObject = streamRef.current;
+      videoRef.current.muted = true;
+      videoRef.current.controls = false;
     }
+    setStatus('preview');
   }, []);
 
   const confirmRecording = useCallback(() => {
