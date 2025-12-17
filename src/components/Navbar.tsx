@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,26 @@ interface NavbarProps {
 const Navbar = ({ variant = "simple" }: NavbarProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin');
+
+      setIsAdmin(data && data.length > 0);
+    };
+
+    checkAdminRole();
+  }, [user]);
 
   const goToDashboard = async () => {
     if (!user) return;
@@ -54,29 +75,47 @@ const Navbar = ({ variant = "simple" }: NavbarProps) => {
         </Link>
         
         {variant === "full" && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {user.user_metadata?.full_name || 'My Account'}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={goToDashboard} className="cursor-pointer">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="group relative text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  >
+                    Admin Panel
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-young-blue transition-all duration-300 group-hover:w-full" />
+                  </Link>
+                )}
+                <Link 
+                  to="/dashboard" 
+                  className="group relative text-muted-foreground hover:text-foreground transition-colors duration-200"
+                >
+                  Dashboard
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-young-blue transition-all duration-300 group-hover:w-full" />
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <User className="h-4 w-4" />
+                      <span className="hidden sm:inline">
+                        {user.user_metadata?.full_name || 'My Account'}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-popover">
+                    <DropdownMenuItem onClick={goToDashboard} className="cursor-pointer">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <Button variant="ghost" asChild>
                 <Link to="/auth">Recruiter Login</Link>
