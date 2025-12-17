@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = false
+
+[functions.analyze-bcq-response]
+verify_jwt = false

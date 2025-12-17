@@ -219,6 +219,11 @@ export type Database = {
           application_id: string
           business_case_id: string
           completed_at: string | null
+          content_analysis_status: string | null
+          content_areas_to_probe: string[] | null
+          content_quality_score: number | null
+          content_strengths: string[] | null
+          content_summary: string | null
           created_at: string
           fluency_grammar_score: number | null
           fluency_hesitation_score: number | null
@@ -235,6 +240,11 @@ export type Database = {
           application_id: string
           business_case_id: string
           completed_at?: string | null
+          content_analysis_status?: string | null
+          content_areas_to_probe?: string[] | null
+          content_quality_score?: number | null
+          content_strengths?: string[] | null
+          content_summary?: string | null
           created_at?: string
           fluency_grammar_score?: number | null
           fluency_hesitation_score?: number | null
@@ -251,6 +261,11 @@ export type Database = {
           application_id?: string
           business_case_id?: string
           completed_at?: string | null
+          content_analysis_status?: string | null
+          content_areas_to_probe?: string[] | null
+          content_quality_score?: number | null
+          content_strengths?: string[] | null
+          content_summary?: string | null
           created_at?: string
           fluency_grammar_score?: number | null
           fluency_hesitation_score?: number | null
