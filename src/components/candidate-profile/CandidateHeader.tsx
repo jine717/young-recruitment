@@ -93,40 +93,29 @@ function AIScoreBadge({
     );
   }
 
-  const getRecommendationConfig = () => {
-    switch (recommendation) {
-      case 'proceed':
-        return {
-          icon: TrendingUp,
-          bgClass: 'bg-[hsl(var(--young-blue))]/10',
-          borderClass: 'border-[hsl(var(--young-blue))]/30',
-          textClass: 'text-[hsl(var(--young-blue))]',
-        };
-      case 'review':
-        return {
-          icon: AlertTriangle,
-          bgClass: 'bg-[hsl(var(--young-gold))]/10',
-          borderClass: 'border-[hsl(var(--young-gold))]/30',
-          textClass: 'text-[hsl(var(--young-gold))]',
-        };
-      case 'reject':
-        return {
-          icon: XCircle,
-          bgClass: 'bg-destructive/10',
-          borderClass: 'border-destructive/30',
-          textClass: 'text-destructive',
-        };
-      default:
-        return {
-          icon: TrendingUp,
-          bgClass: 'bg-muted/50',
-          borderClass: 'border-border',
-          textClass: 'text-muted-foreground',
-        };
-    }
+  // Use score-based colors matching the dashboard (green ≥70, gold 40-69, red <40)
+  const getScoreColor = (s: number) => {
+    if (s >= 70) return {
+      icon: TrendingUp,
+      bgClass: 'bg-green-500/10',
+      borderClass: 'border-green-500/30',
+      textClass: 'text-green-600',
+    };
+    if (s >= 40) return {
+      icon: AlertTriangle,
+      bgClass: 'bg-[hsl(var(--young-gold))]/10',
+      borderClass: 'border-[hsl(var(--young-gold))]/30',
+      textClass: 'text-[hsl(var(--young-gold))]',
+    };
+    return {
+      icon: XCircle,
+      bgClass: 'bg-destructive/10',
+      borderClass: 'border-destructive/30',
+      textClass: 'text-destructive',
+    };
   };
 
-  const config = getRecommendationConfig();
+  const config = getScoreColor(score);
   const Icon = config.icon;
 
   // Check if this is post-interview score
