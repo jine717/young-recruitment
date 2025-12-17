@@ -18,6 +18,7 @@ import RecruiterBusinessCase from "./pages/recruiter/RecruiterBusinessCase";
 import RecruiterAnalytics from "./pages/recruiter/RecruiterAnalytics";
 import CandidatesEvaluation from "./pages/recruiter/CandidatesEvaluation";
 import PitchDeck from "./pages/PitchDeck";
+import BusinessCasePortal from "./pages/BusinessCasePortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply/:id" element={<Apply />} />
+            <Route path="/bcq/:applicationId/:token" element={<BusinessCasePortal />} />
             <Route path="/dashboard" element={<RecruiterDashboard />} />
             <Route path="/dashboard/candidate/:applicationId" element={<CandidateProfile />} />
             {/* Recruiter Jobs Routes */}
