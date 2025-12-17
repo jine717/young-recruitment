@@ -18,6 +18,20 @@ export interface BusinessCaseResponse {
   video_url: string | null;
   text_response: string | null;
   completed_at: string | null;
+  transcription: string | null;
+  // Fluency analysis fields
+  fluency_pronunciation_score: number | null;
+  fluency_pace_score: number | null;
+  fluency_hesitation_score: number | null;
+  fluency_grammar_score: number | null;
+  fluency_overall_score: number | null;
+  fluency_notes: string | null;
+  // Content analysis fields
+  content_quality_score: number | null;
+  content_strengths: string[] | null;
+  content_areas_to_probe: string[] | null;
+  content_summary: string | null;
+  content_analysis_status: string | null;
 }
 
 export interface Application {

@@ -10,14 +10,22 @@ import {
   CheckCircle, 
   AlertTriangle,
   ChevronDown,
-  Play,
+  ChevronLeft,
+  ChevronRight,
   RefreshCw,
-  Lock
+  Lock,
+  FileText,
+  Sparkles,
+  Lightbulb,
+  MessageSquare
 } from 'lucide-react';
 import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
+import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
+
+const QUESTIONS_PER_PAGE = 3;
 
 interface BCQTabProps {
   applicationId: string;
@@ -51,6 +59,7 @@ export function BCQTab({
   reviewProgress,
 }: BCQTabProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const sendBCQInvitation = useSendBCQInvitation();
   const { data: businessCases = [] } = useBusinessCases(jobId);
   const { data: responses = [] } = useBusinessCaseResponses(applicationId);
@@ -91,6 +100,13 @@ export function BCQTab({
   };
 
   const status = getStatus();
+
+  // Pagination
+  const totalPages = Math.ceil(businessCases.length / QUESTIONS_PER_PAGE);
+  const paginatedQuestions = businessCases.slice(
+    (currentPage - 1) * QUESTIONS_PER_PAGE,
+    currentPage * QUESTIONS_PER_PAGE
+  );
 
   // Status badge component
   const StatusBadge = () => {
@@ -318,41 +334,75 @@ export function BCQTab({
         </Collapsible>
       </Card>
 
-      {/* Video Responses (only show when there are responses) */}
-      {responses.length > 0 && (
+      {/* Questions Card - Show when BCQ sent or completed */}
+      {status !== 'not_sent' && businessCases.length > 0 && (
         <Card className="shadow-young-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Play className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
-              Video Responses
+              <FileText className="w-4 h-4 text-[hsl(var(--young-khaki))]" />
+              Questions
               <Badge variant="secondary" className="ml-auto">
                 {responses.filter(r => r.completed_at).length}/{businessCases.length}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {businessCases.map((bc) => {
+            {paginatedQuestions.map((bc) => {
               const response = responses.find(r => r.business_case_id === bc.id);
               const isCompleted = !!response?.completed_at;
 
               return (
                 <ResponseCard
                   key={bc.id}
+                  responseId={response?.id}
                   questionNumber={bc.question_number}
                   questionTitle={bc.question_title}
                   questionDescription={bc.question_description}
                   videoUrl={response?.video_url}
-                  transcription={(response as any)?.text_response}
+                  transcription={response?.transcription}
                   isCompleted={isCompleted}
-                  fluencyPronunciationScore={(response as any)?.fluency_pronunciation_score}
-                  fluencyPaceScore={(response as any)?.fluency_pace_score}
-                  fluencyHesitationScore={(response as any)?.fluency_hesitation_score}
-                  fluencyGrammarScore={(response as any)?.fluency_grammar_score}
-                  fluencyOverallScore={(response as any)?.fluency_overall_score}
-                  fluencyNotes={(response as any)?.fluency_notes}
+                  canEdit={canEdit}
+                  fluencyPronunciationScore={response?.fluency_pronunciation_score}
+                  fluencyPaceScore={response?.fluency_pace_score}
+                  fluencyHesitationScore={response?.fluency_hesitation_score}
+                  fluencyGrammarScore={response?.fluency_grammar_score}
+                  fluencyOverallScore={response?.fluency_overall_score}
+                  fluencyNotes={response?.fluency_notes}
+                  contentQualityScore={response?.content_quality_score}
+                  contentStrengths={response?.content_strengths}
+                  contentAreasToProbe={response?.content_areas_to_probe}
+                  contentSummary={response?.content_summary}
+                  contentAnalysisStatus={response?.content_analysis_status}
                 />
               );
             })}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -362,35 +412,58 @@ export function BCQTab({
 
 // Response Card Component
 interface ResponseCardProps {
+  responseId?: string;
   questionNumber: number;
   questionTitle: string;
   questionDescription: string;
   videoUrl?: string | null;
   transcription?: string | null;
   isCompleted: boolean;
+  canEdit: boolean;
   fluencyPronunciationScore?: number | null;
   fluencyPaceScore?: number | null;
   fluencyHesitationScore?: number | null;
   fluencyGrammarScore?: number | null;
   fluencyOverallScore?: number | null;
   fluencyNotes?: string | null;
+  contentQualityScore?: number | null;
+  contentStrengths?: string[] | null;
+  contentAreasToProbe?: string[] | null;
+  contentSummary?: string | null;
+  contentAnalysisStatus?: string | null;
 }
 
 function ResponseCard({
+  responseId,
   questionNumber,
   questionTitle,
   questionDescription,
   videoUrl,
   transcription,
   isCompleted,
+  canEdit,
   fluencyPronunciationScore,
   fluencyPaceScore,
   fluencyHesitationScore,
   fluencyGrammarScore,
   fluencyOverallScore,
   fluencyNotes,
+  contentQualityScore,
+  contentStrengths,
+  contentAreasToProbe,
+  contentSummary,
+  contentAnalysisStatus,
 }: ResponseCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const analyzeResponse = useAnalyzeBCQResponse();
+
+  const handleAnalyze = () => {
+    if (!responseId) return;
+    analyzeResponse.mutate(responseId);
+  };
+
+  const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
+  const isAnalyzing = contentAnalysisStatus === 'analyzing' || analyzeResponse.isPending;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -411,11 +484,23 @@ function ResponseCard({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isCompleted ? (
-                <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-              ) : (
-                <Clock className="w-4 h-4 text-[hsl(var(--young-gold))]" />
-              )}
+              <Badge variant={isCompleted ? 'default' : 'outline'} className={
+                isCompleted 
+                  ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30 hover:bg-[hsl(var(--young-blue))]/30' 
+                  : ''
+              }>
+                {isCompleted ? (
+                  <>
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Answered
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3 h-3 mr-1" />
+                    Pending
+                  </>
+                )}
+              </Badge>
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </div>
           </div>
@@ -423,8 +508,9 @@ function ResponseCard({
         
         <CollapsibleContent>
           <div className="border-t border-border p-4 space-y-4">
-            {videoUrl ? (
+            {isCompleted && videoUrl ? (
               <>
+                {/* Video Player */}
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
                   <video 
                     src={videoUrl} 
@@ -434,6 +520,7 @@ function ResponseCard({
                   />
                 </div>
                 
+                {/* Transcription */}
                 {transcription && (
                   <div className="bg-muted/30 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -493,11 +580,121 @@ function ResponseCard({
                     )}
                   </div>
                 )}
+
+                {/* Response Analysis Section */}
+                <div className="bg-[hsl(var(--young-gold))]/5 rounded-lg p-4 border border-[hsl(var(--young-gold))]/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Response Analysis
+                    </p>
+                    {canEdit && transcription && !hasContentAnalysis && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAnalyze}
+                        disabled={isAnalyzing}
+                        className="h-7 text-xs"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3 mr-1.5" />
+                            Analyze
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {hasContentAnalysis ? (
+                    <div className="space-y-4">
+                      {/* Quality Score */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-full bg-[hsl(var(--young-gold))]/20 flex items-center justify-center">
+                          <span className="text-xl font-bold text-[hsl(var(--young-gold))]">
+                            {contentQualityScore}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Quality Score</p>
+                          <p className="text-xs text-muted-foreground">How well the response addresses the question</p>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      {contentSummary && (
+                        <div className="bg-background rounded-lg p-3">
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Summary</span>
+                          </div>
+                          <p className="text-sm text-foreground/90">{contentSummary}</p>
+                        </div>
+                      )}
+
+                      {/* Strengths */}
+                      {contentStrengths && contentStrengths.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--young-blue))]" />
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Strengths</span>
+                          </div>
+                          <ul className="space-y-1.5">
+                            {contentStrengths.map((strength, i) => (
+                              <li key={i} className="text-sm flex items-start gap-2">
+                                <span className="text-[hsl(var(--young-blue))] mt-1">•</span>
+                                <span>{strength}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Areas to Probe */}
+                      {contentAreasToProbe && contentAreasToProbe.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Lightbulb className="w-3.5 h-3.5 text-[hsl(var(--young-gold))]" />
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Areas to Probe in Interview</span>
+                          </div>
+                          <ul className="space-y-1.5">
+                            {contentAreasToProbe.map((area, i) => (
+                              <li key={i} className="text-sm flex items-start gap-2">
+                                <span className="text-[hsl(var(--young-gold))] mt-1">•</span>
+                                <span>{area}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      {transcription ? (
+                        <>
+                          <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Click "Analyze" to generate AI insights</p>
+                        </>
+                      ) : (
+                        <>
+                          <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Waiting for transcription</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
                 <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No response recorded yet</p>
+                <p className="text-xs mt-1">Waiting for candidate to complete this question</p>
               </div>
             )}
           </div>
