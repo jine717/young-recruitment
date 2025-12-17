@@ -155,8 +155,14 @@ export default function Apply() {
         silent: true,
       });
 
-      // Note: AI analysis will be triggered after BCQ completion, not here
-      // The bcq_invitation email will be sent in Phase 2
+      // Trigger automatic AI analysis (CV + DISC matching) in background
+      // This runs async - candidate doesn't wait for it to complete
+      supabase.functions.invoke('analyze-candidate', {
+        body: { applicationId },
+      }).catch(err => {
+        console.error('Background AI analysis failed:', err);
+        // Don't show error to candidate - analysis can be retriggered by recruiter
+      });
 
       setSubmitted(true);
     } catch (error) {

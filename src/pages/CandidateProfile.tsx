@@ -569,6 +569,7 @@ export default function CandidateProfile() {
               businessCaseCompletedAt={application.business_case_completed_at}
               bcqResponseTimeMinutes={application.bcq_response_time_minutes}
               bcqDelayed={application.bcq_delayed}
+              reviewProgress={reviewProgress}
             />
           </TabsContent>
 
