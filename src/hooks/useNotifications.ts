@@ -53,15 +53,21 @@ export function useSendNotification() {
       customMessage,
       interviewDate,
       interviewTime,
+      meetingLink,
+      location,
+      interviewType,
     }: {
       applicationId: string;
       type: NotificationType;
       customMessage?: string;
       interviewDate?: string;
       interviewTime?: string;
+      meetingLink?: string;
+      location?: string;
+      interviewType?: 'video' | 'phone' | 'in_person';
     }) => {
       const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { applicationId, type, customMessage, interviewDate, interviewTime },
+        body: { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType },
       });
 
       if (error) throw error;

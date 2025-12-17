@@ -100,12 +100,15 @@ export function ScheduleInterviewModal({
         newType: interviewType,
       });
 
-      // Send notification to candidate
+      // Send notification to candidate with meeting details
       await sendNotification.mutateAsync({
         applicationId,
         type: 'interview_scheduled',
         interviewDate: format(interviewDate, 'MMMM d, yyyy'),
         interviewTime: format(interviewDate, 'h:mm a'),
+        meetingLink: meetingLink || undefined,
+        location: location || undefined,
+        interviewType,
       });
 
       onOpenChange(false);
