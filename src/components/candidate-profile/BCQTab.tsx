@@ -232,60 +232,84 @@ export function BCQTab({
                 </div>
               )}
 
-              {/* Sent or Completed State - Compact Horizontal Timeline */}
+              {/* Sent or Completed State - Professional Grid Timeline */}
               {(status === 'sent' || status === 'completed') && (
-                <div className="space-y-3">
-                  {/* Compact Horizontal Timeline */}
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-0">
+                  {/* Two-Column Grid with Divider */}
+                  <div className="grid grid-cols-2 divide-x divide-border">
                     {/* Column 1: Invitation Sent */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] shrink-0" />
-                      <span className="text-muted-foreground">Invitation Sent:</span>
-                      <span className="font-medium">
-                        {format(new Date(bcqInvitationSentAt!), 'MMM d, HH:mm')}
-                      </span>
+                    <div className="pr-4 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                        Invitation Sent
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--young-blue))]" />
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-sm font-medium">
+                            {format(new Date(bcqInvitationSentAt!), 'MMM d, yyyy')}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(bcqInvitationSentAt!), 'HH:mm')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Column 2: BCQ Completed */}
-                    <div className="flex items-center gap-2 text-sm">
-                      {businessCaseCompletedAt ? (
-                        <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] shrink-0" />
-                      ) : (
-                        <Clock className="w-4 h-4 text-[hsl(var(--young-khaki))] shrink-0" />
-                      )}
-                      <span className="text-muted-foreground">BCQ Completed:</span>
-                      {businessCaseCompletedAt ? (
-                        <span className="font-medium">
-                          {format(new Date(businessCaseCompletedAt), 'MMM d, HH:mm')}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">Not yet</span>
-                      )}
+                    <div className="pl-4 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                        BCQ Completed
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {businessCaseCompletedAt ? (
+                          <>
+                            <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--young-blue))]" />
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm font-medium">
+                                {format(new Date(businessCaseCompletedAt), 'MMM d, yyyy')}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(businessCaseCompletedAt), 'HH:mm')}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5 text-[hsl(var(--young-khaki))]" />
+                            <span className="text-sm text-muted-foreground">Awaiting</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Response Time (only when completed) */}
                   {status === 'completed' && bcqResponseTimeMinutes !== null && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Response Time:</span>
-                      <span className={bcqDelayed ? 'text-destructive font-medium' : 'font-medium'}>
+                    <div className="flex items-center justify-between pt-3 mt-3 border-t">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Response Time
+                      </span>
+                      <span className={`text-sm font-medium ${bcqDelayed ? 'text-destructive' : ''}`}>
                         {formatResponseTime(bcqResponseTimeMinutes)}
-                        {bcqDelayed && ' (> 24h)'}
+                        {bcqDelayed && <span className="text-xs ml-1 opacity-80">(exceeded 24h)</span>}
                       </span>
                     </div>
                   )}
 
-                  {/* Resend Invitation (only when not completed) */}
+                  {/* Resend Invitation */}
                   {status === 'sent' && canEdit && bcqAccessToken && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSendInvitation}
-                      disabled={sendBCQInvitation.isPending}
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
-                      Resend Invitation
-                    </Button>
+                    <div className="pt-3 mt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendInvitation}
+                        disabled={sendBCQInvitation.isPending}
+                        className="w-full sm:w-auto"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 mr-2 ${sendBCQInvitation.isPending ? 'animate-spin' : ''}`} />
+                        Resend Invitation
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
