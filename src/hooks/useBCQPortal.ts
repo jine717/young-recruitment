@@ -315,16 +315,19 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
     if (!application) return;
 
     const now = new Date();
-    const linkOpenedAt = application.bcq_link_opened_at 
-      ? new Date(application.bcq_link_opened_at) 
-      : now;
+    // Use invitation sent time as reference for delay calculation
+    const invitationSentAt = (application as any).bcq_invitation_sent_at
+      ? new Date((application as any).bcq_invitation_sent_at)
+      : application.bcq_link_opened_at 
+        ? new Date(application.bcq_link_opened_at) 
+        : now;
     
     const responseTimeMinutes = Math.round(
-      (now.getTime() - linkOpenedAt.getTime()) / (1000 * 60)
+      (now.getTime() - invitationSentAt.getTime()) / (1000 * 60)
     );
 
-    // Check if delayed (more than 24 hours since link opened)
-    const isDelayed = (now.getTime() - linkOpenedAt.getTime()) > (24 * 60 * 60 * 1000);
+    // Check if delayed (more than 24 hours since invitation sent)
+    const isDelayed = (now.getTime() - invitationSentAt.getTime()) > (24 * 60 * 60 * 1000);
 
     await supabase
       .from('applications')
