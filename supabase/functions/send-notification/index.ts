@@ -27,6 +27,8 @@ interface NotificationRequest {
   meetingLink?: string;
   location?: string;
   interviewType?: 'video' | 'phone' | 'in_person';
+  interviewDateISO?: string;
+  durationMinutes?: number;
 }
 
 // Young brand colors
@@ -38,6 +40,35 @@ const brandColors = {
   khaki: '#605738',
 };
 
+// Generate Google Calendar URL
+function generateGoogleCalendarUrl(
+  interviewDateISO: string,
+  durationMinutes: number,
+  jobTitle: string,
+  interviewType: string,
+  meetingLink?: string,
+  location?: string
+): string {
+  const startDate = new Date(interviewDateISO);
+  const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+  
+  const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  
+  const typeLabels: Record<string, string> = { phone: 'Phone', video: 'Video', in_person: 'In-Person' };
+  const title = `${typeLabels[interviewType] || 'Interview'} Interview - ${jobTitle}`;
+  const locationValue = meetingLink || location || '';
+  
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
+    details: `Interview for ${jobTitle} position at Young Recruitment`,
+    location: locationValue,
+  });
+  
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function getEmailTemplate(
   type: NotificationType,
   candidateName: string,
@@ -47,8 +78,36 @@ function getEmailTemplate(
   interviewTime?: string,
   meetingLink?: string,
   location?: string,
-  interviewType?: 'video' | 'phone' | 'in_person'
+  interviewType?: 'video' | 'phone' | 'in_person',
+  interviewDateISO?: string,
+  durationMinutes?: number
 ): { subject: string; html: string } {
+  
+  // Helper to generate Google Calendar button
+  const getGoogleCalendarButtonHtml = () => {
+    if (!interviewDateISO || !durationMinutes) return '';
+    
+    const calendarUrl = generateGoogleCalendarUrl(
+      interviewDateISO,
+      durationMinutes,
+      jobTitle,
+      interviewType || 'video',
+      meetingLink,
+      location
+    );
+    
+    return `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td align="center">
+            <a href="${calendarUrl}" target="_blank" style="display: inline-block; background: #ffffff; border: 1px solid #dadce0; color: ${brandColors.boldBlack}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              📅 Add to Google Calendar
+            </a>
+          </td>
+        </tr>
+      </table>
+    `;
+  };
   
   // Helper to generate meeting details section
   const getMeetingDetailsHtml = () => {
@@ -62,6 +121,7 @@ function getEmailTemplate(
             </td>
           </tr>
         </table>
+        ${getGoogleCalendarButtonHtml()}
       `;
     } else if (meetingLink) {
       const typeLabel = interviewType === 'phone' ? '📞 Phone Call' : '📹 Video Call';
@@ -75,9 +135,10 @@ function getEmailTemplate(
             </td>
           </tr>
         </table>
+        ${getGoogleCalendarButtonHtml()}
       `;
     }
-    return '';
+    return getGoogleCalendarButtonHtml();
   };
   
   // Brand text logo in Bold Black with Young-style typography
@@ -444,7 +505,7 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType }: NotificationRequest = await req.json();
+    const { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType, interviewDateISO, durationMinutes }: NotificationRequest = await req.json();
 
     console.log(`Processing notification request: type=${type}, applicationId=${applicationId}`);
 
@@ -492,7 +553,9 @@ serve(async (req: Request) => {
       interviewTime,
       meetingLink,
       location,
-      interviewType
+      interviewType,
+      interviewDateISO,
+      durationMinutes
     );
 
     console.log(`Sending email to ${candidateEmail}: ${subject}`);

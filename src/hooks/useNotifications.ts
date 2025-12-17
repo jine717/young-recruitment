@@ -56,6 +56,8 @@ export function useSendNotification() {
       meetingLink,
       location,
       interviewType,
+      interviewDateISO,
+      durationMinutes,
     }: {
       applicationId: string;
       type: NotificationType;
@@ -65,9 +67,11 @@ export function useSendNotification() {
       meetingLink?: string;
       location?: string;
       interviewType?: 'video' | 'phone' | 'in_person';
+      interviewDateISO?: string;
+      durationMinutes?: number;
     }) => {
       const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType },
+        body: { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType, interviewDateISO, durationMinutes },
       });
 
       if (error) throw error;

@@ -87,6 +87,40 @@ const jobTitle = "Growth Marketing Manager";
 const interviewDate = "December 20, 2025";
 const interviewTime = "10:00 AM";
 const meetingLink = "https://meet.google.com/abc-defg-hij";
+const interviewDateISO = "2025-12-20T10:00:00Z";
+const durationMinutes = 60;
+
+// Generate Google Calendar URL
+function generateGoogleCalendarUrl(
+  dateISO: string,
+  duration: number,
+  job: string,
+  type: string,
+  link?: string,
+  loc?: string
+): string {
+  const startDate = new Date(dateISO);
+  const endDate = new Date(startDate.getTime() + duration * 60000);
+  
+  const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  
+  const typeLabels: Record<string, string> = { phone: 'Phone', video: 'Video', in_person: 'In-Person' };
+  const title = `${typeLabels[type] || 'Interview'} Interview - ${job}`;
+  const locationValue = link || loc || '';
+  
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
+    details: `Interview for ${job} position at Young Recruitment`,
+    location: locationValue,
+  });
+  
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+const scheduledCalendarUrl = generateGoogleCalendarUrl(interviewDateISO, durationMinutes, jobTitle, 'video', meetingLink);
+const rescheduledCalendarUrl = generateGoogleCalendarUrl("2025-12-22T15:00:00Z", durationMinutes, jobTitle, 'video', meetingLink);
 
 // All email templates
 const testEmails = [
@@ -195,6 +229,15 @@ const testEmails = [
           </td>
         </tr>
       </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td align="center">
+            <a href="${scheduledCalendarUrl}" target="_blank" style="display: inline-block; background: #ffffff; border: 1px solid #dadce0; color: ${brandColors.boldBlack}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              📅 Add to Google Calendar
+            </a>
+          </td>
+        </tr>
+      </table>
       <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
         <strong>How to Prepare:</strong>
       </p>
@@ -239,6 +282,15 @@ const testEmails = [
             <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">📹 Video Call</p>
             <p style="font-size: 14px; margin: 0 0 12px 0; color: ${brandColors.khaki}; word-break: break-all;">${meetingLink}</p>
             <a href="${meetingLink}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Join Meeting</a>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td align="center">
+            <a href="${rescheduledCalendarUrl}" target="_blank" style="display: inline-block; background: #ffffff; border: 1px solid #dadce0; color: ${brandColors.boldBlack}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              📅 Add to Google Calendar
+            </a>
           </td>
         </tr>
       </table>
