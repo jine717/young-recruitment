@@ -24,6 +24,9 @@ interface NotificationRequest {
   customMessage?: string;
   interviewDate?: string;
   interviewTime?: string;
+  meetingLink?: string;
+  location?: string;
+  interviewType?: 'video' | 'phone' | 'in_person';
 }
 
 // Young brand colors
@@ -41,8 +44,41 @@ function getEmailTemplate(
   jobTitle: string,
   customMessage?: string,
   interviewDate?: string,
-  interviewTime?: string
+  interviewTime?: string,
+  meetingLink?: string,
+  location?: string,
+  interviewType?: 'video' | 'phone' | 'in_person'
 ): { subject: string; html: string } {
+  
+  // Helper to generate meeting details section
+  const getMeetingDetailsHtml = () => {
+    if (interviewType === 'in_person' && location) {
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+          <tr>
+            <td style="background: rgba(96, 87, 56, 0.1); padding: 15px; border-radius: 8px;">
+              <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">📍 Location:</p>
+              <p style="font-size: 16px; margin: 0; color: ${brandColors.boldBlack};">${location}</p>
+            </td>
+          </tr>
+        </table>
+      `;
+    } else if (meetingLink) {
+      const typeLabel = interviewType === 'phone' ? '📞 Phone Call' : '📹 Video Call';
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.1); padding: 15px; border-radius: 8px;">
+              <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">${typeLabel}</p>
+              <p style="font-size: 14px; margin: 0 0 12px 0; color: ${brandColors.khaki}; word-break: break-all;">${meetingLink}</p>
+              <a href="${meetingLink}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Join Meeting</a>
+            </td>
+          </tr>
+        </table>
+      `;
+    }
+    return '';
+  };
   
   // Brand text logo in Bold Black with Young-style typography
   const logoHtml = `
@@ -255,6 +291,7 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
+        ${getMeetingDetailsHtml()}
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -303,6 +340,7 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
+        ${getMeetingDetailsHtml()}
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -406,7 +444,7 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { applicationId, type, customMessage, interviewDate, interviewTime }: NotificationRequest = await req.json();
+    const { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType }: NotificationRequest = await req.json();
 
     console.log(`Processing notification request: type=${type}, applicationId=${applicationId}`);
 
@@ -451,7 +489,10 @@ serve(async (req: Request) => {
       jobTitle,
       customMessage,
       interviewDate,
-      interviewTime
+      interviewTime,
+      meetingLink,
+      location,
+      interviewType
     );
 
     console.log(`Sending email to ${candidateEmail}: ${subject}`);

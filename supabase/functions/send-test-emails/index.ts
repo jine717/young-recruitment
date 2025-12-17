@@ -86,6 +86,7 @@ const candidateName = "José Luis";
 const jobTitle = "Growth Marketing Manager";
 const interviewDate = "December 20, 2025";
 const interviewTime = "10:00 AM";
+const meetingLink = "https://meet.google.com/abc-defg-hij";
 
 // All email templates
 const testEmails = [
@@ -182,6 +183,15 @@ const testEmails = [
           <td style="background: rgba(147, 177, 255, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.youngBlue};">
             <p style="font-size: 18px; margin: 0 0 10px 0;"><strong>📅 Date:</strong> ${interviewDate}</p>
             <p style="font-size: 18px; margin: 0;"><strong>⏰ Time:</strong> ${interviewTime}</p>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td style="background: rgba(147, 177, 255, 0.1); padding: 15px; border-radius: 8px;">
+            <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">📹 Video Call</p>
+            <p style="font-size: 14px; margin: 0 0 12px 0; color: ${brandColors.khaki}; word-break: break-all;">${meetingLink}</p>
+            <a href="${meetingLink}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Join Meeting</a>
           </td>
         </tr>
       </table>
