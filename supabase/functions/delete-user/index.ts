@@ -35,6 +35,40 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Clear foreign key references before deleting user
+    // This handles cases where user has created jobs or been assigned applications
+    console.log('Clearing foreign key references for user:', userId);
+    
+    // Clear assigned_to in applications
+    const { error: appError } = await supabaseAdmin
+      .from('applications')
+      .update({ assigned_to: null })
+      .eq('assigned_to', userId);
+    
+    if (appError) {
+      console.log('Note: Error clearing applications assigned_to:', appError.message);
+    }
+
+    // Clear created_by in jobs
+    const { error: jobsCreatedError } = await supabaseAdmin
+      .from('jobs')
+      .update({ created_by: null })
+      .eq('created_by', userId);
+    
+    if (jobsCreatedError) {
+      console.log('Note: Error clearing jobs created_by:', jobsCreatedError.message);
+    }
+
+    // Clear linkedin_posted_by in jobs
+    const { error: jobsPostedError } = await supabaseAdmin
+      .from('jobs')
+      .update({ linkedin_posted_by: null })
+      .eq('linkedin_posted_by', userId);
+    
+    if (jobsPostedError) {
+      console.log('Note: Error clearing jobs linkedin_posted_by:', jobsPostedError.message);
+    }
+
     // Delete user from auth.users (cascades to profiles and user_roles)
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
