@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -35,7 +35,7 @@ interface CandidateHeaderProps {
 const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   under_review: 'bg-muted text-muted-foreground',
-  reviewed: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/50',
+  bcq_sent: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
   interview: 'bg-muted text-muted-foreground',
   interviewed: 'bg-green-500/20 text-green-700 border-green-500/50',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
@@ -45,7 +45,7 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   pending: 'New',
   under_review: 'In Review',
-  reviewed: 'Reviewed',
+  bcq_sent: 'BCQ Sent',
   interview: 'Interview',
   interviewed: 'Interviewed',
   hired: 'Hired',
@@ -55,7 +55,7 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
-  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
+  bcq_sent: <Send className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />,
@@ -239,8 +239,8 @@ export function CandidateHeader({
                 <SelectItem value="under_review">
                   <span className="flex items-center">{statusIcons.under_review} In Review</span>
                 </SelectItem>
-                <SelectItem value="reviewed">
-                  <span className="flex items-center">{statusIcons.reviewed} Reviewed</span>
+                <SelectItem value="bcq_sent">
+                  <span className="flex items-center">{statusIcons.bcq_sent} BCQ Sent</span>
                 </SelectItem>
                 <SelectItem value="interview">
                   <span className="flex items-center">{statusIcons.interview} Interview</span>

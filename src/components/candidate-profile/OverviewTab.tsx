@@ -20,8 +20,6 @@ interface OverviewTabProps {
   reviewProgress: ReviewProgress | null;
   reviewProgressLoading: boolean;
   onReviewSection: (section: ReviewSection, reviewed: boolean) => void;
-  onCompleteReview: () => void;
-  isCompletingReview: boolean;
   canEdit: boolean;
   applicationStatus: string;
 }
@@ -69,13 +67,11 @@ export function OverviewTab({
   reviewProgress,
   reviewProgressLoading,
   onReviewSection,
-  onCompleteReview,
-  isCompletingReview,
   canEdit,
   applicationStatus,
 }: OverviewTabProps) {
   // Show review progress for review stages (not pending, hired, rejected)
-  const showReviewProgress = ['under_review', 'reviewed', 'interview', 'interviewed'].includes(applicationStatus) && canEdit;
+  const showReviewProgress = ['under_review', 'bcq_sent', 'interview', 'interviewed'].includes(applicationStatus) && canEdit;
 
   return (
     <div className="space-y-4">

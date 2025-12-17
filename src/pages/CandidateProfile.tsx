@@ -151,7 +151,7 @@ export default function CandidateProfile() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isCompletingReview, setIsCompletingReview] = useState(false);
+  
   
   // Track if we've already auto-transitioned to prevent duplicate calls
   const hasAutoTransitioned = useRef(false);
@@ -177,22 +177,6 @@ export default function CandidateProfile() {
     }
   }, [application?.id, application?.status, canEdit]);
 
-  // Handle completing review (all sections reviewed → status = reviewed)
-  const handleCompleteReview = async () => {
-    if (!application || !isReviewComplete(reviewProgress)) return;
-    
-    setIsCompletingReview(true);
-    try {
-      await updateStatus(application.id, 'reviewed' as any);
-      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({ title: 'Review completed', description: 'Candidate status updated to Reviewed' });
-    } catch (error) {
-      toast({ title: 'Error completing review', variant: 'destructive' });
-    } finally {
-      setIsCompletingReview(false);
-    }
-  };
 
   // Build comprehensive candidate context for AI Assistant
   const candidateContext: CandidateContext | null = useMemo(() => {
@@ -545,8 +529,6 @@ export default function CandidateProfile() {
               onReviewSection={(section, reviewed) => {
                 updateReviewSection.mutate({ applicationId: application.id, section, reviewed });
               }}
-              onCompleteReview={handleCompleteReview}
-              isCompletingReview={isCompletingReview}
               canEdit={canEdit}
               applicationStatus={application.status}
             />

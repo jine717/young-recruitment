@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 export type NotificationType = 
   | 'application_received'
   | 'status_in_review'
-  | 'status_reviewed'
   | 'interview_scheduled'
   | 'interview_rescheduled'
   | 'decision_offer'
@@ -103,7 +102,6 @@ export function useSendNotification() {
 export const notificationTypeLabels: Record<NotificationType, string> = {
   application_received: "Application Received",
   status_in_review: "In Review",
-  status_reviewed: "Review Complete",
   interview_scheduled: "Interview Scheduled",
   interview_rescheduled: "Interview Rescheduled",
   decision_offer: "Offer Letter",
