@@ -69,7 +69,7 @@ function wrapInEmailTemplate(content: string, preheaderText: string): string {
               </p>
               <p style="margin: 0; font-size: 11px; color: ${brandColors.khaki};">
                 This email was sent regarding your application at Young.<br>
-                If you have questions, please contact us at <a href="mailto:recruitment@young-id.com" style="color: ${brandColors.youngBlue}; text-decoration: none;">recruitment@young-id.com</a>
+                If you have questions, please contact us at <a href="mailto:talents@young.com" style="color: ${brandColors.youngBlue}; text-decoration: none;">talents@young.com</a>
               </p>
             </td>
           </tr>
