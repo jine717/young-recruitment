@@ -342,8 +342,14 @@ export function BCQTab({
                   questionTitle={bc.question_title}
                   questionDescription={bc.question_description}
                   videoUrl={response?.video_url}
-                  transcription={(response as any)?.transcription}
+                  transcription={(response as any)?.text_response}
                   isCompleted={isCompleted}
+                  fluencyPronunciationScore={(response as any)?.fluency_pronunciation_score}
+                  fluencyPaceScore={(response as any)?.fluency_pace_score}
+                  fluencyHesitationScore={(response as any)?.fluency_hesitation_score}
+                  fluencyGrammarScore={(response as any)?.fluency_grammar_score}
+                  fluencyOverallScore={(response as any)?.fluency_overall_score}
+                  fluencyNotes={(response as any)?.fluency_notes}
                 />
               );
             })}
@@ -362,6 +368,12 @@ interface ResponseCardProps {
   videoUrl?: string | null;
   transcription?: string | null;
   isCompleted: boolean;
+  fluencyPronunciationScore?: number | null;
+  fluencyPaceScore?: number | null;
+  fluencyHesitationScore?: number | null;
+  fluencyGrammarScore?: number | null;
+  fluencyOverallScore?: number | null;
+  fluencyNotes?: string | null;
 }
 
 function ResponseCard({
@@ -371,6 +383,12 @@ function ResponseCard({
   videoUrl,
   transcription,
   isCompleted,
+  fluencyPronunciationScore,
+  fluencyPaceScore,
+  fluencyHesitationScore,
+  fluencyGrammarScore,
+  fluencyOverallScore,
+  fluencyNotes,
 }: ResponseCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -427,6 +445,52 @@ function ResponseCard({
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">
                       {transcription}
                     </p>
+                  </div>
+                )}
+
+                {/* English Fluency Analysis Section */}
+                {fluencyOverallScore !== null && fluencyOverallScore !== undefined && (
+                  <div className="bg-[hsl(var(--young-blue))]/5 rounded-lg p-4 border border-[hsl(var(--young-blue))]/20">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                      English Fluency Analysis
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                          {fluencyPronunciationScore ?? '-'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Pronunciation</p>
+                      </div>
+                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                          {fluencyPaceScore ?? '-'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Pace</p>
+                      </div>
+                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                          {fluencyHesitationScore ?? '-'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Fluidity</p>
+                      </div>
+                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                          {fluencyGrammarScore ?? '-'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Grammar</p>
+                      </div>
+                      <div className="text-center p-2 bg-[hsl(var(--young-blue))]/10 rounded-lg shadow-sm col-span-2 sm:col-span-1">
+                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                          {fluencyOverallScore}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-medium">Overall</p>
+                      </div>
+                    </div>
+                    {fluencyNotes && (
+                      <p className="text-xs text-muted-foreground mt-3 italic border-t pt-3">
+                        {fluencyNotes}
+                      </p>
+                    )}
                   </div>
                 )}
               </>
