@@ -20,6 +20,7 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 interface TranscribeParams {
   responseId: string;
   videoUrl: string;
+  applicationId: string;
 }
 
 export function useTranscribeBCQResponse() {
@@ -95,10 +96,10 @@ export function useTranscribeBCQResponse() {
 
       return transcriptionData;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success('Video transcribed successfully');
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['business-case-responses'] });
+      // Invalidate queries to refresh the UI with correct applicationId
+      queryClient.invalidateQueries({ queryKey: ['business-case-responses', variables.applicationId] });
     },
     onError: (error: Error) => {
       console.error('Transcription error:', error);
