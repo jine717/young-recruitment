@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   FileVideo, 
   Send, 
@@ -19,6 +20,13 @@ import {
   Lightbulb,
   MessageSquare
 } from 'lucide-react';
+
+// Calculate combined overall score: 80% Content Quality + 20% English Fluency
+const calculateOverallScore = (contentScore: number | null | undefined, fluencyScore: number | null | undefined) => {
+  if (contentScore === null || contentScore === undefined) return null;
+  if (fluencyScore === null || fluencyScore === undefined) return Math.round(contentScore);
+  return Math.round(contentScore * 0.8 + fluencyScore * 0.2);
+};
 import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
 import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
@@ -504,18 +512,31 @@ function ResponseCard({
                 <div className="flex items-center gap-2">
                   <h4 className="font-medium text-sm">{questionTitle}</h4>
                   {contentQualityScore !== null && contentQualityScore !== undefined && (
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs font-semibold ${
-                        contentQualityScore >= 71 
-                          ? 'bg-green-100 text-green-700 border-green-300' 
-                          : contentQualityScore >= 41 
-                            ? 'bg-orange-100 text-orange-700 border-orange-300' 
-                            : 'bg-red-100 text-red-700 border-red-300'
-                      }`}
-                    >
-                      {contentQualityScore}
-                    </Badge>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs font-semibold cursor-help ${
+                              (() => {
+                                const overallScore = calculateOverallScore(contentQualityScore, fluencyOverallScore);
+                                if (overallScore === null) return '';
+                                return overallScore >= 71 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : overallScore >= 41 
+                                    ? 'bg-orange-100 text-orange-700 border-orange-300' 
+                                    : 'bg-red-100 text-red-700 border-red-300';
+                              })()
+                            }`}
+                          >
+                            {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-xs font-medium">Overall Score: 80% Content Quality + 20% English Fluency</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-1">{questionDescription}</p>
@@ -637,36 +658,81 @@ function ResponseCard({
                             English Fluency (Audio)
                           </p>
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                                {fluencyPronunciationScore ?? '-'}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">Pronunciation</p>
-                            </div>
-                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                                {fluencyPaceScore ?? '-'}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">Pace</p>
-                            </div>
-                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                                {fluencyHesitationScore ?? '-'}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">Fluidity</p>
-                            </div>
-                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                                {fluencyGrammarScore ?? '-'}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">Grammar</p>
-                            </div>
-                            <div className="text-center p-2 bg-[hsl(var(--young-blue))]/10 rounded-lg shadow-sm col-span-2 sm:col-span-1">
-                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                                {fluencyOverallScore}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground font-medium">Overall</p>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-center p-2 bg-background rounded-lg shadow-sm cursor-help">
+                                    <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                      {fluencyPronunciationScore ?? '-'}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">Pronunciation</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Clarity of speech, accent clarity, and word pronunciation accuracy</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-center p-2 bg-background rounded-lg shadow-sm cursor-help">
+                                    <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                      {fluencyPaceScore ?? '-'}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">Pace</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Speaking speed, natural rhythm, and flow of speech</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-center p-2 bg-background rounded-lg shadow-sm cursor-help">
+                                    <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                      {fluencyHesitationScore ?? '-'}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">Fluidity</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Smoothness of speech - fewer "um", "uh", pauses = higher score</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-center p-2 bg-background rounded-lg shadow-sm cursor-help">
+                                    <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                      {fluencyGrammarScore ?? '-'}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">Grammar</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Grammatical correctness in spoken sentences</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-center p-2 bg-[hsl(var(--young-blue))]/10 rounded-lg shadow-sm col-span-2 sm:col-span-1 cursor-help">
+                                    <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                      {fluencyOverallScore}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground font-medium">Overall</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Combined English fluency score from audio analysis</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           {fluencyNotes && (
                             <p className="text-xs text-muted-foreground mt-2 italic">
@@ -685,11 +751,20 @@ function ResponseCard({
                           
                           {/* Quality Score */}
                           <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-full bg-[hsl(var(--young-gold))]/20 flex items-center justify-center">
-                              <span className="text-lg font-bold text-[hsl(var(--young-gold))]">
-                                {contentQualityScore}
-                              </span>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="w-12 h-12 rounded-full bg-[hsl(var(--young-gold))]/20 flex items-center justify-center cursor-help">
+                                    <span className="text-lg font-bold text-[hsl(var(--young-gold))]">
+                                      {contentQualityScore}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">Measures how completely and effectively the candidate addressed the question</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <div>
                               <p className="text-sm font-medium">Quality Score</p>
                               <p className="text-xs text-muted-foreground">How well the response addresses the question</p>
