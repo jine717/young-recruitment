@@ -312,6 +312,27 @@ export function BCQTab({
                     </div>
                   )}
 
+                  {/* Time to Complete with 24h indicator */}
+                  {status === 'completed' && bcqResponseTimeMinutes !== null && (
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Time to Complete
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {bcqResponseTimeMinutes < 1440 ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                        )}
+                        <span className={`text-sm font-medium ${
+                          bcqResponseTimeMinutes < 1440 ? 'text-green-600' : 'text-destructive'
+                        }`}>
+                          {formatResponseTime(bcqResponseTimeMinutes)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Resend Invitation */}
                   {status === 'sent' && canEdit && bcqAccessToken && (
                     <div className="pt-3 mt-3 border-t">
