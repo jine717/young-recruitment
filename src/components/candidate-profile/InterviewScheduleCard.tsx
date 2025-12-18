@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock, History, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ interface InterviewScheduleCardProps {
   applicationId?: string;
   candidateName?: string;
   jobTitle?: string;
+  applicationStatus?: string;
 }
 
 const typeIcons: Record<InterviewType, React.ReactNode> = {
@@ -163,12 +164,16 @@ export function InterviewScheduleCard({
   applicationId,
   candidateName,
   jobTitle,
+  applicationStatus,
 }: InterviewScheduleCardProps) {
   const cancelInterview = useCancelInterview();
   const updateInterview = useUpdateInterview();
   const logHistory = useLogInterviewHistory();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+
+  // Check if interview scheduling is allowed (must be pre_interview or later)
+  const canScheduleInterview = ['pre_interview', 'interview', 'interviewed', 'hired'].includes(applicationStatus || '');
 
   const handleCancel = async (interview: Interview) => {
     await cancelInterview.mutateAsync(interview.id);
@@ -226,7 +231,7 @@ export function InterviewScheduleCard({
               <Badge variant="secondary">{activeInterviews.length}</Badge>
             )}
           </CardTitle>
-          {canEdit && onScheduleInterview && (
+          {canEdit && onScheduleInterview && canScheduleInterview && (
             <Button 
               onClick={onScheduleInterview} 
               size="sm"
@@ -239,13 +244,29 @@ export function InterviewScheduleCard({
           )}
         </CardHeader>
         <CardContent>
-          {interviews.length === 0 ? (
+          {/* Locked state - need Overview + BCQ Analysis first */}
+          {!canScheduleInterview && interviews.length === 0 && (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-dashed">
+              <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">Interview Scheduling Locked</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Complete "Overview + BCQ Analysis" in the BCQ tab to unlock interview scheduling
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Empty state - allowed to schedule but none yet */}
+          {canScheduleInterview && interviews.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm font-medium">No interviews scheduled</p>
               <p className="text-xs mt-1">Click 'Schedule' to book an interview</p>
             </div>
-          ) : (
+          )}
+          
+          {interviews.length === 0 ? null : (
             <div className="space-y-4">
               {interviews.map((interview) => (
                 <div

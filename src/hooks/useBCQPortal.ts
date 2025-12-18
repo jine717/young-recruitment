@@ -375,7 +375,8 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         business_case_completed: true,
         business_case_completed_at: now.toISOString(),
         bcq_response_time_minutes: responseTimeMinutes,
-        bcq_delayed: isDelayed
+        bcq_delayed: isDelayed,
+        status: 'bcq_received'
       } as any)
       .eq('id', application.id);
 
