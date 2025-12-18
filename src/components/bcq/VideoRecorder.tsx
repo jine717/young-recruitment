@@ -18,12 +18,21 @@ export function VideoRecorder({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const elapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Format seconds to M:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -61,6 +70,7 @@ export function VideoRecorder({
     if (!streamRef.current) return;
     
     chunksRef.current = [];
+    setElapsedTime(0);
     
     const mediaRecorder = new MediaRecorder(streamRef.current, {
       mimeType: 'video/webm;codecs=vp9,opus'
@@ -120,6 +130,26 @@ export function VideoRecorder({
     
     return () => clearTimeout(timer);
   }, [countdown, beginActualRecording]);
+
+  // Elapsed time interval during recording
+  useEffect(() => {
+    if (isRecording) {
+      elapsedTimerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current);
+        elapsedTimerRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current);
+      }
+    };
+  }, [isRecording]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
@@ -230,10 +260,13 @@ export function VideoRecorder({
           </div>
         )}
         
-        {/* Max time reminder during recording */}
+        {/* Elapsed time display during recording */}
         {isRecording && (
           <div className="absolute bottom-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
-            <span className="text-xs text-muted-foreground">Max 3 min</span>
+            <span className="text-xs font-medium">
+              <span className="text-foreground">{formatTime(elapsedTime)}</span>
+              <span className="text-muted-foreground"> / {formatTime(maxDuration)}</span>
+            </span>
           </div>
         )}
       </div>
