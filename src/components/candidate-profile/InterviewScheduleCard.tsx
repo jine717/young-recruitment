@@ -171,6 +171,7 @@ export function InterviewScheduleCard({
   const logHistory = useLogInterviewHistory();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   // Check if interview scheduling is allowed (must be pre_interview or later)
   const canScheduleInterview = ['pre_interview', 'interview', 'interviewed', 'hired'].includes(applicationStatus || '');
@@ -200,15 +201,17 @@ export function InterviewScheduleCard({
     setRescheduleModalOpen(true);
   };
 
+  const activeInterviews = interviews.filter(i => i.status !== 'cancelled');
+
   if (isLoading) {
     return (
       <Card className="shadow-young-sm hover-lift transition-all duration-200">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
-          Scheduled Interviews
-        </CardTitle>
-      </CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+            Scheduled Interviews
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="h-20 bg-muted rounded" />
@@ -218,32 +221,40 @@ export function InterviewScheduleCard({
     );
   }
 
-  const activeInterviews = interviews.filter(i => i.status !== 'cancelled');
-
   return (
     <>
       <Card className="shadow-young-sm hover-lift transition-all duration-200">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
-            Scheduled Interviews
-            {activeInterviews.length > 0 && (
-              <Badge variant="secondary">{activeInterviews.length}</Badge>
-            )}
-          </CardTitle>
-          {canEdit && onScheduleInterview && canScheduleInterview && (
-            <Button 
-              onClick={onScheduleInterview} 
-              size="sm"
-              variant="outline"
-              className="gap-1"
-            >
-              <CalendarPlus className="w-4 h-4" />
-              Schedule
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+                Scheduled Interviews
+                {activeInterviews.length > 0 && (
+                  <Badge variant="secondary">{activeInterviews.length}</Badge>
+                )}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {canEdit && onScheduleInterview && canScheduleInterview && (
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onScheduleInterview();
+                    }} 
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                  >
+                    <CalendarPlus className="w-4 h-4" />
+                    Schedule
+                  </Button>
+                )}
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
           {/* Locked state - need Overview + BCQ Analysis first */}
           {!canScheduleInterview && interviews.length === 0 && (
             <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-dashed">
@@ -375,7 +386,9 @@ export function InterviewScheduleCard({
               ))}
             </div>
           )}
-        </CardContent>
+          </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       {/* Reschedule Modal */}
