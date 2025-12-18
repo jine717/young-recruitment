@@ -501,11 +501,48 @@ function ResponseCard({
                 {questionNumber}
               </div>
               <div>
-                <h4 className="font-medium text-sm">{questionTitle}</h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-sm">{questionTitle}</h4>
+                  {contentQualityScore !== null && contentQualityScore !== undefined && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs font-semibold ${
+                        contentQualityScore >= 71 
+                          ? 'bg-green-100 text-green-700 border-green-300' 
+                          : contentQualityScore >= 41 
+                            ? 'bg-orange-100 text-orange-700 border-orange-300' 
+                            : 'bg-red-100 text-red-700 border-red-300'
+                      }`}
+                    >
+                      {contentQualityScore}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground line-clamp-1">{questionDescription}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Analysis status badge - only show when answered */}
+              {isCompleted && (
+                <Badge 
+                  variant="outline" 
+                  className={
+                    hasContentAnalysis 
+                      ? 'bg-green-100 text-green-700 border-green-300' 
+                      : 'bg-muted text-muted-foreground'
+                  }
+                >
+                  {hasContentAnalysis ? (
+                    <>
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Analyzed
+                    </>
+                  ) : (
+                    'Not analyzed'
+                  )}
+                </Badge>
+              )}
+              {/* Answered/Pending badge */}
               <Badge variant={isCompleted ? 'default' : 'outline'} className={
                 isCompleted 
                   ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30 hover:bg-[hsl(var(--young-blue))]/30' 
