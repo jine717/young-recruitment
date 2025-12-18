@@ -67,13 +67,16 @@ serve(async (req) => {
   }
 
   try {
-    const { applicationId } = await req.json();
+    const { applicationId, customInstructions } = await req.json();
     
     if (!applicationId) {
       throw new Error("applicationId is required");
     }
 
     console.log("Starting interview analysis for application:", applicationId);
+    if (customInstructions) {
+      console.log("Custom instructions provided:", customInstructions);
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -156,7 +159,8 @@ serve(async (req) => {
       fixedQuestions,
       fixedNotes,
       recruiterNotes,
-      previousEval
+      previousEval,
+      customInstructions
     });
 
     // Call Lovable AI for interview analysis
@@ -424,6 +428,7 @@ function buildInterviewAnalysisPrompt(params: {
   fixedNotes: FixedQuestionNote[];
   recruiterNotes: RecruiterNote[];
   previousEval: PreviousAIScore | null;
+  customInstructions?: string;
 }): string {
   const {
     candidateName,
@@ -435,7 +440,8 @@ function buildInterviewAnalysisPrompt(params: {
     fixedQuestions,
     fixedNotes,
     recruiterNotes,
-    previousEval
+    previousEval,
+    customInstructions
   } = params;
 
   // Build fixed questions with their notes
@@ -516,7 +522,12 @@ ${notesSection}
 
 ---
 
-## Analysis Instructions
+${customInstructions ? `## Custom Instructions from Recruiter
+${customInstructions}
+
+---
+
+` : ''}## Analysis Instructions
 
 Based on ALL the information above, provide a comprehensive interview analysis:
 
@@ -535,6 +546,7 @@ IMPORTANT:
 - Be objective and base your analysis on the actual data provided
 - If no notes were recorded for questions, assume the interview was standard/neutral
 - The score change should be proportional to the interview evidence
+${customInstructions ? '- Pay special attention to the custom instructions provided by the recruiter' : ''}
 `;
 
   return prompt;

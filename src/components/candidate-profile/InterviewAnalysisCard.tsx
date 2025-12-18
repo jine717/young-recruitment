@@ -17,38 +17,21 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
-import { useInterviewAnalysis, useTriggerInterviewAnalysis, InterviewAnalysis } from '@/hooks/useInterviewAnalysis';
-import { useToast } from '@/hooks/use-toast';
+import { useInterviewAnalysis, InterviewAnalysis } from '@/hooks/useInterviewAnalysis';
+import { InterviewAnalysisModal } from './InterviewAnalysisModal';
 
 interface InterviewAnalysisCardProps {
   applicationId: string;
+  candidateName?: string;
 }
 
-export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardProps) {
+export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidate' }: InterviewAnalysisCardProps) {
   const { data: analysisDoc, isLoading } = useInterviewAnalysis(applicationId);
-  const triggerAnalysis = useTriggerInterviewAnalysis();
-  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const hasAnalysis = analysisDoc?.status === 'completed' && analysisDoc.analysis;
   const analysis = analysisDoc?.analysis as InterviewAnalysis | null;
-
-  const handleAnalyze = async () => {
-    try {
-      await triggerAnalysis.mutateAsync(applicationId);
-      toast({
-        title: "Interview Analyzed",
-        description: "The interview analysis and AI Score have been updated.",
-      });
-      setIsOpen(true);
-    } catch (error) {
-      toast({
-        title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to analyze interview",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -63,44 +46,43 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
   // No analysis yet - show empty state with analyze button
   if (!hasAnalysis) {
     return (
-      <Card className="border-dashed shadow-young-sm hover-lift transition-all duration-200">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <ClipboardCheck className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-              Interview Analysis
-            </CardTitle>
-            <Button
-              onClick={handleAnalyze}
-              disabled={triggerAnalysis.isPending}
-              size="sm"
-              className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
-            >
-              {triggerAnalysis.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Analyze Interview
-                </>
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Analyze recruiter notes and update AI Score based on interview performance
-          </p>
-        </CardHeader>
-        <CardContent className="py-6 text-center text-muted-foreground border-t border-dashed">
-          <ClipboardCheck className="h-8 w-8 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">No interview analysis yet</p>
-          <p className="text-xs mt-1">
-            Add notes to interview questions, then click "Analyze Interview"
-          </p>
-        </CardContent>
-      </Card>
+      <>
+        <Card className="border-dashed shadow-young-sm hover-lift transition-all duration-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--young-blue))]" />
+                Interview Analysis
+              </CardTitle>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                size="sm"
+                className="bg-[hsl(var(--young-blue))] hover:bg-[hsl(var(--young-blue))]/90 text-white"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Analyze Interview
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Analyze recruiter notes and evaluate interview performance
+            </p>
+          </CardHeader>
+          <CardContent className="py-6 text-center text-muted-foreground border-t border-dashed">
+            <ClipboardCheck className="h-8 w-8 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">No interview analysis yet</p>
+            <p className="text-xs mt-1">
+              Add notes to interview questions, then click "Analyze Interview"
+            </p>
+          </CardContent>
+        </Card>
+        <InterviewAnalysisModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          applicationId={applicationId}
+          candidateName={candidateName}
+          onSuccess={() => setIsOpen(true)}
+        />
+      </>
     );
   }
 
@@ -160,30 +142,27 @@ export function InterviewAnalysisCard({ applicationId }: InterviewAnalysisCardPr
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleAnalyze();
+                    setIsModalOpen(true);
                   }}
-                  disabled={triggerAnalysis.isPending}
                   size="sm"
                   variant="outline"
                   className="h-7 text-xs"
                 >
-                  {triggerAnalysis.isPending ? (
-                    <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Re-analyze
-                    </>
-                  )}
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Re-analyze
                 </Button>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
             </div>
           </CardHeader>
         </CollapsibleTrigger>
+        <InterviewAnalysisModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          applicationId={applicationId}
+          candidateName={candidateName}
+          onSuccess={() => setIsOpen(true)}
+        />
 
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-4">
