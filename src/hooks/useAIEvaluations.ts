@@ -12,7 +12,15 @@ export interface AIEvaluation {
   cultural_fit_score: number | null;
   skills_match_score: number | null;
   communication_score: number | null;
-  raw_response: unknown;
+  raw_response: {
+    score_change_explanation?: {
+      previous_score: number | null;
+      new_score: number;
+      change: number;
+      reasons_for_change: string[];
+    };
+    [key: string]: unknown;
+  } | null;
   created_at: string;
   // Pre-interview scores (preserved when interview analysis is run)
   initial_overall_score: number | null;
@@ -20,7 +28,13 @@ export interface AIEvaluation {
   initial_communication_score: number | null;
   initial_cultural_fit_score: number | null;
   initial_recommendation: string | null;
-  evaluation_stage: 'initial' | 'post_interview';
+  // Pre-BCQ scores (preserved when post-BCQ analysis is run)
+  pre_bcq_overall_score: number | null;
+  pre_bcq_skills_match_score: number | null;
+  pre_bcq_communication_score: number | null;
+  pre_bcq_cultural_fit_score: number | null;
+  pre_bcq_recommendation: string | null;
+  evaluation_stage: 'initial' | 'post_bcq' | 'post_interview';
 }
 
 export function useAIEvaluation(applicationId: string | undefined) {

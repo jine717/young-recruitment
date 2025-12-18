@@ -26,7 +26,7 @@ interface CandidateHeaderProps {
   aiLoading: boolean;
   // Pre/Post interview differentiation
   initialScore: number | null;
-  evaluationStage: 'initial' | 'post_interview' | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
   // Quick Actions props
   applicationId: string;
   // Editing permission
@@ -83,7 +83,7 @@ function AIScoreBadge({
   recommendation: string | null; 
   isLoading: boolean;
   initialScore: number | null;
-  evaluationStage: 'initial' | 'post_interview' | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
 }) {
   if (isLoading) {
     return (
