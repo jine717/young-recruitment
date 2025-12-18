@@ -18,6 +18,7 @@ export interface BusinessCaseResponse {
   video_url: string | null;
   text_response: string | null;
   completed_at: string | null;
+  created_at: string;
   transcription: string | null;
   // Fluency analysis fields
   fluency_pronunciation_score: number | null;
