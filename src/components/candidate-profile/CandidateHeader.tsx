@@ -27,7 +27,7 @@ interface CandidateHeaderProps {
   // Pre/Post interview differentiation
   initialScore: number | null;
   preBcqScore: number | null;
-  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | 'final' | null;
   // Quick Actions props
   applicationId: string;
   // Editing permission
@@ -86,7 +86,7 @@ function AIScoreBadge({
   isLoading: boolean;
   initialScore: number | null;
   preBcqScore: number | null;
-  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | 'final' | null;
 }) {
   if (isLoading) {
     return (
@@ -134,8 +134,11 @@ function AIScoreBadge({
   // Determine previous score based on stage
   const isPostBcq = evaluationStage === 'post_bcq';
   const isPostInterview = evaluationStage === 'post_interview';
+  const isFinal = evaluationStage === 'final';
+  
+  // For final evaluation, don't show score history - just the final number
   const previousScore = isPostBcq ? preBcqScore : isPostInterview ? initialScore : null;
-  const showScoreHistory = (isPostBcq || isPostInterview) && previousScore !== null;
+  const showScoreHistory = !isFinal && (isPostBcq || isPostInterview) && previousScore !== null;
   const scoreChange = showScoreHistory ? score - previousScore : null;
 
   return (
@@ -165,6 +168,11 @@ function AIScoreBadge({
       {isPostInterview && (
         <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/20">
           Post-Interview
+        </span>
+      )}
+      {isFinal && (
+        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+          Final
         </span>
       )}
     </div>
