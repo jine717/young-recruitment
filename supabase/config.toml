@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.analyze-post-bcq]
 verify_jwt = false
+
+[functions.analyze-final]
+verify_jwt = false

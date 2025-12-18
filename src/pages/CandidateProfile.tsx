@@ -25,10 +25,11 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Gavel, CheckCircle, StickyNote, FileVideo } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle, StickyNote, FileVideo, Award } from 'lucide-react';
 import { BCQTab } from '@/components/candidate-profile/BCQTab';
 import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
+import { FinalEvaluationTab } from '@/components/candidate-profile/FinalEvaluationTab';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
 
@@ -503,6 +504,13 @@ export default function CandidateProfile() {
                 <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
+            <TabsTrigger value="final" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <Award className="w-4 h-4" />
+              Final Evaluation
+              {documentAnalyses?.some(d => (d.document_type as string) === 'final_evaluation' && d.status === 'completed') && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+            </TabsTrigger>
             
             {/* Decision button at the end of tabs bar */}
             {canEdit && (
@@ -569,6 +577,15 @@ export default function CandidateProfile() {
               onScheduleInterview={() => setShowScheduleModal(true)}
               candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
               jobTitle={application.job.title}
+            />
+          </TabsContent>
+
+          <TabsContent value="final" className="mt-0">
+            <FinalEvaluationTab
+              applicationId={application.id}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              aiEvaluation={aiEvaluation}
+              documentAnalyses={documentAnalyses}
             />
           </TabsContent>
         </Tabs>
