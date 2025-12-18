@@ -445,11 +445,11 @@ export function BCQTab({
       {/* Overview + BCQ Analysis Card - Show when BCQ completed */}
       {businessCaseCompleted && (
         <Card className={`shadow-young-sm border-2 ${
-          evaluationStage === 'post_bcq' 
+          (evaluationStage === 'post_bcq' || aiEvaluation?.pre_bcq_overall_score != null)
             ? 'border-green-500/50 bg-green-50/30' 
             : 'border-[hsl(var(--young-gold))]/50'
         }`}>
-          {evaluationStage === 'post_bcq' && aiEvaluation ? (
+          {(evaluationStage === 'post_bcq' || aiEvaluation?.pre_bcq_overall_score != null) && aiEvaluation ? (
             // Collapsible view when analysis is completed
             <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
               <CollapsibleTrigger asChild>
