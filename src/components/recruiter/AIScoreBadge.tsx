@@ -7,7 +7,7 @@ interface AIScoreBadgeProps {
   status: 'pending' | 'processing' | 'completed' | 'failed' | null;
   size?: 'sm' | 'md';
   initialScore?: number | null;
-  evaluationStage?: 'initial' | 'post_interview' | null;
+  evaluationStage?: 'initial' | 'post_bcq' | 'post_interview' | null;
 }
 
 export function AIScoreBadge({ 

@@ -34,6 +34,7 @@ import { useTranscribeBCQResponse } from '@/hooks/useTranscribeBCQResponse';
 import { PostBCQAnalysisModal } from './PostBCQAnalysisModal';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
+import { type AIEvaluation } from '@/hooks/useAIEvaluations';
 
 const QUESTIONS_PER_PAGE = 3;
 
@@ -54,6 +55,7 @@ interface BCQTabProps {
   reviewProgress: ReviewProgress | null;
   applicationStatus: string;
   evaluationStage: string | null;
+  aiEvaluation?: AIEvaluation | null;
 }
 
 export function BCQTab({
@@ -71,13 +73,20 @@ export function BCQTab({
   reviewProgress,
   applicationStatus,
   evaluationStage,
+  aiEvaluation,
 }: BCQTabProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showScoreChangeReasons, setShowScoreChangeReasons] = useState(false);
   const sendBCQInvitation = useSendBCQInvitation();
   const { data: businessCases = [] } = useBusinessCases(jobId);
   const { data: responses = [] } = useBusinessCaseResponses(applicationId);
+
+  // Calculate score change for post_bcq display
+  const scoreChange = aiEvaluation?.overall_score != null && aiEvaluation?.pre_bcq_overall_score != null
+    ? aiEvaluation.overall_score - aiEvaluation.pre_bcq_overall_score
+    : 0;
 
   // Gate: Check if all 3 review sections are completed
   const canSendBCQ = reviewProgress && 
@@ -475,11 +484,104 @@ export function BCQTab({
             )}
           </CardHeader>
           <CardContent>
-            {evaluationStage === 'post_bcq' ? (
-              <p className="text-sm text-muted-foreground">
-                Comprehensive analysis completed. AI has re-evaluated the candidate considering CV, DISC, and BCQ responses. 
-                The candidate is now ready for the interview phase.
-              </p>
+            {evaluationStage === 'post_bcq' && aiEvaluation ? (
+              <div className="space-y-4">
+                {/* Score Change Display */}
+                <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Previous</p>
+                    <p className="text-2xl font-bold text-muted-foreground">
+                      {aiEvaluation.pre_bcq_overall_score ?? '—'}
+                    </p>
+                  </div>
+                  <span className="text-2xl text-muted-foreground">→</span>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Current</p>
+                    <p className="text-2xl font-bold text-[hsl(var(--young-blue))]">
+                      {aiEvaluation.overall_score ?? '—'}
+                    </p>
+                  </div>
+                  {scoreChange !== 0 && (
+                    <Badge className={scoreChange < 0 
+                      ? 'bg-destructive/20 text-destructive border-destructive/30' 
+                      : 'bg-green-500/20 text-green-700 border-green-500/30'
+                    }>
+                      {scoreChange > 0 ? '+' : ''}{scoreChange}
+                    </Badge>
+                  )}
+                  {aiEvaluation.recommendation && (
+                    <Badge className={
+                      aiEvaluation.recommendation === 'proceed' 
+                        ? 'bg-green-500/20 text-green-700 border-green-500/30 ml-auto'
+                        : aiEvaluation.recommendation === 'review'
+                          ? 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30 ml-auto'
+                          : 'bg-destructive/20 text-destructive border-destructive/30 ml-auto'
+                    }>
+                      {aiEvaluation.recommendation === 'proceed' ? 'Proceed' : aiEvaluation.recommendation === 'review' ? 'Review' : 'Reject'}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Summary */}
+                {aiEvaluation.summary && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Summary</h4>
+                    <p className="text-sm text-muted-foreground">{aiEvaluation.summary}</p>
+                  </div>
+                )}
+
+                {/* Strengths */}
+                {aiEvaluation.strengths && aiEvaluation.strengths.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 text-[hsl(var(--young-blue))]">Strengths</h4>
+                    <ul className="space-y-1">
+                      {aiEvaluation.strengths.map((s, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-[hsl(var(--young-blue))] mt-0.5 flex-shrink-0" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Concerns */}
+                {aiEvaluation.concerns && aiEvaluation.concerns.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 text-destructive">Concerns</h4>
+                    <ul className="space-y-1">
+                      {aiEvaluation.concerns.map((c, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Score Change Reasons (from raw_response) */}
+                {aiEvaluation.raw_response?.score_change_explanation?.reasons_for_change && 
+                 aiEvaluation.raw_response.score_change_explanation.reasons_for_change.length > 0 && (
+                  <Collapsible open={showScoreChangeReasons} onOpenChange={setShowScoreChangeReasons}>
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-[hsl(var(--young-blue))] transition-colors">
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showScoreChangeReasons ? 'rotate-180' : ''}`} />
+                      Reasons for Score Change
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <ul className="mt-2 space-y-1 pl-6">
+                        {aiEvaluation.raw_response.score_change_explanation.reasons_for_change.map((r, i) => (
+                          <li key={i} className="text-sm text-muted-foreground list-disc">{r}</li>
+                        ))}
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+
+                <p className="text-xs text-muted-foreground pt-2 border-t">
+                  Candidate is now ready for the interview phase.
+                </p>
+              </div>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">

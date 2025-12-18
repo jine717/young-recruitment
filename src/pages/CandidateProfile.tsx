@@ -553,6 +553,7 @@ export default function CandidateProfile() {
               reviewProgress={reviewProgress}
               applicationStatus={application.status}
               evaluationStage={aiEvaluation?.evaluation_stage || null}
+              aiEvaluation={aiEvaluation}
             />
           </TabsContent>
 
