@@ -452,6 +452,7 @@ export default function CandidateProfile() {
           aiRecommendation={aiEvaluation?.recommendation ?? null}
           aiLoading={aiLoading}
           initialScore={aiEvaluation?.initial_overall_score ?? null}
+          preBcqScore={aiEvaluation?.pre_bcq_overall_score ?? null}
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
           canEdit={canEdit}
