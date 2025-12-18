@@ -356,6 +356,24 @@ Be objective and thorough. Weight the BCQ responses heavily as they demonstrate 
       // Don't throw - evaluation was saved successfully
     }
 
+    // Also save to document_analyses for persistence across stage changes
+    const { error: docError } = await supabase
+      .from("document_analyses")
+      .upsert({
+        application_id: applicationId,
+        document_type: 'post_bcq_analysis',
+        status: 'completed',
+        summary: evaluation.summary,
+        analysis: evaluation,
+      }, {
+        onConflict: 'application_id,document_type'
+      });
+
+    if (docError) {
+      console.error("[analyze-post-bcq] Failed to save to document_analyses:", docError);
+      // Don't throw - main evaluation was saved successfully
+    }
+
     console.log("[analyze-post-bcq] Analysis completed successfully");
 
     return new Response(
