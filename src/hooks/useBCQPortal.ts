@@ -7,6 +7,7 @@ interface Application {
   candidate_email: string | null;
   job_id: string;
   bcq_access_token: string | null;
+  bcq_invitation_sent_at: string | null;
   bcq_link_opened_at: string | null;
   bcq_started_at: string | null;
   bcq_completed_at: string | null;
@@ -102,6 +103,7 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         candidate_email: appWithBCQ.candidate_email,
         job_id: appWithBCQ.job_id,
         bcq_access_token: appWithBCQ.bcq_access_token,
+        bcq_invitation_sent_at: (appWithBCQ as any).bcq_invitation_sent_at || null,
         bcq_link_opened_at: (appWithBCQ as any).bcq_link_opened_at || null,
         bcq_started_at: (appWithBCQ as any).bcq_started_at || null,
         bcq_completed_at: (appWithBCQ as any).bcq_completed_at || null,
@@ -341,8 +343,8 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
 
     const now = new Date();
     // Use invitation sent time as reference for delay calculation
-    const invitationSentAt = (application as any).bcq_invitation_sent_at
-      ? new Date((application as any).bcq_invitation_sent_at)
+    const invitationSentAt = application.bcq_invitation_sent_at
+      ? new Date(application.bcq_invitation_sent_at)
       : application.bcq_link_opened_at 
         ? new Date(application.bcq_link_opened_at) 
         : now;
