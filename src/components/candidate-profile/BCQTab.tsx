@@ -498,9 +498,10 @@ function ResponseCard({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="border border-border rounded-lg overflow-hidden">
-        <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+          {/* Clickable area for collapse/expand */}
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center gap-3 cursor-pointer flex-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 isCompleted 
                   ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))]' 
@@ -508,86 +509,87 @@ function ResponseCard({
               }`}>
                 {questionNumber}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium text-sm">{questionTitle}</h4>
-                  {contentQualityScore !== null && contentQualityScore !== undefined && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs font-semibold cursor-help ${
-                              (() => {
-                                const overallScore = calculateOverallScore(contentQualityScore, fluencyOverallScore);
-                                if (overallScore === null) return '';
-                                return overallScore >= 71 
-                                  ? 'bg-green-100 text-green-700 border-green-300' 
-                                  : overallScore >= 41 
-                                    ? 'bg-orange-100 text-orange-700 border-orange-300' 
-                                    : 'bg-red-100 text-red-700 border-red-300';
-                              })()
-                            }`}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onPointerUp={(e) => e.stopPropagation()}
-                            onMouseEnter={(e) => e.stopPropagation()}
-                          >
-                            {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs">
-                          <p className="text-xs font-medium">Overall Score: 80% Content Quality + 20% English Fluency</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm">{questionTitle}</h4>
                 <p className="text-xs text-muted-foreground line-clamp-1">{questionDescription}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Analysis status badge - only show when answered */}
-              {isCompleted && (
-                <Badge 
-                  variant="outline" 
-                  className={
-                    hasContentAnalysis 
-                      ? 'bg-green-100 text-green-700 border-green-300' 
-                      : 'bg-muted text-muted-foreground'
-                  }
-                >
-                  {hasContentAnalysis ? (
-                    <>
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Analyzed
-                    </>
-                  ) : (
-                    'Not analyzed'
-                  )}
-                </Badge>
-              )}
-              {/* Answered/Pending badge */}
-              <Badge variant={isCompleted ? 'default' : 'outline'} className={
-                isCompleted 
-                  ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30 hover:bg-[hsl(var(--young-blue))]/30' 
-                  : ''
-              }>
-                {isCompleted ? (
+          </CollapsibleTrigger>
+          
+          {/* Badges area - outside CollapsibleTrigger so tooltips work */}
+          <div className="flex items-center gap-2">
+            {/* Score badge with tooltip */}
+            {contentQualityScore !== null && contentQualityScore !== undefined && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs font-semibold cursor-help ${
+                        (() => {
+                          const overallScore = calculateOverallScore(contentQualityScore, fluencyOverallScore);
+                          if (overallScore === null) return '';
+                          return overallScore >= 71 
+                            ? 'bg-green-100 text-green-700 border-green-300' 
+                            : overallScore >= 41 
+                              ? 'bg-orange-100 text-orange-700 border-orange-300' 
+                              : 'bg-red-100 text-red-700 border-red-300';
+                        })()
+                      }`}
+                    >
+                      {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-xs font-medium">Overall Score: 80% Content Quality + 20% English Fluency</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {/* Analysis status badge - only show when answered */}
+            {isCompleted && (
+              <Badge 
+                variant="outline" 
+                className={
+                  hasContentAnalysis 
+                    ? 'bg-green-100 text-green-700 border-green-300' 
+                    : 'bg-muted text-muted-foreground'
+                }
+              >
+                {hasContentAnalysis ? (
                   <>
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Answered
+                    Analyzed
                   </>
                 ) : (
-                  <>
-                    <Clock className="w-3 h-3 mr-1" />
-                    Pending
-                  </>
+                  'Not analyzed'
                 )}
               </Badge>
-              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </div>
+            )}
+            {/* Answered/Pending badge */}
+            <Badge variant={isCompleted ? 'default' : 'outline'} className={
+              isCompleted 
+                ? 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30 hover:bg-[hsl(var(--young-blue))]/30' 
+                : ''
+            }>
+              {isCompleted ? (
+                <>
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Answered
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3 h-3 mr-1" />
+                  Pending
+                </>
+              )}
+            </Badge>
+            {/* Chevron - clicking this area also works for collapse */}
+            <CollapsibleTrigger asChild>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
           </div>
-        </CollapsibleTrigger>
+        </div>
         
         <CollapsibleContent>
           <div className="border-t border-border p-4 space-y-4">
