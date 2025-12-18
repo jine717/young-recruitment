@@ -523,22 +523,24 @@ function ResponseCard({
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs font-semibold cursor-help ${
-                        (() => {
-                          const overallScore = calculateOverallScore(contentQualityScore, fluencyOverallScore);
-                          if (overallScore === null) return '';
-                          return overallScore >= 71 
-                            ? 'bg-green-100 text-green-700 border-green-300' 
-                            : overallScore >= 41 
-                              ? 'bg-orange-100 text-orange-700 border-orange-300' 
-                              : 'bg-red-100 text-red-700 border-red-300';
-                        })()
-                      }`}
-                    >
-                      {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
-                    </Badge>
+                    <span className="inline-flex cursor-help">
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs font-semibold ${
+                          (() => {
+                            const overallScore = calculateOverallScore(contentQualityScore, fluencyOverallScore);
+                            if (overallScore === null) return '';
+                            return overallScore >= 71 
+                              ? 'bg-green-100 text-green-700 border-green-300' 
+                              : overallScore >= 41 
+                                ? 'bg-orange-100 text-orange-700 border-orange-300' 
+                                : 'bg-red-100 text-red-700 border-red-300';
+                          })()
+                        }`}
+                      >
+                        {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
+                      </Badge>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
                     <p className="text-xs font-medium">Overall Score: 80% Content Quality + 20% English Fluency</p>
