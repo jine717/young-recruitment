@@ -38,7 +38,7 @@ export function useTranscribeBCQResponse() {
       // 2. Convert to base64 safely
       const base64Audio = await blobToBase64(videoBlob);
 
-      // 3. Call transcribe-video function
+      // 3. Call transcribe-video function (only returns transcription)
       const { data: transcriptionData, error: transcriptionError } = await supabase.functions
         .invoke('transcribe-video', {
           body: {
@@ -56,38 +56,10 @@ export function useTranscribeBCQResponse() {
         throw new Error('No transcription returned');
       }
 
-      // 4. Build update data with transcription and fluency analysis
-      const updateData: Record<string, unknown> = {
-        transcription: transcriptionData.text
-      };
-
-      // Add fluency analysis if available
-      if (transcriptionData.fluency_analysis) {
-        const fluency = transcriptionData.fluency_analysis;
-        if (fluency.pronunciation_score !== undefined) {
-          updateData.fluency_pronunciation_score = fluency.pronunciation_score;
-        }
-        if (fluency.pace_rhythm_score !== undefined) {
-          updateData.fluency_pace_score = fluency.pace_rhythm_score;
-        }
-        if (fluency.hesitation_score !== undefined) {
-          updateData.fluency_hesitation_score = fluency.hesitation_score;
-        }
-        if (fluency.grammar_score !== undefined) {
-          updateData.fluency_grammar_score = fluency.grammar_score;
-        }
-        if (fluency.overall_fluency_score !== undefined) {
-          updateData.fluency_overall_score = fluency.overall_fluency_score;
-        }
-        if (fluency.fluency_notes !== undefined) {
-          updateData.fluency_notes = fluency.fluency_notes;
-        }
-      }
-
-      // 5. Update response record in database
+      // 4. Update response record with only transcription
       const { error: updateError } = await supabase
         .from('business_case_responses')
-        .update(updateData)
+        .update({ transcription: transcriptionData.text })
         .eq('id', responseId);
 
       if (updateError) {
