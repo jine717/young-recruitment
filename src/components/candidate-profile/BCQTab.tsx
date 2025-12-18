@@ -560,53 +560,7 @@ function ResponseCard({
                   </div>
                 )}
 
-                {/* English Fluency Analysis Section */}
-                {fluencyOverallScore !== null && fluencyOverallScore !== undefined && (
-                  <div className="bg-[hsl(var(--young-blue))]/5 rounded-lg p-4 border border-[hsl(var(--young-blue))]/20">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      English Fluency Analysis
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                          {fluencyPronunciationScore ?? '-'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Pronunciation</p>
-                      </div>
-                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                          {fluencyPaceScore ?? '-'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Pace</p>
-                      </div>
-                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                          {fluencyHesitationScore ?? '-'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Fluidity</p>
-                      </div>
-                      <div className="text-center p-2 bg-background rounded-lg shadow-sm">
-                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                          {fluencyGrammarScore ?? '-'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Grammar</p>
-                      </div>
-                      <div className="text-center p-2 bg-[hsl(var(--young-blue))]/10 rounded-lg shadow-sm col-span-2 sm:col-span-1">
-                        <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
-                          {fluencyOverallScore}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground font-medium">Overall</p>
-                      </div>
-                    </div>
-                    {fluencyNotes && (
-                      <p className="text-xs text-muted-foreground mt-3 italic border-t pt-3">
-                        {fluencyNotes}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Response Analysis Section */}
+                {/* Response Analysis Section (includes English Fluency + Content Quality) */}
                 <div className="bg-[hsl(var(--young-gold))]/5 rounded-lg p-4 border border-[hsl(var(--young-gold))]/20">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -636,76 +590,132 @@ function ResponseCard({
                     )}
                   </div>
 
-                  {hasContentAnalysis ? (
+                  {/* Show content based on state */}
+                  {transcription ? (
                     <div className="space-y-4">
-                      {/* Quality Score */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-full bg-[hsl(var(--young-gold))]/20 flex items-center justify-center">
-                          <span className="text-xl font-bold text-[hsl(var(--young-gold))]">
-                            {contentQualityScore}
-                          </span>
-                        </div>
+                      {/* ENGLISH FLUENCY Section */}
+                      {fluencyOverallScore !== null && fluencyOverallScore !== undefined && (
                         <div>
-                          <p className="text-sm font-medium">Quality Score</p>
-                          <p className="text-xs text-muted-foreground">How well the response addresses the question</p>
-                        </div>
-                      </div>
-
-                      {/* Summary */}
-                      {contentSummary && (
-                        <div className="bg-background rounded-lg p-3">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Summary</span>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--young-blue))] mb-2">
+                            English Fluency
+                          </p>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                {fluencyPronunciationScore ?? '-'}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">Pronunciation</p>
+                            </div>
+                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                {fluencyPaceScore ?? '-'}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">Pace</p>
+                            </div>
+                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                {fluencyHesitationScore ?? '-'}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">Fluidity</p>
+                            </div>
+                            <div className="text-center p-2 bg-background rounded-lg shadow-sm">
+                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                {fluencyGrammarScore ?? '-'}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">Grammar</p>
+                            </div>
+                            <div className="text-center p-2 bg-[hsl(var(--young-blue))]/10 rounded-lg shadow-sm col-span-2 sm:col-span-1">
+                              <p className="text-lg font-bold text-[hsl(var(--young-blue))]">
+                                {fluencyOverallScore}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground font-medium">Overall</p>
+                            </div>
                           </div>
-                          <p className="text-sm text-foreground/90">{contentSummary}</p>
+                          {fluencyNotes && (
+                            <p className="text-xs text-muted-foreground mt-2 italic">
+                              {fluencyNotes}
+                            </p>
+                          )}
                         </div>
                       )}
 
-                      {/* Strengths */}
-                      {contentStrengths && contentStrengths.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--young-blue))]" />
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Strengths</span>
+                      {/* CONTENT QUALITY Section */}
+                      {hasContentAnalysis ? (
+                        <div className="pt-3 border-t border-border/50">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--young-gold))] mb-3">
+                            Content Quality
+                          </p>
+                          
+                          {/* Quality Score */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-[hsl(var(--young-gold))]/20 flex items-center justify-center">
+                              <span className="text-lg font-bold text-[hsl(var(--young-gold))]">
+                                {contentQualityScore}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Quality Score</p>
+                              <p className="text-xs text-muted-foreground">How well the response addresses the question</p>
+                            </div>
                           </div>
-                          <ul className="space-y-1.5">
-                            {contentStrengths.map((strength, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
-                                <span className="text-[hsl(var(--young-blue))] mt-1">•</span>
-                                <span>{strength}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
 
-                      {/* Areas to Probe */}
-                      {contentAreasToProbe && contentAreasToProbe.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Lightbulb className="w-3.5 h-3.5 text-[hsl(var(--young-gold))]" />
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Areas to Probe in Interview</span>
-                          </div>
-                          <ul className="space-y-1.5">
-                            {contentAreasToProbe.map((area, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
-                                <span className="text-[hsl(var(--young-gold))] mt-1">•</span>
-                                <span>{area}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          {/* Summary */}
+                          {contentSummary && (
+                            <div className="bg-background rounded-lg p-3 mb-3">
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Summary</span>
+                              </div>
+                              <p className="text-sm text-foreground/90">{contentSummary}</p>
+                            </div>
+                          )}
+
+                          {/* Strengths */}
+                          {contentStrengths && contentStrengths.length > 0 && (
+                            <div className="mb-3">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--young-blue))]" />
+                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Strengths</span>
+                              </div>
+                              <ul className="space-y-1.5">
+                                {contentStrengths.map((strength, i) => (
+                                  <li key={i} className="text-sm flex items-start gap-2">
+                                    <span className="text-[hsl(var(--young-blue))] mt-1">•</span>
+                                    <span>{strength}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Areas to Probe */}
+                          {contentAreasToProbe && contentAreasToProbe.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Lightbulb className="w-3.5 h-3.5 text-[hsl(var(--young-gold))]" />
+                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Areas to Probe in Interview</span>
+                              </div>
+                              <ul className="space-y-1.5">
+                                {contentAreasToProbe.map((area, i) => (
+                                  <li key={i} className="text-sm flex items-start gap-2">
+                                    <span className="text-[hsl(var(--young-gold))] mt-1">•</span>
+                                    <span>{area}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-3 text-muted-foreground border-t border-border/50 mt-3">
+                          <Sparkles className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Click "Analyze" to generate content analysis</p>
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
-                      {transcription ? (
-                        <>
-                          <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Click "Analyze" to generate AI insights</p>
-                        </>
-                      ) : videoUrl && canEdit ? (
+                      {videoUrl && canEdit ? (
                         <>
                           <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p className="text-sm mb-3">Video recorded but not transcribed</p>
