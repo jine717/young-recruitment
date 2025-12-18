@@ -367,6 +367,7 @@ export function BCQTab({
                   questionTitle={bc.question_title}
                   questionDescription={bc.question_description}
                   videoUrl={response?.video_url}
+                  videoCreatedAt={response?.created_at}
                   transcription={response?.transcription}
                   isCompleted={isCompleted}
                   canEdit={canEdit}
@@ -425,6 +426,7 @@ interface ResponseCardProps {
   questionTitle: string;
   questionDescription: string;
   videoUrl?: string | null;
+  videoCreatedAt?: string | null;
   transcription?: string | null;
   isCompleted: boolean;
   canEdit: boolean;
@@ -447,6 +449,7 @@ function ResponseCard({
   questionTitle,
   questionDescription,
   videoUrl,
+  videoCreatedAt,
   transcription,
   isCompleted,
   canEdit,
@@ -521,7 +524,10 @@ function ResponseCard({
                 {/* Video Player */}
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
                   <video 
-                    src={videoUrl} 
+                    src={videoUrl && videoCreatedAt 
+                      ? `${videoUrl}?t=${new Date(videoCreatedAt).getTime()}` 
+                      : videoUrl ?? undefined
+                    } 
                     controls 
                     className="w-full h-full"
                     preload="metadata"
