@@ -22,6 +22,7 @@ import {
 import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
 import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
+import { useTranscribeBCQResponse } from '@/hooks/useTranscribeBCQResponse';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
 
@@ -467,14 +468,21 @@ function ResponseCard({
 }: ResponseCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const analyzeResponse = useAnalyzeBCQResponse();
+  const transcribeResponse = useTranscribeBCQResponse();
 
   const handleAnalyze = () => {
     if (!responseId) return;
     analyzeResponse.mutate(responseId);
   };
 
+  const handleTranscribe = () => {
+    if (!responseId || !videoUrl) return;
+    transcribeResponse.mutate({ responseId, videoUrl });
+  };
+
   const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
   const isAnalyzing = contentAnalysisStatus === 'analyzing' || analyzeResponse.isPending;
+  const isTranscribing = transcribeResponse.isPending;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -693,6 +701,29 @@ function ResponseCard({
                         <>
                           <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">Click "Analyze" to generate AI insights</p>
+                        </>
+                      ) : videoUrl && canEdit ? (
+                        <>
+                          <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm mb-3">Video recorded but not transcribed</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleTranscribe}
+                            disabled={isTranscribing}
+                          >
+                            {isTranscribing ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                                Transcribing...
+                              </>
+                            ) : (
+                              <>
+                                <MessageSquare className="w-3 h-3 mr-1.5" />
+                                Transcribe Now
+                              </>
+                            )}
+                          </Button>
                         </>
                       ) : (
                         <>
