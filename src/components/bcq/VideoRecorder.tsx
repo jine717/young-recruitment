@@ -17,6 +17,7 @@ export function VideoRecorder({
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -40,7 +41,7 @@ export function VideoRecorder({
       
       streamRef.current = stream;
       setHasPermission(true);
-      setStatus('preview'); // Video element renders after this, useEffect will assign stream
+      setStatus('preview');
     } catch (err) {
       console.error('Camera access denied:', err);
       setHasPermission(false);
@@ -55,7 +56,8 @@ export function VideoRecorder({
     }
   }, [status]);
 
-  const startRecording = useCallback(() => {
+  // Actual recording logic - called after countdown finishes
+  const beginActualRecording = useCallback(() => {
     if (!streamRef.current) return;
     
     chunksRef.current = [];
@@ -84,7 +86,7 @@ export function VideoRecorder({
     };
     
     mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start(1000); // Collect data every second
+    mediaRecorder.start(1000);
     setIsRecording(true);
     setStatus('recording');
     
@@ -95,6 +97,29 @@ export function VideoRecorder({
       }
     }, maxDuration * 1000);
   }, [maxDuration]);
+
+  // Start countdown when user clicks record
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) return;
+    setCountdown(3);
+  }, []);
+
+  // Countdown effect - decrements every second, starts recording when reaches 0
+  useEffect(() => {
+    if (countdown === null) return;
+    
+    if (countdown === 0) {
+      setCountdown(null);
+      beginActualRecording();
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [countdown, beginActualRecording]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
@@ -119,13 +144,14 @@ export function VideoRecorder({
     }
   }, [recordedBlob, onRecordingComplete]);
 
-  // Play recorded video when status changes to 'recorded'
+  // Setup recorded video - NO auto-play, user must click to play
   useEffect(() => {
     if (status === 'recorded' && recordedBlob && videoRef.current) {
       videoRef.current.srcObject = null;
       videoRef.current.src = URL.createObjectURL(recordedBlob);
       videoRef.current.muted = false;
       videoRef.current.controls = true;
+      videoRef.current.pause(); // Ensure video is paused initially
     }
   }, [status, recordedBlob]);
 
@@ -183,12 +209,18 @@ export function VideoRecorder({
           ref={videoRef}
           className="w-full h-full object-cover"
           playsInline
-          autoPlay
-          muted
-          onLoadedMetadata={() => {
-            videoRef.current?.play().catch(console.error);
-          }}
+          autoPlay={status !== 'recorded'}
+          muted={status !== 'recorded'}
         />
+        
+        {/* Countdown overlay */}
+        {countdown !== null && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+            <span className="text-7xl font-bold text-white animate-pulse">
+              {countdown}
+            </span>
+          </div>
+        )}
         
         {/* Recording indicator */}
         {isRecording && (
@@ -215,12 +247,12 @@ export function VideoRecorder({
             </span>
             <Button
               onClick={startRecording}
-              disabled={disabled}
+              disabled={disabled || countdown !== null}
               size="sm"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               <Video className="w-4 h-4 mr-1.5" />
-              Start Recording
+              {countdown !== null ? `Starting in ${countdown}...` : 'Start Recording'}
             </Button>
           </>
         )}
