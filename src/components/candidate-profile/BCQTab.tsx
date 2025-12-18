@@ -528,6 +528,9 @@ function ResponseCard({
                                     : 'bg-red-100 text-red-700 border-red-300';
                               })()
                             }`}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => e.stopPropagation()}
+                            onMouseEnter={(e) => e.stopPropagation()}
                           >
                             {calculateOverallScore(contentQualityScore, fluencyOverallScore)}
                           </Badge>
