@@ -634,7 +634,7 @@ function ResponseCard({
                       {fluencyOverallScore !== null && fluencyOverallScore !== undefined && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--young-blue))] mb-2">
-                            English Fluency
+                            English Fluency (Audio)
                           </p>
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                             <div className="text-center p-2 bg-background rounded-lg shadow-sm">
