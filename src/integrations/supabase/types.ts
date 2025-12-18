@@ -59,6 +59,11 @@ export type Database = {
           initial_recommendation: string | null
           initial_skills_match_score: number | null
           overall_score: number | null
+          pre_bcq_communication_score: number | null
+          pre_bcq_cultural_fit_score: number | null
+          pre_bcq_overall_score: number | null
+          pre_bcq_recommendation: string | null
+          pre_bcq_skills_match_score: number | null
           raw_response: Json | null
           recommendation:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -81,6 +86,11 @@ export type Database = {
           initial_recommendation?: string | null
           initial_skills_match_score?: number | null
           overall_score?: number | null
+          pre_bcq_communication_score?: number | null
+          pre_bcq_cultural_fit_score?: number | null
+          pre_bcq_overall_score?: number | null
+          pre_bcq_recommendation?: string | null
+          pre_bcq_skills_match_score?: number | null
           raw_response?: Json | null
           recommendation?:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -103,6 +113,11 @@ export type Database = {
           initial_recommendation?: string | null
           initial_skills_match_score?: number | null
           overall_score?: number | null
+          pre_bcq_communication_score?: number | null
+          pre_bcq_cultural_fit_score?: number | null
+          pre_bcq_overall_score?: number | null
+          pre_bcq_recommendation?: string | null
+          pre_bcq_skills_match_score?: number | null
           raw_response?: Json | null
           recommendation?:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -1065,6 +1080,8 @@ export type Database = {
         | "reviewed"
         | "interviewed"
         | "bcq_sent"
+        | "bcq_received"
+        | "pre_interview"
       hiring_decision_type: "hired" | "rejected" | "on_hold"
       interview_recommendation:
         | "strong_hire"
@@ -1214,6 +1231,8 @@ export const Constants = {
         "reviewed",
         "interviewed",
         "bcq_sent",
+        "bcq_received",
+        "pre_interview",
       ],
       hiring_decision_type: ["hired", "rejected", "on_hold"],
       interview_recommendation: [

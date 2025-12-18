@@ -25,32 +25,38 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
-const statusColors: Record<ApplicationWithDetails['status'], string> = {
+const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
   reviewed: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
   bcq_sent: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
+  bcq_received: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
+  pre_interview: "bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/30",
   interview: "bg-muted text-muted-foreground",
   interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
-const statusLabels: Record<ApplicationWithDetails['status'], string> = {
+const statusLabels: Record<string, string> = {
   pending: "New",
   under_review: "In Review",
   reviewed: "Reviewed",
   bcq_sent: "BCQ Sent",
+  bcq_received: "BCQ Received",
+  pre_interview: "Pre Interview",
   interview: "Interview",
   interviewed: "Interviewed",
   rejected: "Rejected",
   hired: "Hired"
 };
 
-const statusIcons: Record<ApplicationWithDetails['status'], React.ReactNode> = {
+const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
   reviewed: <FileCheck className="h-3 w-3 mr-1" />,
   bcq_sent: <Send className="h-3 w-3 mr-1" />,
+  bcq_received: <FileCheck className="h-3 w-3 mr-1" />,
+  pre_interview: <FileQuestion className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,

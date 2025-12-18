@@ -73,6 +73,7 @@ export function InterviewTab({
         applicationId={applicationId}
         candidateName={candidateName}
         jobTitle={jobTitle}
+        applicationStatus={applicationStatus}
       />
     </div>
   );

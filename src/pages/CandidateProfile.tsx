@@ -551,6 +551,8 @@ export default function CandidateProfile() {
               bcqResponseTimeMinutes={application.bcq_response_time_minutes}
               bcqDelayed={application.bcq_delayed}
               reviewProgress={reviewProgress}
+              applicationStatus={application.status}
+              evaluationStage={aiEvaluation?.evaluation_stage || null}
             />
           </TabsContent>
 

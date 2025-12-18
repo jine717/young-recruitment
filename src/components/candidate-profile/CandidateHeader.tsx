@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send, FileQuestion, ClipboardCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -39,6 +39,8 @@ const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   under_review: 'bg-muted text-muted-foreground',
   bcq_sent: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+  bcq_received: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+  pre_interview: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50',
   interview: 'bg-muted text-muted-foreground',
   interviewed: 'bg-green-500/20 text-green-700 border-green-500/50',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
@@ -49,6 +51,8 @@ const statusLabels: Record<string, string> = {
   pending: 'New',
   under_review: 'In Review',
   bcq_sent: 'BCQ Sent',
+  bcq_received: 'BCQ Received',
+  pre_interview: 'Pre Interview',
   interview: 'Interview',
   interviewed: 'Interviewed',
   hired: 'Hired',
@@ -59,11 +63,14 @@ const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
   bcq_sent: <Send className="h-3 w-3 mr-1" />,
+  bcq_received: <FileCheck className="h-3 w-3 mr-1" />,
+  pre_interview: <ClipboardCheck className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
+
 
 function AIScoreBadge({ 
   score, 
@@ -252,6 +259,12 @@ export function CandidateHeader({
                 </SelectItem>
                 <SelectItem value="bcq_sent">
                   <span className="flex items-center">{statusIcons.bcq_sent} BCQ Sent</span>
+                </SelectItem>
+                <SelectItem value="bcq_received">
+                  <span className="flex items-center">{statusIcons.bcq_received} BCQ Received</span>
+                </SelectItem>
+                <SelectItem value="pre_interview">
+                  <span className="flex items-center">{statusIcons.pre_interview} Pre Interview</span>
                 </SelectItem>
                 <SelectItem value="interview">
                   <span className="flex items-center">{statusIcons.interview} Interview</span>

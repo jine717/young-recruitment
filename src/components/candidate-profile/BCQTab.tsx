@@ -31,6 +31,7 @@ import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
 import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
 import { useTranscribeBCQResponse } from '@/hooks/useTranscribeBCQResponse';
+import { PostBCQAnalysisModal } from './PostBCQAnalysisModal';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
 
@@ -51,6 +52,8 @@ interface BCQTabProps {
   bcqResponseTimeMinutes: number | null;
   bcqDelayed: boolean | null;
   reviewProgress: ReviewProgress | null;
+  applicationStatus: string;
+  evaluationStage: string | null;
 }
 
 export function BCQTab({
@@ -66,9 +69,12 @@ export function BCQTab({
   bcqResponseTimeMinutes,
   bcqDelayed,
   reviewProgress,
+  applicationStatus,
+  evaluationStage,
 }: BCQTabProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const sendBCQInvitation = useSendBCQInvitation();
   const { data: businessCases = [] } = useBusinessCases(jobId);
   const { data: responses = [] } = useBusinessCaseResponses(applicationId);
@@ -425,6 +431,78 @@ export function BCQTab({
           </CardContent>
         </Card>
       )}
+
+      {/* Overview + BCQ Analysis Card - Show when BCQ completed and not yet analyzed */}
+      {businessCaseCompleted && (
+        <Card className={`shadow-young-sm border-2 ${
+          evaluationStage === 'post_bcq' 
+            ? 'border-green-500/50 bg-green-50/30' 
+            : 'border-[hsl(var(--young-gold))]/50'
+        }`}>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Sparkles className={`w-4 h-4 ${
+                evaluationStage === 'post_bcq' 
+                  ? 'text-green-600' 
+                  : 'text-[hsl(var(--young-gold))]'
+              }`} />
+              Overview + BCQ Analysis
+              {evaluationStage === 'post_bcq' && (
+                <Badge className="bg-green-500/20 text-green-700 border-green-500/30 ml-2">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Completed
+                </Badge>
+              )}
+            </CardTitle>
+            {canEdit && evaluationStage !== 'post_bcq' && (
+              <Button
+                onClick={() => setShowAnalysisModal(true)}
+                className="bg-[hsl(var(--young-gold))] hover:bg-[hsl(var(--young-gold))]/90 text-[hsl(var(--young-bold-black))]"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Run Analysis
+              </Button>
+            )}
+            {canEdit && evaluationStage === 'post_bcq' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnalysisModal(true)}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Re-analyze
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {evaluationStage === 'post_bcq' ? (
+              <p className="text-sm text-muted-foreground">
+                Comprehensive analysis completed. AI has re-evaluated the candidate considering CV, DISC, and BCQ responses. 
+                The candidate is now ready for the interview phase.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Complete the comprehensive evaluation before moving to the interview phase. 
+                  AI will analyze all available data: CV, DISC profile, and BCQ responses.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Lock className="w-3 h-3" />
+                  Interview scheduling will be unlocked after this analysis
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Post BCQ Analysis Modal */}
+      <PostBCQAnalysisModal
+        open={showAnalysisModal}
+        onOpenChange={setShowAnalysisModal}
+        applicationId={applicationId}
+        candidateName={candidateName}
+      />
     </div>
   );
 }
