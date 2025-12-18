@@ -171,7 +171,7 @@ export function InterviewScheduleCard({
   const logHistory = useLogInterviewHistory();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Check if interview scheduling is allowed (must be pre_interview or later)
   const canScheduleInterview = ['pre_interview', 'interview', 'interviewed', 'hired'].includes(applicationStatus || '');
