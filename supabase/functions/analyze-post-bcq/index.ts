@@ -246,7 +246,7 @@ Be objective and thorough. Weight the BCQ responses heavily as they demonstrate 
     }
 
     console.log("[analyze-post-bcq] Calling Lovable AI...");
-    const aiResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
