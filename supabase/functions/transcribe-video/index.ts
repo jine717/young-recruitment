@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('No audio data provided');
     }
 
-    console.log('Processing audio with Gemini...');
+    console.log('Processing audio with Gemini for transcription...');
     console.log(`Content type: ${contentType}`);
     console.log(`Language: ${language}`);
 
@@ -33,7 +33,7 @@ serve(async (req) => {
 
     console.log(`Using mime type: ${mimeType}`);
 
-    // Call Gemini with audio as inline_data
+    // Call Gemini with audio as inline_data - ONLY transcription
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -48,24 +48,11 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `You are a professional transcription and language assessment specialist.
+                text: `You are a professional transcription specialist.
 
-TASK 1 - TRANSCRIPTION:
-Transcribe the audio accurately in ${language}. Capture exactly what was said.
+TASK: Transcribe the audio accurately in ${language}. Capture exactly what was said, including any filler words or hesitations.
 
-TASK 2 - ENGLISH FLUENCY ANALYSIS:
-Analyze the speaker's English fluency based on the AUDIO characteristics (not just the text content).
-
-Evaluate fluency on these criteria (each 0-100):
-- pronunciation_score: Clarity of pronunciation, accent comprehensibility
-- pace_rhythm_score: Natural speaking pace, rhythm, and flow
-- hesitation_score: Frequency of pauses, filler words (um, uh, like), hesitations (higher score = fewer hesitations)
-- grammar_score: Grammatical correctness in spoken sentences
-- overall_fluency_score: Overall English fluency combining all factors
-
-Also provide brief fluency_notes (1-2 sentences) summarizing the speaker's English proficiency.
-
-Use the analyze_audio tool to return your analysis.`
+Use the transcribe_audio tool to return the transcription.`
               },
               {
                 type: 'image_url',
@@ -80,53 +67,22 @@ Use the analyze_audio tool to return your analysis.`
           {
             type: 'function',
             function: {
-              name: 'analyze_audio',
-              description: 'Return transcription and fluency analysis results',
+              name: 'transcribe_audio',
+              description: 'Return the transcription of the audio',
               parameters: {
                 type: 'object',
                 properties: {
                   transcription: {
                     type: 'string',
                     description: 'Full transcription of the audio content'
-                  },
-                  fluency_analysis: {
-                    type: 'object',
-                    properties: {
-                      pronunciation_score: { 
-                        type: 'number',
-                        description: 'Pronunciation clarity score 0-100'
-                      },
-                      pace_rhythm_score: { 
-                        type: 'number',
-                        description: 'Speaking pace and rhythm score 0-100'
-                      },
-                      hesitation_score: { 
-                        type: 'number',
-                        description: 'Hesitation/filler word score 0-100 (higher = fewer hesitations)'
-                      },
-                      grammar_score: { 
-                        type: 'number',
-                        description: 'Grammar correctness score 0-100'
-                      },
-                      overall_fluency_score: { 
-                        type: 'number',
-                        description: 'Overall fluency score 0-100'
-                      },
-                      fluency_notes: { 
-                        type: 'string',
-                        description: 'Brief notes on speaker fluency'
-                      }
-                    },
-                    required: ['pronunciation_score', 'pace_rhythm_score', 'hesitation_score', 
-                               'grammar_score', 'overall_fluency_score', 'fluency_notes']
                   }
                 },
-                required: ['transcription', 'fluency_analysis']
+                required: ['transcription']
               }
             }
           }
         ],
-        tool_choice: { type: 'function', function: { name: 'analyze_audio' } }
+        tool_choice: { type: 'function', function: { name: 'transcribe_audio' } }
       }),
     });
 
@@ -164,12 +120,10 @@ Use the analyze_audio tool to return your analysis.`
     
     console.log('Transcription successful');
     console.log('Transcription length:', analysisResult.transcription?.length || 0);
-    console.log('Fluency scores:', analysisResult.fluency_analysis);
 
     return new Response(
       JSON.stringify({
-        text: analysisResult.transcription,
-        fluency_analysis: analysisResult.fluency_analysis
+        text: analysisResult.transcription
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -65,7 +65,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Analyze with Gemini
+    // Analyze with Gemini - BOTH content quality AND English fluency
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -79,7 +79,16 @@ serve(async (req) => {
             role: 'system',
             content: `You are an expert recruitment analyst evaluating candidate responses to business case questions.
 
-Your task is to analyze how well the candidate's response addresses the question, identify strengths, and suggest areas to probe further in an interview.
+You will perform TWO types of analysis:
+
+1. CONTENT QUALITY ANALYSIS: Evaluate how well the candidate's response addresses the question, identify strengths, and suggest areas to probe further in an interview.
+
+2. ENGLISH FLUENCY ANALYSIS: Based on the transcription text, evaluate the speaker's English proficiency looking at:
+   - Vocabulary and word choice
+   - Sentence structure and grammar
+   - Clarity of expression
+   - Professional language use
+   - Any noticeable hesitations or filler words captured in the transcription
 
 Be specific, constructive, and focus on actionable insights for recruiters.`
           },
@@ -93,7 +102,7 @@ ${question}
 CANDIDATE'S RESPONSE (transcribed from video):
 ${transcription}
 
-Evaluate and provide your analysis using the analyze_response tool.`
+Evaluate BOTH the content quality AND English fluency. Use the analyze_response tool to provide your complete analysis.`
           }
         ],
         tools: [
@@ -101,13 +110,14 @@ Evaluate and provide your analysis using the analyze_response tool.`
             type: 'function',
             function: {
               name: 'analyze_response',
-              description: 'Provide structured analysis of the candidate response',
+              description: 'Provide structured analysis of content quality and English fluency',
               parameters: {
                 type: 'object',
                 properties: {
+                  // Content Quality Analysis
                   quality_score: {
                     type: 'number',
-                    description: 'Overall quality score from 0-100 based on how well the response addresses the question'
+                    description: 'Overall content quality score from 0-100 based on how well the response addresses the question'
                   },
                   strengths: {
                     type: 'array',
@@ -122,9 +132,42 @@ Evaluate and provide your analysis using the analyze_response tool.`
                   summary: {
                     type: 'string',
                     description: 'Brief 2-3 sentence summary of the response quality and key observations'
+                  },
+                  // English Fluency Analysis
+                  fluency_analysis: {
+                    type: 'object',
+                    description: 'English language fluency assessment',
+                    properties: {
+                      pronunciation_score: { 
+                        type: 'number',
+                        description: 'Vocabulary and clarity score 0-100 (based on word choices visible in transcription)'
+                      },
+                      pace_rhythm_score: { 
+                        type: 'number',
+                        description: 'Sentence flow and structure score 0-100'
+                      },
+                      hesitation_score: { 
+                        type: 'number',
+                        description: 'Fluidity score 0-100 (higher = fewer filler words/hesitations in transcription)'
+                      },
+                      grammar_score: { 
+                        type: 'number',
+                        description: 'Grammar correctness score 0-100'
+                      },
+                      overall_fluency_score: { 
+                        type: 'number',
+                        description: 'Overall English fluency score 0-100'
+                      },
+                      fluency_notes: { 
+                        type: 'string',
+                        description: 'Brief notes (1-2 sentences) on the speaker\'s English proficiency'
+                      }
+                    },
+                    required: ['pronunciation_score', 'pace_rhythm_score', 'hesitation_score', 
+                               'grammar_score', 'overall_fluency_score', 'fluency_notes']
                   }
                 },
-                required: ['quality_score', 'strengths', 'areas_to_probe', 'summary']
+                required: ['quality_score', 'strengths', 'areas_to_probe', 'summary', 'fluency_analysis']
               }
             }
           }
@@ -149,16 +192,31 @@ Evaluate and provide your analysis using the analyze_response tool.`
     const analysis = JSON.parse(toolCall.function.arguments);
     console.log('Analysis result:', analysis);
 
+    // Build update data with both content and fluency analysis
+    const updateData: Record<string, unknown> = {
+      // Content quality fields
+      content_quality_score: analysis.quality_score,
+      content_strengths: analysis.strengths,
+      content_areas_to_probe: analysis.areas_to_probe,
+      content_summary: analysis.summary,
+      content_analysis_status: 'completed'
+    };
+
+    // Add fluency analysis if available
+    if (analysis.fluency_analysis) {
+      const fluency = analysis.fluency_analysis;
+      updateData.fluency_pronunciation_score = fluency.pronunciation_score;
+      updateData.fluency_pace_score = fluency.pace_rhythm_score;
+      updateData.fluency_hesitation_score = fluency.hesitation_score;
+      updateData.fluency_grammar_score = fluency.grammar_score;
+      updateData.fluency_overall_score = fluency.overall_fluency_score;
+      updateData.fluency_notes = fluency.fluency_notes;
+    }
+
     // Save analysis to database
     const { error: updateError } = await supabase
       .from('business_case_responses')
-      .update({
-        content_quality_score: analysis.quality_score,
-        content_strengths: analysis.strengths,
-        content_areas_to_probe: analysis.areas_to_probe,
-        content_summary: analysis.summary,
-        content_analysis_status: 'completed'
-      })
+      .update(updateData)
       .eq('id', responseId);
 
     if (updateError) {
@@ -172,7 +230,8 @@ Evaluate and provide your analysis using the analyze_response tool.`
           quality_score: analysis.quality_score,
           strengths: analysis.strengths,
           areas_to_probe: analysis.areas_to_probe,
-          summary: analysis.summary
+          summary: analysis.summary,
+          fluency_analysis: analysis.fluency_analysis
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
