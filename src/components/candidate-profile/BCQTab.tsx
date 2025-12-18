@@ -364,6 +364,7 @@ export function BCQTab({
                 <ResponseCard
                   key={bc.id}
                   responseId={response?.id}
+                  applicationId={applicationId}
                   questionNumber={bc.question_number}
                   questionTitle={bc.question_title}
                   questionDescription={bc.question_description}
@@ -423,6 +424,7 @@ export function BCQTab({
 // Response Card Component
 interface ResponseCardProps {
   responseId?: string;
+  applicationId: string;
   questionNumber: number;
   questionTitle: string;
   questionDescription: string;
@@ -446,6 +448,7 @@ interface ResponseCardProps {
 
 function ResponseCard({
   responseId,
+  applicationId,
   questionNumber,
   questionTitle,
   questionDescription,
@@ -477,7 +480,7 @@ function ResponseCard({
 
   const handleTranscribe = () => {
     if (!responseId || !videoUrl) return;
-    transcribeResponse.mutate({ responseId, videoUrl });
+    transcribeResponse.mutate({ responseId, videoUrl, applicationId });
   };
 
   const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
