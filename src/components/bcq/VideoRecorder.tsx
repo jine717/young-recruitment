@@ -41,6 +41,7 @@ export function VideoRecorder({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [audioError, setAudioError] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -49,6 +50,9 @@ export function VideoRecorder({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const elapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mimeTypeRef = useRef<string>('');
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Format seconds to M:SS
   const formatTime = (seconds: number) => {
@@ -83,6 +87,37 @@ export function VideoRecorder({
       } else {
         console.log('Audio track found:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
         setAudioError(false);
+        
+        // Setup audio level monitoring
+        try {
+          const audioContext = new AudioContext();
+          const analyser = audioContext.createAnalyser();
+          const source = audioContext.createMediaStreamSource(stream);
+          
+          analyser.fftSize = 256;
+          analyser.smoothingTimeConstant = 0.5;
+          source.connect(analyser);
+          
+          audioContextRef.current = audioContext;
+          analyserRef.current = analyser;
+          
+          // Start monitoring audio levels
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const updateLevel = () => {
+            if (analyserRef.current) {
+              analyserRef.current.getByteFrequencyData(dataArray);
+              // Calculate average level
+              const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+              // Normalize to 0-100
+              const normalizedLevel = Math.min(100, (average / 128) * 100);
+              setAudioLevel(normalizedLevel);
+              animationFrameRef.current = requestAnimationFrame(updateLevel);
+            }
+          };
+          updateLevel();
+        } catch (audioErr) {
+          console.warn('Could not setup audio monitoring:', audioErr);
+        }
       }
       
       streamRef.current = stream;
@@ -240,6 +275,13 @@ export function VideoRecorder({
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
+      // Cleanup audio monitoring
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
   }, [stopStream]);
 
@@ -305,6 +347,29 @@ export function VideoRecorder({
           <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground px-2 py-1 rounded-full">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
             <span className="text-xs font-medium">Recording</span>
+          </div>
+        )}
+        
+        {/* Audio Level VU Meter - shown during preview and recording */}
+        {(status === 'preview' || status === 'recording') && !audioError && (
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+            <Mic className="w-3 h-3 text-foreground" />
+            <div className="flex gap-0.5 items-end h-3">
+              {[0, 1, 2, 3, 4].map((i) => {
+                const threshold = i * 20;
+                const isActive = audioLevel > threshold;
+                const barColor = i < 3 ? 'bg-primary' : i < 4 ? 'bg-yellow-500' : 'bg-destructive';
+                return (
+                  <div
+                    key={i}
+                    className={`w-1 rounded-sm transition-all duration-75 ${
+                      isActive ? barColor : 'bg-muted-foreground/30'
+                    }`}
+                    style={{ height: `${6 + i * 2}px` }}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
         
