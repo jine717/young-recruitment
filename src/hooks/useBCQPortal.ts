@@ -29,7 +29,7 @@ interface BCQResponse {
   id: string;
   business_case_id: string;
   video_url: string | null;
-  text_response: string | null;
+  transcription: string | null;
   fluency_pronunciation_score: number | null;
   fluency_pace_score: number | null;
   fluency_hesitation_score: number | null;
@@ -37,6 +37,21 @@ interface BCQResponse {
   fluency_overall_score: number | null;
   fluency_notes: string | null;
 }
+
+// Helper function to convert blob to base64 safely (handles large files)
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:video/webm;base64,")
+      const base64Data = base64.split(',')[1];
+      resolve(base64Data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 export function useBCQPortal(applicationId: string | undefined, token: string | undefined) {
   const [application, setApplication] = useState<Application | null>(null);
@@ -240,11 +255,8 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
 
       // Transcribe the video
       try {
-        // Convert blob to base64 for transcription
-        const arrayBuffer = await videoBlob.arrayBuffer();
-        const base64Audio = btoa(
-          String.fromCharCode(...new Uint8Array(arrayBuffer))
-        );
+        // Convert blob to base64 safely (handles large files)
+        const base64Audio = await blobToBase64(videoBlob);
 
         const { data: transcriptionData, error: transcriptionError } = await supabase.functions
           .invoke('transcribe-video', {
@@ -257,10 +269,11 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
 
         if (transcriptionError) {
           console.error('Transcription error:', transcriptionError);
+          setError('Transcription failed. Analysis will be available later.');
         } else if (transcriptionData?.text) {
           // Build update data with transcription and fluency analysis
           const updateData: Record<string, unknown> = { 
-            text_response: transcriptionData.text 
+            transcription: transcriptionData.text 
           };
           
           // Add fluency analysis if available
@@ -284,7 +297,7 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
             ...prev,
             [questionId]: {
               ...respData,
-              text_response: transcriptionData.text,
+              transcription: transcriptionData.text,
               fluency_pronunciation_score: transcriptionData.fluency_analysis?.pronunciation_score ?? null,
               fluency_pace_score: transcriptionData.fluency_analysis?.pace_rhythm_score ?? null,
               fluency_hesitation_score: transcriptionData.fluency_analysis?.hesitation_score ?? null,
@@ -296,7 +309,7 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         }
       } catch (transcriptError) {
         console.error('Transcription failed:', transcriptError);
-        // Continue without transcription - it can be retried later
+        setError('Transcription failed. Analysis will be available later.');
       }
 
       // Update local responses
