@@ -1,12 +1,33 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Square, RotateCcw, Check, Camera, AlertCircle } from 'lucide-react';
+import { Video, Square, RotateCcw, Check, Camera, AlertCircle, Mic } from 'lucide-react';
 
 interface VideoRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
   maxDuration?: number; // Default 180 seconds (3 min)
   disabled?: boolean;
 }
+
+// Get the best supported MIME type for video recording with audio
+const getSupportedMimeType = (): string => {
+  const types = [
+    'video/webm;codecs=vp8,opus',  // Most compatible
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=h264,opus',
+    'video/webm',
+    'video/mp4'
+  ];
+  
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      console.log('Using MIME type:', type);
+      return type;
+    }
+  }
+  
+  console.warn('No specific MIME type supported, using browser default');
+  return '';
+};
 
 export function VideoRecorder({ 
   onRecordingComplete, 
@@ -19,6 +40,7 @@ export function VideoRecorder({
   const [isRecording, setIsRecording] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [audioError, setAudioError] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -26,6 +48,7 @@ export function VideoRecorder({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const elapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mimeTypeRef = useRef<string>('');
 
   // Format seconds to M:SS
   const formatTime = (seconds: number) => {
@@ -45,12 +68,29 @@ export function VideoRecorder({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
       });
+      
+      // Verify audio track exists and is active
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        console.error('No audio track found in stream');
+        setAudioError(true);
+      } else {
+        console.log('Audio track found:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
+        setAudioError(false);
+      }
       
       streamRef.current = stream;
       setHasPermission(true);
       setStatus('preview');
+      
+      // Get supported MIME type
+      mimeTypeRef.current = getSupportedMimeType();
     } catch (err) {
       console.error('Camera access denied:', err);
       setHasPermission(false);
@@ -72,9 +112,14 @@ export function VideoRecorder({
     chunksRef.current = [];
     setElapsedTime(0);
     
-    const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: 'video/webm;codecs=vp9,opus'
-    });
+    // Use detected MIME type or let browser choose default
+    const options: MediaRecorderOptions = {};
+    if (mimeTypeRef.current) {
+      options.mimeType = mimeTypeRef.current;
+    }
+    
+    const mediaRecorder = new MediaRecorder(streamRef.current, options);
+    console.log('MediaRecorder created with mimeType:', mediaRecorder.mimeType);
     
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
@@ -83,7 +128,10 @@ export function VideoRecorder({
     };
     
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      // Use the actual mimeType from the recorder
+      const actualMimeType = mediaRecorder.mimeType || 'video/webm';
+      const blob = new Blob(chunksRef.current, { type: actualMimeType });
+      console.log('Recording complete. Blob type:', blob.type, 'size:', blob.size);
       setRecordedBlob(blob);
       setStatus('recorded');
       setIsRecording(false);
@@ -275,12 +323,18 @@ export function VideoRecorder({
       <div className="flex items-center justify-center gap-2 flex-wrap">
         {status === 'preview' && (
           <>
+            {audioError && (
+              <div className="flex items-center gap-1.5 text-destructive text-xs">
+                <Mic className="w-3.5 h-3.5" />
+                <span>No microphone detected</span>
+              </div>
+            )}
             <span className="text-xs text-muted-foreground">
               Max: <span className="font-medium text-foreground">3 min</span>
             </span>
             <Button
               onClick={startRecording}
-              disabled={disabled || countdown !== null}
+              disabled={disabled || countdown !== null || audioError}
               size="sm"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
