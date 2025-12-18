@@ -40,7 +40,7 @@ export function FinalEvaluationTab({
   documentAnalyses,
 }: FinalEvaluationTabProps) {
   const [showModal, setShowModal] = useState(false);
-  const [isResultsOpen, setIsResultsOpen] = useState(true);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
   
   const { data: finalEvaluationDoc, isLoading } = useFinalEvaluation(applicationId);
   
