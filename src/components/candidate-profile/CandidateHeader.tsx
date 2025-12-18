@@ -26,6 +26,7 @@ interface CandidateHeaderProps {
   aiLoading: boolean;
   // Pre/Post interview differentiation
   initialScore: number | null;
+  preBcqScore: number | null;
   evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
   // Quick Actions props
   applicationId: string;
@@ -77,12 +78,14 @@ function AIScoreBadge({
   recommendation, 
   isLoading,
   initialScore,
+  preBcqScore,
   evaluationStage
 }: { 
   score: number | null; 
   recommendation: string | null; 
   isLoading: boolean;
   initialScore: number | null;
+  preBcqScore: number | null;
   evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | null;
 }) {
   if (isLoading) {
@@ -128,16 +131,19 @@ function AIScoreBadge({
   const config = getScoreColor(score);
   const Icon = config.icon;
 
-  // Check if this is post-interview score
+  // Determine previous score based on stage
+  const isPostBcq = evaluationStage === 'post_bcq';
   const isPostInterview = evaluationStage === 'post_interview';
-  const scoreChange = isPostInterview && initialScore !== null ? score - initialScore : null;
+  const previousScore = isPostBcq ? preBcqScore : isPostInterview ? initialScore : null;
+  const showScoreHistory = (isPostBcq || isPostInterview) && previousScore !== null;
+  const scoreChange = showScoreHistory ? score - previousScore : null;
 
   return (
     <div className="flex items-center gap-2">
       <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bgClass} border ${config.borderClass}`}>
-        {isPostInterview && initialScore !== null ? (
+        {showScoreHistory && previousScore !== null ? (
           <>
-            <span className="text-sm text-muted-foreground line-through">{initialScore}</span>
+            <span className="text-sm text-muted-foreground line-through">{previousScore}</span>
             <span className="text-muted-foreground">→</span>
             <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
             {scoreChange !== null && scoreChange !== 0 && (
@@ -151,6 +157,11 @@ function AIScoreBadge({
         )}
         <Icon className={`w-4 h-4 ${config.textClass}`} />
       </div>
+      {isPostBcq && (
+        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-gold))]/10 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/20">
+          Post-BCQ
+        </span>
+      )}
       {isPostInterview && (
         <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/20">
           Post-Interview
@@ -174,6 +185,7 @@ export function CandidateHeader({
   aiRecommendation,
   aiLoading,
   initialScore,
+  preBcqScore,
   evaluationStage,
   applicationId,
   canEdit = true,
@@ -209,6 +221,7 @@ export function CandidateHeader({
               recommendation={aiRecommendation} 
               isLoading={aiLoading}
               initialScore={initialScore}
+              preBcqScore={preBcqScore}
               evaluationStage={evaluationStage}
             />
           </div>
