@@ -81,7 +81,6 @@ export default function BusinessCasePortal() {
         candidateName={application.candidate_name || 'Candidate'}
         jobTitle={application.job?.title || 'Position'}
         totalQuestions={businessCases.length}
-        responseTimeMinutes={responseTimeMinutes}
       />
     );
   }

@@ -1,28 +1,17 @@
-import { CheckCircle2, Mail, Clock } from 'lucide-react';
+import { CheckCircle2, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface CompletionScreenProps {
   candidateName: string;
   jobTitle: string;
   totalQuestions: number;
-  responseTimeMinutes?: number;
 }
 
 export function CompletionScreen({ 
   candidateName, 
   jobTitle, 
-  totalQuestions,
-  responseTimeMinutes 
+  totalQuestions
 }: CompletionScreenProps) {
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins} minutes`;
-  };
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-lg w-full border-chart-1/20 bg-card shadow-lg">
@@ -45,20 +34,11 @@ export function CompletionScreen({
           </div>
           
           {/* Stats */}
-          <div className="flex justify-center gap-6 py-4">
+          <div className="flex justify-center py-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{totalQuestions}</div>
               <div className="text-xs text-muted-foreground">Questions</div>
             </div>
-            
-            {responseTimeMinutes && (
-              <div className="text-center">
-                <div className="text-2xl font-bold text-secondary">
-                  {formatTime(responseTimeMinutes)}
-                </div>
-                <div className="text-xs text-muted-foreground">Total Time</div>
-              </div>
-            )}
           </div>
           
           {/* Position Info */}
@@ -72,18 +52,6 @@ export function CompletionScreen({
           {/* Next Steps */}
           <div className="space-y-3 pt-4">
             <h3 className="font-medium text-foreground">What's Next?</h3>
-            
-            <div className="flex items-start gap-3 text-left p-3 bg-muted/20 rounded-lg">
-              <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Confirmation Email
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  You'll receive a confirmation email shortly
-                </p>
-              </div>
-            </div>
             
             <div className="flex items-start gap-3 text-left p-3 bg-muted/20 rounded-lg">
               <Clock className="w-5 h-5 text-secondary mt-0.5 flex-shrink-0" />

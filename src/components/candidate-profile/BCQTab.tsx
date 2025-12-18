@@ -299,24 +299,11 @@ export function BCQTab({
                     </div>
                   </div>
 
-                  {/* Response Time (only when completed) */}
+                  {/* Response Time with 24h color indicator */}
                   {status === 'completed' && bcqResponseTimeMinutes !== null && (
                     <div className="flex items-center justify-between pt-3 mt-3 border-t">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Response Time
-                      </span>
-                      <span className={`text-sm font-medium ${bcqDelayed ? 'text-destructive' : ''}`}>
-                        {formatResponseTime(bcqResponseTimeMinutes)}
-                        {bcqDelayed && <span className="text-xs ml-1 opacity-80">(exceeded 24h)</span>}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Time to Complete with 24h indicator */}
-                  {status === 'completed' && bcqResponseTimeMinutes !== null && (
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Time to Complete
                       </span>
                       <div className="flex items-center gap-1.5">
                         {bcqResponseTimeMinutes < 1440 ? (
