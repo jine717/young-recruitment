@@ -163,21 +163,6 @@ function AIScoreBadge({
         )}
         <Icon className={`w-4 h-4 ${config.textClass}`} />
       </div>
-      {isPostBcq && (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-gold))]/10 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/20">
-          Post-BCQ
-        </span>
-      )}
-      {isPostInterview && (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/20">
-          Post-Interview
-        </span>
-      )}
-      {isFinal && (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
-          Final
-        </span>
-      )}
     </div>
   );
 }
