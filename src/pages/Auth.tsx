@@ -15,18 +15,9 @@ const signInSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const getRedirectPath = async (userId: string): Promise<string> => {
-  const { data: roles } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId);
-
-  const userRoles = roles?.map(r => r.role) || [];
-
-  if (userRoles.includes('admin')) return '/admin';
-  if (userRoles.includes('recruiter')) return '/dashboard';
-  
-  // Only recruiters/admins should use this login page
+const getRedirectPath = async (_userId: string): Promise<string> => {
+  // All authenticated users go to the recruiter dashboard
+  // Admin panel is accessible from the dashboard navigation
   return '/dashboard';
 };
 
