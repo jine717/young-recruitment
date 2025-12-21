@@ -92,11 +92,18 @@ export function useTriggerFinalEvaluation() {
 
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      const { applicationId } = variables;
+      
+      // Invalidate specific queries for this application (critical for UI update)
+      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-evaluation', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['final-evaluation', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['document-analyses', applicationId] });
+      
+      // Also invalidate lists for dashboard views
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['ai-evaluations'] });
-      queryClient.invalidateQueries({ queryKey: ['final-evaluation'] });
-      queryClient.invalidateQueries({ queryKey: ['document-analyses'] });
       
       toast.success('Final Evaluation Complete', {
         description: `Final score: ${data.evaluation.final_overall_score}/100 - ${data.evaluation.final_recommendation.replace('_', ' ')}`,

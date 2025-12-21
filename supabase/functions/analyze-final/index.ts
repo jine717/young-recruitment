@@ -352,6 +352,21 @@ Be thorough, objective, and provide actionable insights. This is the final word 
       // Don't throw - document_analyses was saved successfully
     }
 
+    // Auto-update application status to 'evaluated'
+    const { error: statusError } = await supabase
+      .from("applications")
+      .update({
+        status: "evaluated",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", applicationId);
+
+    if (statusError) {
+      console.error("[analyze-final] Failed to update status to evaluated:", statusError);
+    } else {
+      console.log("[analyze-final] Application status updated to 'evaluated'");
+    }
+
     console.log("[analyze-final] Final evaluation completed successfully");
 
     return new Response(
