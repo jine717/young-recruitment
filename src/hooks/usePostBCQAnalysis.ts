@@ -49,8 +49,15 @@ export function usePostBCQAnalysis() {
 
       return data;
     },
-    onSuccess: (data) => {
-      // Invalidate all related queries
+    onSuccess: (data, variables) => {
+      const { applicationId } = variables;
+      
+      // Invalidate specific queries for this application (critical for UI update)
+      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-evaluation', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['document-analyses', applicationId] });
+      
+      // Also invalidate lists for dashboard views
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['ai-evaluations'] });
       
