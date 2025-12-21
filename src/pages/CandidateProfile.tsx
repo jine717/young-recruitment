@@ -491,11 +491,9 @@ export default function CandidateProfile() {
             <TabsTrigger value="bcq" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <FileVideo className="w-4 h-4" />
               BCQ
-              {application.business_case_completed ? (
+              {application.business_case_completed && aiEvaluation?.evaluation_stage !== 'initial' && (
                 <CheckCircle className="w-4 h-4 text-green-500" />
-              ) : application.bcq_invitation_sent_at ? (
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--young-gold))]" />
-              ) : null}
+              )}
             </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
