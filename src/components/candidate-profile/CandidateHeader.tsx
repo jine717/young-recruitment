@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send, FileQuestion, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send, FileQuestion, ClipboardCheck, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -44,6 +44,7 @@ const statusColors: Record<string, string> = {
   pre_interview: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50',
   interview: 'bg-muted text-muted-foreground',
   interviewed: 'bg-green-500/20 text-green-700 border-green-500/50',
+  evaluated: 'bg-purple-500/20 text-purple-700 border-purple-500/50',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
   rejected: 'bg-red-500/20 text-red-700 border-red-500/50',
 };
@@ -56,6 +57,7 @@ const statusLabels: Record<string, string> = {
   pre_interview: 'Pre Interview',
   interview: 'Interview',
   interviewed: 'Interviewed',
+  evaluated: 'Evaluated',
   hired: 'Hired',
   rejected: 'Rejected',
 };
@@ -68,6 +70,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   pre_interview: <ClipboardCheck className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
+  evaluated: <Award className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
@@ -292,6 +295,9 @@ export function CandidateHeader({
                 </SelectItem>
                 <SelectItem value="interviewed">
                   <span className="flex items-center text-green-700">{statusIcons.interviewed} Interviewed</span>
+                </SelectItem>
+                <SelectItem value="evaluated">
+                  <span className="flex items-center text-purple-700">{statusIcons.evaluated} Evaluated</span>
                 </SelectItem>
                 <SelectItem value="hired">
                   <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>

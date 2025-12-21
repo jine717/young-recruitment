@@ -1079,6 +1079,7 @@ export type Database = {
         | "hired"
         | "reviewed"
         | "interviewed"
+        | "evaluated"
         | "bcq_sent"
         | "bcq_received"
         | "pre_interview"
@@ -1230,6 +1231,7 @@ export const Constants = {
         "hired",
         "reviewed",
         "interviewed",
+        "evaluated",
         "bcq_sent",
         "bcq_received",
         "pre_interview",

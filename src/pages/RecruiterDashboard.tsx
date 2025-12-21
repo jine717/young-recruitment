@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle, Send } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle, Send, Award } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -34,6 +34,7 @@ const statusColors: Record<string, string> = {
   pre_interview: "bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/30",
   interview: "bg-muted text-muted-foreground",
   interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
+  evaluated: "bg-purple-500/20 text-purple-700 border border-purple-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
@@ -46,6 +47,7 @@ const statusLabels: Record<string, string> = {
   pre_interview: "Pre Interview",
   interview: "Interview",
   interviewed: "Interviewed",
+  evaluated: "Evaluated",
   rejected: "Rejected",
   hired: "Hired"
 };
@@ -59,6 +61,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   pre_interview: <FileQuestion className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
+  evaluated: <Award className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
