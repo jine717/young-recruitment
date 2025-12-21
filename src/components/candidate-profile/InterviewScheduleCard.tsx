@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Clock, Video, Phone, MapPin, ExternalLink, MoreVertical, XCircle, CheckCircle, CalendarPlus, CalendarClock, History, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ interface InterviewScheduleCardProps {
   applicationId?: string;
   candidateName?: string;
   jobTitle?: string;
+  applicationStatus?: string;
 }
 
 const typeIcons: Record<InterviewType, React.ReactNode> = {
@@ -163,12 +164,17 @@ export function InterviewScheduleCard({
   applicationId,
   candidateName,
   jobTitle,
+  applicationStatus,
 }: InterviewScheduleCardProps) {
   const cancelInterview = useCancelInterview();
   const updateInterview = useUpdateInterview();
   const logHistory = useLogInterviewHistory();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Check if interview scheduling is allowed (must be pre_interview or later)
+  const canScheduleInterview = ['pre_interview', 'interview', 'interviewed', 'hired'].includes(applicationStatus || '');
 
   const handleCancel = async (interview: Interview) => {
     await cancelInterview.mutateAsync(interview.id);
@@ -195,15 +201,17 @@ export function InterviewScheduleCard({
     setRescheduleModalOpen(true);
   };
 
+  const activeInterviews = interviews.filter(i => i.status !== 'cancelled');
+
   if (isLoading) {
     return (
       <Card className="shadow-young-sm hover-lift transition-all duration-200">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
-          Scheduled Interviews
-        </CardTitle>
-      </CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+            Scheduled Interviews
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="h-20 bg-muted rounded" />
@@ -213,39 +221,63 @@ export function InterviewScheduleCard({
     );
   }
 
-  const activeInterviews = interviews.filter(i => i.status !== 'cancelled');
-
   return (
     <>
       <Card className="shadow-young-sm hover-lift transition-all duration-200">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
-            Scheduled Interviews
-            {activeInterviews.length > 0 && (
-              <Badge variant="secondary">{activeInterviews.length}</Badge>
-            )}
-          </CardTitle>
-          {canEdit && onScheduleInterview && (
-            <Button 
-              onClick={onScheduleInterview} 
-              size="sm"
-              variant="outline"
-              className="gap-1"
-            >
-              <CalendarPlus className="w-4 h-4" />
-              Schedule
-            </Button>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[hsl(var(--young-gold))]" />
+                Scheduled Interviews
+                {activeInterviews.length > 0 && (
+                  <Badge variant="secondary">{activeInterviews.length}</Badge>
+                )}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {canEdit && onScheduleInterview && canScheduleInterview && (
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onScheduleInterview();
+                    }} 
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                  >
+                    <CalendarPlus className="w-4 h-4" />
+                    Schedule
+                  </Button>
+                )}
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+          {/* Locked state - need Overview + BCQ Analysis first */}
+          {!canScheduleInterview && interviews.length === 0 && (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-dashed">
+              <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">Interview Scheduling Locked</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Complete "Overview + BCQ Analysis" in the BCQ tab to unlock interview scheduling
+                </p>
+              </div>
+            </div>
           )}
-        </CardHeader>
-        <CardContent>
-          {interviews.length === 0 ? (
+          
+          {/* Empty state - allowed to schedule but none yet */}
+          {canScheduleInterview && interviews.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm font-medium">No interviews scheduled</p>
               <p className="text-xs mt-1">Click 'Schedule' to book an interview</p>
             </div>
-          ) : (
+          )}
+          
+          {interviews.length === 0 ? null : (
             <div className="space-y-4">
               {interviews.map((interview) => (
                 <div
@@ -354,7 +386,9 @@ export function InterviewScheduleCard({
               ))}
             </div>
           )}
-        </CardContent>
+          </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       {/* Reschedule Modal */}

@@ -11,13 +11,13 @@ const corsHeaders = {
 
 type NotificationType = 
   | 'application_received'
-  | 'business_case_invite'
-  | 'business_case_reminder'
-  | 'status_update'
+  | 'status_in_review'
+  | 'status_reviewed'
   | 'interview_scheduled'
   | 'interview_rescheduled'
   | 'decision_offer'
-  | 'decision_rejection';
+  | 'decision_rejection'
+  | 'bcq_invitation';
 
 interface NotificationRequest {
   applicationId: string;
@@ -25,6 +25,12 @@ interface NotificationRequest {
   customMessage?: string;
   interviewDate?: string;
   interviewTime?: string;
+  meetingLink?: string;
+  location?: string;
+  interviewType?: 'video' | 'phone' | 'in_person';
+  interviewDateISO?: string;
+  durationMinutes?: number;
+  bcqPortalUrl?: string;
 }
 
 // Young brand colors
@@ -36,14 +42,106 @@ const brandColors = {
   khaki: '#605738',
 };
 
+// Generate Google Calendar URL
+function generateGoogleCalendarUrl(
+  interviewDateISO: string,
+  durationMinutes: number,
+  jobTitle: string,
+  interviewType: string,
+  meetingLink?: string,
+  location?: string
+): string {
+  const startDate = new Date(interviewDateISO);
+  const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+  
+  const formatDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  
+  const typeLabels: Record<string, string> = { phone: 'Phone', video: 'Video', in_person: 'In-Person' };
+  const title = `${typeLabels[interviewType] || 'Interview'} Interview - ${jobTitle}`;
+  const locationValue = meetingLink || location || '';
+  
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
+    details: `Interview for ${jobTitle} position at Young Recruitment`,
+    location: locationValue,
+  });
+  
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function getEmailTemplate(
   type: NotificationType,
   candidateName: string,
   jobTitle: string,
   customMessage?: string,
   interviewDate?: string,
-  interviewTime?: string
+  interviewTime?: string,
+  meetingLink?: string,
+  location?: string,
+  interviewType?: 'video' | 'phone' | 'in_person',
+  interviewDateISO?: string,
+  durationMinutes?: number
 ): { subject: string; html: string } {
+  
+  // Helper to generate Google Calendar button
+  const getGoogleCalendarButtonHtml = () => {
+    if (!interviewDateISO || !durationMinutes) return '';
+    
+    const calendarUrl = generateGoogleCalendarUrl(
+      interviewDateISO,
+      durationMinutes,
+      jobTitle,
+      interviewType || 'video',
+      meetingLink,
+      location
+    );
+    
+    return `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+        <tr>
+          <td align="center">
+            <a href="${calendarUrl}" target="_blank" style="display: inline-block; background: #ffffff; border: 1px solid #dadce0; color: ${brandColors.boldBlack}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              📅 Add to Google Calendar
+            </a>
+          </td>
+        </tr>
+      </table>
+    `;
+  };
+  
+  // Helper to generate meeting details section
+  const getMeetingDetailsHtml = () => {
+    if (interviewType === 'in_person' && location) {
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+          <tr>
+            <td style="background: rgba(96, 87, 56, 0.1); padding: 15px; border-radius: 8px;">
+              <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">📍 Location:</p>
+              <p style="font-size: 16px; margin: 0; color: ${brandColors.boldBlack};">${location}</p>
+            </td>
+          </tr>
+        </table>
+        ${getGoogleCalendarButtonHtml()}
+      `;
+    } else if (meetingLink) {
+      const typeLabel = interviewType === 'phone' ? '📞 Phone Call' : '📹 Video Call';
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 15px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.1); padding: 15px; border-radius: 8px;">
+              <p style="font-size: 14px; margin: 0 0 8px 0; font-weight: 600; color: ${brandColors.boldBlack};">${typeLabel}</p>
+              <p style="font-size: 14px; margin: 0 0 12px 0; color: ${brandColors.khaki}; word-break: break-all;">${meetingLink}</p>
+              <a href="${meetingLink}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Join Meeting</a>
+            </td>
+          </tr>
+        </table>
+        ${getGoogleCalendarButtonHtml()}
+      `;
+    }
+    return getGoogleCalendarButtonHtml();
+  };
   
   // Brand text logo in Bold Black with Young-style typography
   const logoHtml = `
@@ -121,7 +219,7 @@ function getEmailTemplate(
               </p>
               <p style="margin: 0; font-size: 11px; color: ${brandColors.khaki};">
                 This email was sent regarding your application at Young.<br>
-                If you have questions, please contact us at <a href="mailto:recruitment@young-id.com" style="color: ${brandColors.youngBlue}; text-decoration: none;">recruitment@young-id.com</a>
+                If you have questions, please contact us at <a href="mailto:talents@young.com" style="color: ${brandColors.youngBlue}; text-decoration: none;">talents@young.com</a>
               </p>
             </td>
           </tr>
@@ -163,19 +261,25 @@ function getEmailTemplate(
         </p>
       `,
     },
-    business_case_invite: {
-      subject: `Complete Your Business Case - ${jobTitle}`,
-      preheader: `Great news! Your application for ${jobTitle} has moved to the next stage.`,
+    status_in_review: {
+      subject: `Your Application is Under Review - ${jobTitle}`,
+      preheader: `Good news! Your application for ${jobTitle} is now being reviewed by our team.`,
       content: `
-        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Time to Show Your Skills!</h1>
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Your Application is Being Reviewed</h1>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          Great news! Your application for <strong>${jobTitle}</strong> has moved to the next stage.
+          Great news! Your application for the <strong>${jobTitle}</strong> position has been opened and is now being actively reviewed by our recruitment team.
         </p>
-        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          Please complete our Business Case assessment to continue the process. This involves answering 
-          a few questions that help us understand your problem-solving approach.
-        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.15); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.youngBlue};">
+              <p style="font-size: 16px; margin: 0; font-weight: 600; color: ${brandColors.boldBlack};">📋 What happens next?</p>
+              <p style="font-size: 14px; margin: 10px 0 0 0; color: ${brandColors.khaki};">
+                Our team is carefully evaluating your qualifications, experience, and how you align with the role. This typically takes a few business days.
+              </p>
+            </td>
+          </tr>
+        </table>
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -185,25 +289,34 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          We appreciate your patience and will keep you updated on the progress of your application.
+        </p>
         <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
           Best regards,<br/>
           <strong>The Young Team</strong>
         </p>
       `,
     },
-    business_case_reminder: {
-      subject: `Reminder: Complete Your Business Case - ${jobTitle}`,
-      preheader: `Don't miss out! Complete your Business Case for ${jobTitle}.`,
+    status_reviewed: {
+      subject: `Application Review Complete - ${jobTitle}`,
+      preheader: `We've completed our initial review of your application for ${jobTitle}.`,
       content: `
-        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Don't Miss Out!</h1>
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Initial Review Complete</h1>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          We noticed you haven't completed the Business Case for the <strong>${jobTitle}</strong> position yet.
+          We've completed our initial review of your application for the <strong>${jobTitle}</strong> position.
         </p>
-        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          We'd love to see your responses! Please complete it at your earliest convenience to continue 
-          the application process.
-        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(184, 143, 94, 0.15); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.gold};">
+              <p style="font-size: 16px; margin: 0; font-weight: 600; color: ${brandColors.boldBlack};">✅ Review Status: Complete</p>
+              <p style="font-size: 14px; margin: 10px 0 0 0; color: ${brandColors.khaki};">
+                Your application has passed our initial screening. Our team is now determining the next steps in the process.
+              </p>
+            </td>
+          </tr>
+        </table>
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -213,30 +326,9 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
-        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
-          Best regards,<br/>
-          <strong>The Young Team</strong>
-        </p>
-      `,
-    },
-    status_update: {
-      subject: `Application Update - ${jobTitle}`,
-      preheader: `Update on your application for ${jobTitle} at Young.`,
-      content: `
-        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Application Update</h1>
-        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          We wanted to update you on your application for <strong>${jobTitle}</strong>.
+          We'll be in touch shortly with more information about the next stage of the selection process.
         </p>
-        ${customMessage ? `
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
-          <tr>
-            <td style="background: #f5f5f5; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6;">
-              ${customMessage}
-            </td>
-          </tr>
-        </table>
-        ` : '<p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Your application is currently under review. We\'ll be in touch soon with more details.</p>'}
         <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
           Best regards,<br/>
           <strong>The Young Team</strong>
@@ -262,6 +354,7 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
+        ${getMeetingDetailsHtml()}
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -310,6 +403,7 @@ function getEmailTemplate(
           </tr>
         </table>
         ` : ''}
+        ${getMeetingDetailsHtml()}
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
           <tr>
@@ -373,12 +467,7 @@ function getEmailTemplate(
         <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Thank You for Applying</h1>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          Thank you for your interest in the <strong>${jobTitle}</strong> position at Young and for 
-          taking the time to go through our application process.
-        </p>
-        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          After careful consideration, we've decided to move forward with other candidates whose 
-          experience more closely matches our current needs.
+          Thank you for your interest in the <strong>${jobTitle}</strong> position and for taking the time to apply.
         </p>
         ${customMessage ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
@@ -388,13 +477,64 @@ function getEmailTemplate(
             </td>
           </tr>
         </table>
-        ` : ''}
+        ` : '<p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.</p>'}
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-          We encourage you to apply for future opportunities that match your skills and experience. 
-          We wish you all the best in your career journey.
+          We encourage you to apply for future positions that match your skills and experience. We wish you the best in your job search and future endeavors.
         </p>
         <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
           Best regards,<br/>
+          <strong>The Young Team</strong>
+        </p>
+      `,
+    },
+    bcq_invitation: {
+      subject: `Complete Your Business Case Assessment - ${jobTitle}`,
+      preheader: `Next step: Complete your video assessment for ${jobTitle} at Young.`,
+      content: `
+        <h1 style="color: ${brandColors.youngBlue}; font-size: 24px; font-weight: bold; margin: 0 0 20px 0;">Business Case Assessment</h1>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${candidateName},</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+          Congratulations! Your application for the <strong>${jobTitle}</strong> position has been reviewed and we'd like to invite you to complete the next stage: the Business Case Assessment.
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background: rgba(147, 177, 255, 0.15); padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.youngBlue};">
+              <p style="font-size: 16px; margin: 0 0 10px 0; font-weight: 600; color: ${brandColors.boldBlack};">📹 What to Expect</p>
+              <p style="font-size: 14px; margin: 0 0 8px 0; color: ${brandColors.khaki};">
+                You'll answer a series of business case questions via <strong>video recording</strong> in English.
+              </p>
+              <p style="font-size: 14px; margin: 0; color: ${brandColors.khaki};">
+                Each response has a maximum duration of <strong>3 minutes</strong>.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
+          <tr>
+            <td align="center">
+              <a href="${customMessage || '#'}" target="_blank" style="display: inline-block; background: ${brandColors.youngBlue}; color: ${brandColors.boldBlack}; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px;">Start Assessment</a>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 20px 0 10px 0;">
+          <strong>Tips for Success:</strong>
+        </p>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Find a quiet, well-lit space</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Ensure stable internet connection</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Speak clearly and at a natural pace</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-size: 16px; line-height: 1.6;">• Structure your answers concisely</td>
+          </tr>
+        </table>
+        <p style="font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+          We look forward to seeing your responses!<br/>
           <strong>The Young Team</strong>
         </p>
       `,
@@ -408,9 +548,8 @@ function getEmailTemplate(
   };
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  console.log("send-notification function called");
-
+serve(async (req: Request) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -420,117 +559,110 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { applicationId, type, customMessage, interviewDate, interviewTime }: NotificationRequest = await req.json();
+    const { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType, interviewDateISO, durationMinutes }: NotificationRequest = await req.json();
 
-    console.log(`Processing notification: ${type} for application: ${applicationId}`);
+    console.log(`Processing notification request: type=${type}, applicationId=${applicationId}`);
 
-    // Fetch application with job details and candidate info
+    // Fetch application with job details
     const { data: application, error: appError } = await supabase
       .from("applications")
       .select(`
         id,
-        candidate_id,
         candidate_name,
         candidate_email,
-        jobs (title)
+        jobs (
+          title
+        )
       `)
       .eq("id", applicationId)
       .single();
 
     if (appError || !application) {
-      console.error("Error fetching application:", appError);
-      throw new Error("Application not found");
+      console.error("Failed to fetch application:", appError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Application not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log("Application found:", application);
-
-    // For anonymous applications, use candidate_name and candidate_email from application
-    // For authenticated applications, fetch from profiles table
-    let candidateName = application.candidate_name;
-    let candidateEmail = application.candidate_email;
-
-    if (application.candidate_id) {
-      // Fetch candidate profile for authenticated users
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", application.candidate_id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      // Override with profile data if available
-      if (profile) {
-        candidateName = profile.full_name || candidateName;
-        candidateEmail = profile.email || candidateEmail;
-      }
-    }
-
+    const candidateName = application.candidate_name || "Candidate";
+    const candidateEmail = application.candidate_email;
     const jobTitle = (application.jobs as any)?.title || "Position";
 
-    console.log(`Candidate: ${candidateName}, Email: ${candidateEmail}, Job: ${jobTitle}`);
-
     if (!candidateEmail) {
-      throw new Error("Candidate email not found");
+      console.error("No candidate email found");
+      return new Response(
+        JSON.stringify({ success: false, error: "No candidate email found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log(`Sending ${type} email to ${candidateEmail} for ${jobTitle}`);
-
-    // Get email template
+    // Generate email content
     const { subject, html } = getEmailTemplate(
       type,
       candidateName,
       jobTitle,
       customMessage,
       interviewDate,
-      interviewTime
+      interviewTime,
+      meetingLink,
+      location,
+      interviewType,
+      interviewDateISO,
+      durationMinutes
     );
 
+    console.log(`Sending email to ${candidateEmail}: ${subject}`);
+
     // Send email via Resend
-    const emailResponse = await resend.emails.send({
-      from: "Young Recruitment <noreply@young-id.com>",
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: "Young Recruitment <onboarding@resend.dev>",
       to: [candidateEmail],
       subject,
       html,
     });
 
-    console.log("Email sent successfully:", emailResponse);
-
-    // Log the notification
-    const { error: logError } = await supabase
-      .from("notification_logs")
-      .insert({
+    if (emailError) {
+      console.error("Failed to send email:", emailError);
+      
+      // Log failed notification
+      await supabase.from("notification_logs").insert({
         application_id: applicationId,
         notification_type: type,
         recipient_email: candidateEmail,
         subject,
-        status: "sent",
+        status: "failed",
+        error_message: emailError.message,
       });
 
-    if (logError) {
-      console.error("Error logging notification:", logError);
+      return new Response(
+        JSON.stringify({ success: false, error: emailError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    return new Response(
-      JSON.stringify({ success: true, message: "Notification sent successfully" }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
-  } catch (error: any) {
-    console.error("Error in send-notification function:", error);
+    console.log("Email sent successfully:", emailData);
+
+    // Log successful notification
+    await supabase.from("notification_logs").insert({
+      application_id: applicationId,
+      notification_type: type,
+      recipient_email: candidateEmail,
+      subject,
+      status: "sent",
+    });
 
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: true, emailId: emailData?.id }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error: unknown) {
+    console.error("Error in send-notification function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-};
-
-serve(handler);
+});

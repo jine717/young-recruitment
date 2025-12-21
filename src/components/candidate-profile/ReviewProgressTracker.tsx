@@ -18,7 +18,7 @@ export function ReviewProgressTracker({
   const percentage = (completed / total) * 100;
   
   // Review is considered done when status moved past under_review
-  const isReviewCompleted = ['reviewed', 'interview', 'interviewed', 'hired', 'rejected'].includes(applicationStatus);
+  const isReviewCompleted = ['bcq_sent', 'interview', 'interviewed', 'hired', 'rejected'].includes(applicationStatus);
 
   if (isLoading) {
     return (
@@ -47,18 +47,15 @@ export function ReviewProgressTracker({
         </div>
       </div>
       <Progress value={percentage} variant={isReviewCompleted || allComplete ? 'success' : 'blue'} className="h-2" />
-      <div className="grid grid-cols-4 gap-2 text-xs">
+      <div className="grid grid-cols-3 gap-2 text-xs">
         <div className={`text-center ${progress?.ai_analysis_reviewed ? 'text-green-600' : 'text-muted-foreground'}`}>
           AI Analysis {progress?.ai_analysis_reviewed && '✓'}
         </div>
         <div className={`text-center ${progress?.cv_analysis_reviewed ? 'text-green-600' : 'text-muted-foreground'}`}>
-          CV {progress?.cv_analysis_reviewed && '✓'}
+          CV Analysis {progress?.cv_analysis_reviewed && '✓'}
         </div>
         <div className={`text-center ${progress?.disc_analysis_reviewed ? 'text-green-600' : 'text-muted-foreground'}`}>
-          DISC {progress?.disc_analysis_reviewed && '✓'}
-        </div>
-        <div className={`text-center ${progress?.business_case_reviewed ? 'text-green-600' : 'text-muted-foreground'}`}>
-          Business Case {progress?.business_case_reviewed && '✓'}
+          DISC Analysis {progress?.disc_analysis_reviewed && '✓'}
         </div>
       </div>
     </div>

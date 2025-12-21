@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle, Send, Award } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
 import { useBulkActions } from "@/hooks/useBulkActions";
@@ -25,31 +25,43 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
-const statusColors: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
+const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
-  reviewed: "bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border border-[hsl(var(--young-khaki))]/30",
+  reviewed: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
+  bcq_sent: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
+  bcq_received: "bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/30",
+  pre_interview: "bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border border-[hsl(var(--young-gold))]/30",
   interview: "bg-muted text-muted-foreground",
   interviewed: "bg-green-500/20 text-green-700 border border-green-500/30",
+  evaluated: "bg-purple-500/20 text-purple-700 border border-purple-500/30",
   rejected: "bg-destructive/20 text-destructive border border-destructive/30",
   hired: "bg-green-500/20 text-green-700 border border-green-500/30"
 };
-const statusLabels: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', string> = {
+const statusLabels: Record<string, string> = {
   pending: "New",
   under_review: "In Review",
   reviewed: "Reviewed",
+  bcq_sent: "BCQ Sent",
+  bcq_received: "BCQ Received",
+  pre_interview: "Pre Interview",
   interview: "Interview",
   interviewed: "Interviewed",
+  evaluated: "Evaluated",
   rejected: "Rejected",
   hired: "Hired"
 };
 
-const statusIcons: Record<ApplicationWithDetails['status'] | 'reviewed' | 'interviewed', React.ReactNode> = {
+const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
   reviewed: <FileCheck className="h-3 w-3 mr-1" />,
+  bcq_sent: <Send className="h-3 w-3 mr-1" />,
+  bcq_received: <FileCheck className="h-3 w-3 mr-1" />,
+  pre_interview: <FileQuestion className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
+  evaluated: <Award className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
@@ -200,8 +212,6 @@ const RecruiterDashboard = () => {
         return 'decision_offer';
       case 'rejected':
         return 'decision_rejection';
-      case 'under_review':
-        return 'status_update';
       default:
         return null;
     }
@@ -601,6 +611,10 @@ const RecruiterDashboard = () => {
                                 Review
                                 {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("bcq_sent")} className="flex items-center justify-between">
+                                BCQ Sent
+                                {statusFilter === "bcq_sent" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">
                                 Interview
                                 {statusFilter === "interview" && <Check className="h-4 w-4 ml-2" />}
@@ -737,9 +751,16 @@ const RecruiterDashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
-                                    {app.candidate_name || app.profiles?.full_name || "Unknown"}
-                                  </Link>
+                                  <div className="flex items-center gap-1.5">
+                                    <Link to={`/dashboard/candidate/${app.id}`} className="font-medium hover:text-primary hover:underline" onClick={e => e.stopPropagation()}>
+                                      {app.candidate_name || app.profiles?.full_name || "Unknown"}
+                                    </Link>
+                                    {app.bcq_delayed && (
+                                      <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 h-5">
+                                        D
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <p className="text-sm text-muted-foreground">{app.candidate_email || app.profiles?.email}</p>
                                 </div>
                               </TableCell>

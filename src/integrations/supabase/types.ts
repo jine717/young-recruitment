@@ -59,6 +59,11 @@ export type Database = {
           initial_recommendation: string | null
           initial_skills_match_score: number | null
           overall_score: number | null
+          pre_bcq_communication_score: number | null
+          pre_bcq_cultural_fit_score: number | null
+          pre_bcq_overall_score: number | null
+          pre_bcq_recommendation: string | null
+          pre_bcq_skills_match_score: number | null
           raw_response: Json | null
           recommendation:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -81,6 +86,11 @@ export type Database = {
           initial_recommendation?: string | null
           initial_skills_match_score?: number | null
           overall_score?: number | null
+          pre_bcq_communication_score?: number | null
+          pre_bcq_cultural_fit_score?: number | null
+          pre_bcq_overall_score?: number | null
+          pre_bcq_recommendation?: string | null
+          pre_bcq_skills_match_score?: number | null
           raw_response?: Json | null
           recommendation?:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -103,6 +113,11 @@ export type Database = {
           initial_recommendation?: string | null
           initial_skills_match_score?: number | null
           overall_score?: number | null
+          pre_bcq_communication_score?: number | null
+          pre_bcq_cultural_fit_score?: number | null
+          pre_bcq_overall_score?: number | null
+          pre_bcq_recommendation?: string | null
+          pre_bcq_skills_match_score?: number | null
           raw_response?: Json | null
           recommendation?:
             | Database["public"]["Enums"]["ai_recommendation"]
@@ -128,6 +143,12 @@ export type Database = {
             | null
           ai_score: number | null
           assigned_to: string | null
+          bcq_access_token: string | null
+          bcq_delayed: boolean | null
+          bcq_invitation_sent_at: string | null
+          bcq_link_opened_at: string | null
+          bcq_response_time_minutes: number | null
+          bcq_started_at: string | null
           business_case_completed: boolean
           business_case_completed_at: string | null
           candidate_email: string | null
@@ -147,6 +168,12 @@ export type Database = {
             | null
           ai_score?: number | null
           assigned_to?: string | null
+          bcq_access_token?: string | null
+          bcq_delayed?: boolean | null
+          bcq_invitation_sent_at?: string | null
+          bcq_link_opened_at?: string | null
+          bcq_response_time_minutes?: number | null
+          bcq_started_at?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -166,6 +193,12 @@ export type Database = {
             | null
           ai_score?: number | null
           assigned_to?: string | null
+          bcq_access_token?: string | null
+          bcq_delayed?: boolean | null
+          bcq_invitation_sent_at?: string | null
+          bcq_link_opened_at?: string | null
+          bcq_response_time_minutes?: number | null
+          bcq_started_at?: string | null
           business_case_completed?: boolean
           business_case_completed_at?: string | null
           candidate_email?: string | null
@@ -201,27 +234,63 @@ export type Database = {
           application_id: string
           business_case_id: string
           completed_at: string | null
+          content_analysis_status: string | null
+          content_areas_to_probe: string[] | null
+          content_quality_score: number | null
+          content_strengths: string[] | null
+          content_summary: string | null
           created_at: string
+          fluency_grammar_score: number | null
+          fluency_hesitation_score: number | null
+          fluency_notes: string | null
+          fluency_overall_score: number | null
+          fluency_pace_score: number | null
+          fluency_pronunciation_score: number | null
           id: string
           text_response: string | null
+          transcription: string | null
           video_url: string | null
         }
         Insert: {
           application_id: string
           business_case_id: string
           completed_at?: string | null
+          content_analysis_status?: string | null
+          content_areas_to_probe?: string[] | null
+          content_quality_score?: number | null
+          content_strengths?: string[] | null
+          content_summary?: string | null
           created_at?: string
+          fluency_grammar_score?: number | null
+          fluency_hesitation_score?: number | null
+          fluency_notes?: string | null
+          fluency_overall_score?: number | null
+          fluency_pace_score?: number | null
+          fluency_pronunciation_score?: number | null
           id?: string
           text_response?: string | null
+          transcription?: string | null
           video_url?: string | null
         }
         Update: {
           application_id?: string
           business_case_id?: string
           completed_at?: string | null
+          content_analysis_status?: string | null
+          content_areas_to_probe?: string[] | null
+          content_quality_score?: number | null
+          content_strengths?: string[] | null
+          content_summary?: string | null
           created_at?: string
+          fluency_grammar_score?: number | null
+          fluency_hesitation_score?: number | null
+          fluency_notes?: string | null
+          fluency_overall_score?: number | null
+          fluency_pace_score?: number | null
+          fluency_pronunciation_score?: number | null
           id?: string
           text_response?: string | null
+          transcription?: string | null
           video_url?: string | null
         }
         Relationships: [
@@ -1010,6 +1079,10 @@ export type Database = {
         | "hired"
         | "reviewed"
         | "interviewed"
+        | "evaluated"
+        | "bcq_sent"
+        | "bcq_received"
+        | "pre_interview"
       hiring_decision_type: "hired" | "rejected" | "on_hold"
       interview_recommendation:
         | "strong_hire"
@@ -1158,6 +1231,10 @@ export const Constants = {
         "hired",
         "reviewed",
         "interviewed",
+        "evaluated",
+        "bcq_sent",
+        "bcq_received",
+        "pre_interview",
       ],
       hiring_decision_type: ["hired", "rejected", "on_hold"],
       interview_recommendation: [

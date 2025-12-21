@@ -58,9 +58,12 @@ export function useTriggerInterviewAnalysis() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (applicationId: string) => {
+    mutationFn: async ({ applicationId, customInstructions }: { 
+      applicationId: string; 
+      customInstructions?: string 
+    }) => {
       const { data, error } = await supabase.functions.invoke('analyze-interview', {
-        body: { applicationId },
+        body: { applicationId, customInstructions },
       });
 
       if (error) throw error;
@@ -74,7 +77,7 @@ export function useTriggerInterviewAnalysis() {
 
       return data;
     },
-    onSuccess: (_, applicationId) => {
+    onSuccess: (_, { applicationId }) => {
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['interview-analysis', applicationId] });
       queryClient.invalidateQueries({ queryKey: ['ai-evaluation', applicationId] });

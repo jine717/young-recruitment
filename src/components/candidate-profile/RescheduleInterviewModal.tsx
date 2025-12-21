@@ -123,12 +123,17 @@ export function RescheduleInterviewModal({
         newType: interviewType,
       });
 
-      // Send rescheduled notification to candidate
+      // Send rescheduled notification to candidate with meeting details
       await sendNotification.mutateAsync({
         applicationId,
         type: 'interview_rescheduled',
         interviewDate: format(interviewDate, 'MMMM d, yyyy'),
         interviewTime: format(interviewDate, 'h:mm a'),
+        meetingLink: meetingLink || undefined,
+        location: location || undefined,
+        interviewType,
+        interviewDateISO: interviewDate.toISOString(),
+        durationMinutes: duration,
       });
 
       onOpenChange(false);

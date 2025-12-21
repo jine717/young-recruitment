@@ -5,7 +5,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Mail, Calendar, User, TrendingUp, AlertTriangle, XCircle, Clock, Sparkles, Eye, Video, CheckCircle, FileCheck, Send, FileQuestion, ClipboardCheck, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -25,19 +26,25 @@ interface CandidateHeaderProps {
   aiLoading: boolean;
   // Pre/Post interview differentiation
   initialScore: number | null;
-  evaluationStage: 'initial' | 'post_interview' | null;
+  preBcqScore: number | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | 'final' | null;
   // Quick Actions props
   applicationId: string;
   // Editing permission
   canEdit?: boolean;
+  // BCQ Delayed indicator
+  bcqDelayed?: boolean | null;
 }
 
 const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   under_review: 'bg-muted text-muted-foreground',
-  reviewed: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/50',
+  bcq_sent: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+  bcq_received: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/50',
+  pre_interview: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/50',
   interview: 'bg-muted text-muted-foreground',
   interviewed: 'bg-green-500/20 text-green-700 border-green-500/50',
+  evaluated: 'bg-purple-500/20 text-purple-700 border-purple-500/50',
   hired: 'bg-green-500/20 text-green-700 border-green-500/50',
   rejected: 'bg-red-500/20 text-red-700 border-red-500/50',
 };
@@ -45,9 +52,12 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   pending: 'New',
   under_review: 'In Review',
-  reviewed: 'Reviewed',
+  bcq_sent: 'BCQ Sent',
+  bcq_received: 'BCQ Received',
+  pre_interview: 'Pre Interview',
   interview: 'Interview',
   interviewed: 'Interviewed',
+  evaluated: 'Evaluated',
   hired: 'Hired',
   rejected: 'Rejected',
 };
@@ -55,25 +65,31 @@ const statusLabels: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Sparkles className="h-3 w-3 mr-1" />,
   under_review: <Eye className="h-3 w-3 mr-1" />,
-  reviewed: <FileCheck className="h-3 w-3 mr-1" />,
+  bcq_sent: <Send className="h-3 w-3 mr-1" />,
+  bcq_received: <FileCheck className="h-3 w-3 mr-1" />,
+  pre_interview: <ClipboardCheck className="h-3 w-3 mr-1" />,
   interview: <Video className="h-3 w-3 mr-1" />,
   interviewed: <CheckCircle className="h-3 w-3 mr-1" />,
+  evaluated: <Award className="h-3 w-3 mr-1" />,
   hired: <CheckCircle className="h-3 w-3 mr-1" />,
   rejected: <XCircle className="h-3 w-3 mr-1" />,
 };
+
 
 function AIScoreBadge({ 
   score, 
   recommendation, 
   isLoading,
   initialScore,
+  preBcqScore,
   evaluationStage
 }: { 
   score: number | null; 
   recommendation: string | null; 
   isLoading: boolean;
   initialScore: number | null;
-  evaluationStage: 'initial' | 'post_interview' | null;
+  preBcqScore: number | null;
+  evaluationStage: 'initial' | 'post_bcq' | 'post_interview' | 'final' | null;
 }) {
   if (isLoading) {
     return (
@@ -93,52 +109,47 @@ function AIScoreBadge({
     );
   }
 
-  const getRecommendationConfig = () => {
-    switch (recommendation) {
-      case 'proceed':
-        return {
-          icon: TrendingUp,
-          bgClass: 'bg-[hsl(var(--young-blue))]/10',
-          borderClass: 'border-[hsl(var(--young-blue))]/30',
-          textClass: 'text-[hsl(var(--young-blue))]',
-        };
-      case 'review':
-        return {
-          icon: AlertTriangle,
-          bgClass: 'bg-[hsl(var(--young-gold))]/10',
-          borderClass: 'border-[hsl(var(--young-gold))]/30',
-          textClass: 'text-[hsl(var(--young-gold))]',
-        };
-      case 'reject':
-        return {
-          icon: XCircle,
-          bgClass: 'bg-destructive/10',
-          borderClass: 'border-destructive/30',
-          textClass: 'text-destructive',
-        };
-      default:
-        return {
-          icon: TrendingUp,
-          bgClass: 'bg-muted/50',
-          borderClass: 'border-border',
-          textClass: 'text-muted-foreground',
-        };
-    }
+  // Use score-based colors matching the dashboard (green ≥70, gold 40-69, red <40)
+  const getScoreColor = (s: number) => {
+    if (s >= 70) return {
+      icon: TrendingUp,
+      bgClass: 'bg-green-500/10',
+      borderClass: 'border-green-500/30',
+      textClass: 'text-green-600',
+    };
+    if (s >= 40) return {
+      icon: AlertTriangle,
+      bgClass: 'bg-[hsl(var(--young-gold))]/10',
+      borderClass: 'border-[hsl(var(--young-gold))]/30',
+      textClass: 'text-[hsl(var(--young-gold))]',
+    };
+    return {
+      icon: XCircle,
+      bgClass: 'bg-destructive/10',
+      borderClass: 'border-destructive/30',
+      textClass: 'text-destructive',
+    };
   };
 
-  const config = getRecommendationConfig();
+  const config = getScoreColor(score);
   const Icon = config.icon;
 
-  // Check if this is post-interview score
+  // Determine previous score based on stage
+  const isPostBcq = evaluationStage === 'post_bcq';
   const isPostInterview = evaluationStage === 'post_interview';
-  const scoreChange = isPostInterview && initialScore !== null ? score - initialScore : null;
+  const isFinal = evaluationStage === 'final';
+  
+  // For final evaluation, don't show score history - just the final number
+  const previousScore = isPostBcq ? preBcqScore : isPostInterview ? initialScore : null;
+  const showScoreHistory = !isFinal && (isPostBcq || isPostInterview) && previousScore !== null;
+  const scoreChange = showScoreHistory ? score - previousScore : null;
 
   return (
     <div className="flex items-center gap-2">
       <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${config.bgClass} border ${config.borderClass}`}>
-        {isPostInterview && initialScore !== null ? (
+        {showScoreHistory && previousScore !== null ? (
           <>
-            <span className="text-sm text-muted-foreground line-through">{initialScore}</span>
+            <span className="text-sm text-muted-foreground line-through">{previousScore}</span>
             <span className="text-muted-foreground">→</span>
             <span className={`text-lg font-bold ${config.textClass}`}>{score}</span>
             {scoreChange !== null && scoreChange !== 0 && (
@@ -152,11 +163,6 @@ function AIScoreBadge({
         )}
         <Icon className={`w-4 h-4 ${config.textClass}`} />
       </div>
-      {isPostInterview && (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--young-blue))]/10 text-[hsl(var(--young-blue))] border border-[hsl(var(--young-blue))]/20">
-          Post-Interview
-        </span>
-      )}
     </div>
   );
 }
@@ -175,9 +181,11 @@ export function CandidateHeader({
   aiRecommendation,
   aiLoading,
   initialScore,
+  preBcqScore,
   evaluationStage,
   applicationId,
   canEdit = true,
+  bcqDelayed,
 }: CandidateHeaderProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
@@ -194,14 +202,22 @@ export function CandidateHeader({
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         {/* Left: Candidate info */}
         <div className="flex-1">
-          {/* Name + AI Score inline */}
+          {/* Name + Delayed Badge + AI Score inline */}
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold">{candidateName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{candidateName}</h1>
+              {bcqDelayed && (
+                <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5">
+                  D
+                </Badge>
+              )}
+            </div>
             <AIScoreBadge 
               score={aiScore} 
               recommendation={aiRecommendation} 
               isLoading={aiLoading}
               initialScore={initialScore}
+              preBcqScore={preBcqScore}
               evaluationStage={evaluationStage}
             />
           </div>
@@ -250,14 +266,23 @@ export function CandidateHeader({
                 <SelectItem value="under_review">
                   <span className="flex items-center">{statusIcons.under_review} In Review</span>
                 </SelectItem>
-                <SelectItem value="reviewed">
-                  <span className="flex items-center">{statusIcons.reviewed} Reviewed</span>
+                <SelectItem value="bcq_sent">
+                  <span className="flex items-center">{statusIcons.bcq_sent} BCQ Sent</span>
+                </SelectItem>
+                <SelectItem value="bcq_received">
+                  <span className="flex items-center">{statusIcons.bcq_received} BCQ Received</span>
+                </SelectItem>
+                <SelectItem value="pre_interview">
+                  <span className="flex items-center">{statusIcons.pre_interview} Pre Interview</span>
                 </SelectItem>
                 <SelectItem value="interview">
                   <span className="flex items-center">{statusIcons.interview} Interview</span>
                 </SelectItem>
                 <SelectItem value="interviewed">
                   <span className="flex items-center text-green-700">{statusIcons.interviewed} Interviewed</span>
+                </SelectItem>
+                <SelectItem value="evaluated">
+                  <span className="flex items-center text-purple-700">{statusIcons.evaluated} Evaluated</span>
                 </SelectItem>
                 <SelectItem value="hired">
                   <span className="flex items-center text-green-700">{statusIcons.hired} Hired</span>

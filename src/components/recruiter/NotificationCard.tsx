@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +22,7 @@ interface NotificationCardProps {
 }
 
 export function NotificationCard({ applicationId, candidateName, hasBusinessCase }: NotificationCardProps) {
-  const [selectedType, setSelectedType] = useState<NotificationType>('status_update');
+  const [selectedType, setSelectedType] = useState<NotificationType>('status_in_review');
   const [customMessage, setCustomMessage] = useState('');
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewTime, setInterviewTime] = useState('');
@@ -46,9 +45,8 @@ export function NotificationCard({ applicationId, candidateName, hasBusinessCase
 
   const notificationOptions: { value: NotificationType; label: string }[] = [
     { value: 'application_received', label: 'Application Received' },
-    { value: 'business_case_invite', label: 'Business Case Invite' },
-    { value: 'business_case_reminder', label: 'Business Case Reminder' },
-    { value: 'status_update', label: 'Status Update' },
+    { value: 'status_in_review', label: 'In Review' },
+    { value: 'bcq_invitation', label: 'BCQ Invitation' },
     { value: 'interview_scheduled', label: 'Interview Scheduled' },
     { value: 'decision_offer', label: 'Offer Letter' },
     { value: 'decision_rejection', label: 'Rejection Letter' },

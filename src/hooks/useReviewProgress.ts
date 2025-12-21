@@ -93,6 +93,38 @@ export function useUpdateReviewSection() {
 
       const columnName = `${section}_reviewed`;
 
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from('review_progress')
+        .select('id')
+        .eq('application_id', applicationId)
+        .eq('recruiter_id', userData.user.id)
+        .maybeSingle();
+
+      // If doesn't exist, create it first
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from('review_progress')
+          .insert({
+            application_id: applicationId,
+            recruiter_id: userData.user.id,
+            [columnName]: reviewed,
+          });
+        
+        if (insertError) throw insertError;
+        
+        const { data: newRecord, error: fetchError } = await supabase
+          .from('review_progress')
+          .select('*')
+          .eq('application_id', applicationId)
+          .eq('recruiter_id', userData.user.id)
+          .single();
+          
+        if (fetchError) throw fetchError;
+        return newRecord as ReviewProgress;
+      }
+
+      // If exists, update normally
       const { data, error } = await supabase
         .from('review_progress')
         .update({ [columnName]: reviewed })
@@ -116,15 +148,14 @@ export function useUpdateReviewSection() {
 }
 
 export function getReviewCompletionCount(progress: ReviewProgress | null): { completed: number; total: number } {
-  if (!progress) return { completed: 0, total: 4 };
+  if (!progress) return { completed: 0, total: 3 };
   
   let completed = 0;
   if (progress.ai_analysis_reviewed) completed++;
   if (progress.cv_analysis_reviewed) completed++;
   if (progress.disc_analysis_reviewed) completed++;
-  if (progress.business_case_reviewed) completed++;
   
-  return { completed, total: 4 };
+  return { completed, total: 3 };
 }
 
 export function isReviewComplete(progress: ReviewProgress | null): boolean {
@@ -132,7 +163,6 @@ export function isReviewComplete(progress: ReviewProgress | null): boolean {
   return (
     progress.ai_analysis_reviewed &&
     progress.cv_analysis_reviewed &&
-    progress.disc_analysis_reviewed &&
-    progress.business_case_reviewed
+    progress.disc_analysis_reviewed
   );
 }

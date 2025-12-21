@@ -83,7 +83,7 @@ export function useScheduleInterview() {
 
       if (error) throw error;
 
-      // Auto-transition: reviewed → interview when scheduling
+      // Auto-transition: bcq_sent/pre_interview → interview when scheduling
       // First check current application status
       const { data: application } = await supabase
         .from('applications')
@@ -91,7 +91,7 @@ export function useScheduleInterview() {
         .eq('id', data.application_id)
         .single();
 
-      if (application && application.status === 'reviewed') {
+      if (application && (application.status === 'bcq_sent' || application.status === 'pre_interview')) {
         await supabase
           .from('applications')
           .update({ status: 'interview' })

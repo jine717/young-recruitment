@@ -4,13 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export type NotificationType = 
   | 'application_received'
-  | 'business_case_invite'
-  | 'business_case_reminder'
-  | 'status_update'
+  | 'status_in_review'
   | 'interview_scheduled'
   | 'interview_rescheduled'
   | 'decision_offer'
-  | 'decision_rejection';
+  | 'decision_rejection'
+  | 'bcq_invitation';
 
 export interface NotificationLog {
   id: string;
@@ -54,15 +53,27 @@ export function useSendNotification() {
       customMessage,
       interviewDate,
       interviewTime,
+      meetingLink,
+      location,
+      interviewType,
+      interviewDateISO,
+      durationMinutes,
+      silent,
     }: {
       applicationId: string;
       type: NotificationType;
       customMessage?: string;
       interviewDate?: string;
       interviewTime?: string;
+      meetingLink?: string;
+      location?: string;
+      interviewType?: 'video' | 'phone' | 'in_person';
+      interviewDateISO?: string;
+      durationMinutes?: number;
+      silent?: boolean;
     }) => {
       const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { applicationId, type, customMessage, interviewDate, interviewTime },
+        body: { applicationId, type, customMessage, interviewDate, interviewTime, meetingLink, location, interviewType, interviewDateISO, durationMinutes },
       });
 
       if (error) throw error;
@@ -71,6 +82,12 @@ export function useSendNotification() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['notification-logs', variables.applicationId] });
+      if (!variables.silent) {
+        toast({
+          title: "Email Sent",
+          description: "Notification sent successfully.",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -84,11 +101,10 @@ export function useSendNotification() {
 
 export const notificationTypeLabels: Record<NotificationType, string> = {
   application_received: "Application Received",
-  business_case_invite: "Business Case Invite",
-  business_case_reminder: "Business Case Reminder",
-  status_update: "Status Update",
+  status_in_review: "In Review",
   interview_scheduled: "Interview Scheduled",
   interview_rescheduled: "Interview Rescheduled",
   decision_offer: "Offer Letter",
   decision_rejection: "Rejection Letter",
+  bcq_invitation: "BCQ Invitation",
 };

@@ -392,7 +392,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
               </Card>
 
               {/* Two-column layout */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 items-start">
         {/* Left Column: AI-Generated Questions */}
         <Card>
           <CardHeader className="pb-3">
@@ -432,7 +432,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 pt-0">
+          <CardContent className="space-y-3 pt-0 max-h-[400px] overflow-y-auto">
             {!aiQuestions?.length ? (
               <div className="text-center py-6 text-sm text-muted-foreground">
                 <Sparkles className="h-6 w-6 mx-auto mb-2 opacity-50" />
@@ -488,7 +488,7 @@ export function InterviewQuestionsSection({ applicationId, jobId }: InterviewQue
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 pt-0">
+          <CardContent className="space-y-3 pt-0 max-h-[400px] overflow-y-auto">
             {!fixedQuestions?.length ? (
               <div className="text-center py-6 text-sm text-muted-foreground">
                 <ClipboardList className="h-6 w-6 mx-auto mb-2 opacity-50" />
@@ -591,7 +591,7 @@ function AIQuestionItem({
           </div>
           <p className="text-sm">{question.question_text}</p>
           {question.reasoning && (
-            <p className="text-xs text-muted-foreground mt-1 italic">{question.reasoning}</p>
+            <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2 hover:line-clamp-none cursor-pointer transition-all">{question.reasoning}</p>
           )}
           
           {/* Recruiter Note */}

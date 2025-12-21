@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Upload, Loader2, CheckCircle, Send } from 'lucide-react';
 import { useJob } from '@/hooks/useJobs';
-import { useBusinessCases } from '@/hooks/useBusinessCase';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSendNotification } from '@/hooks/useNotifications';
@@ -24,9 +22,7 @@ const applicationSchema = z.object({
 
 export default function Apply() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: job, isLoading: jobLoading } = useJob(id);
-  const { data: businessCases, isLoading: businessCasesLoading } = useBusinessCases(id);
   const { toast } = useToast();
   const sendNotification = useSendNotification();
 
@@ -34,7 +30,6 @@ export default function Apply() {
   const [candidateEmail, setCandidateEmail] = useState('');
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [discFile, setDiscFile] = useState<File | null>(null);
-  const [responses, setResponses] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -102,13 +97,6 @@ export default function Apply() {
     if (!cvFile) newErrors.cvFile = 'Please upload your CV';
     if (!discFile) newErrors.discFile = 'Please upload your DISC assessment';
 
-    // Validate business case responses - all questions must be answered
-    businessCases?.forEach((bc) => {
-      if (!responses[bc.id] || responses[bc.id].trim().length < 10) {
-        newErrors[`response_${bc.id}`] = 'Please provide a detailed response (at least 10 characters)';
-      }
-    });
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       toast({
@@ -144,7 +132,7 @@ export default function Apply() {
       // Generate application ID client-side to avoid SELECT permission requirement
       const applicationId = crypto.randomUUID();
 
-      // Create application
+      // Create application - BCQ will be completed later via email invitation
       const { error: appError } = await supabase
         .from('applications')
         .insert({
@@ -155,37 +143,25 @@ export default function Apply() {
           cv_url: cvPath,
           disc_url: discPath,
           status: 'pending',
-          business_case_completed: true,
-          business_case_completed_at: new Date().toISOString(),
+          business_case_completed: false, // BCQ not completed yet - will be done via video portal
         });
 
       if (appError) throw appError;
 
-      // Create business case responses
-      if (businessCases && businessCases.length > 0) {
-        const responseInserts = businessCases.map((bc) => ({
-          application_id: applicationId,
-          business_case_id: bc.id,
-          text_response: responses[bc.id],
-          completed_at: new Date().toISOString(),
-        }));
-
-        const { error: respError } = await supabase
-          .from('business_case_responses')
-          .insert(responseInserts);
-
-        if (respError) throw respError;
-      }
-
-      // Send notification (fire and forget)
+      // Send application received notification (silent - page already shows confirmation)
       sendNotification.mutate({ 
         applicationId: applicationId, 
-        type: 'application_received' 
+        type: 'application_received',
+        silent: true,
       });
 
-      // Trigger AI analysis (fire and forget)
+      // Trigger automatic AI analysis (CV + DISC matching) in background
+      // This runs async - candidate doesn't wait for it to complete
       supabase.functions.invoke('analyze-candidate', {
-        body: { applicationId: applicationId }
+        body: { applicationId },
+      }).catch(err => {
+        console.error('Background AI analysis failed:', err);
+        // Don't show error to candidate - analysis can be retriggered by recruiter
       });
 
       setSubmitted(true);
@@ -201,7 +177,7 @@ export default function Apply() {
     }
   };
 
-  if (jobLoading || businessCasesLoading) {
+  if (jobLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -233,11 +209,11 @@ export default function Apply() {
               <CheckCircle className="h-10 w-10 text-primary" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl mb-4">APPLICATION SUBMITTED</h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Thank you for applying for <strong>{job.title}</strong>. We've received your application and will review it carefully.
+            <p className="text-xl text-muted-foreground mb-4">
+              Thank you for applying for <strong>{job.title}</strong>. We've received your application.
             </p>
             <p className="text-muted-foreground mb-8">
-              You'll receive an email at <strong>{candidateEmail}</strong> with updates about your application status.
+              You'll receive an email at <strong>{candidateEmail}</strong> with instructions to complete the next step of our evaluation process.
             </p>
             <Button asChild size="lg">
               <Link to="/jobs">Browse More Positions</Link>
@@ -397,75 +373,6 @@ export default function Apply() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Business Case Questions */}
-            {businessCases && businessCases.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-display text-xl">Business Case Questions</CardTitle>
-                  <CardDescription>
-                    Please answer the following questions to help us understand your fit for this role
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  {businessCases.map((bc, index) => {
-                    const charCount = responses[bc.id]?.length || 0;
-                    const minChars = 50;
-                    const recommendedChars = 500;
-                    
-                    return (
-                      <div 
-                        key={bc.id} 
-                        className="relative p-6 rounded-lg border border-border bg-muted/30 space-y-4 transition-all duration-200 hover:border-primary/30 hover:bg-muted/50"
-                      >
-                        {/* Question Header */}
-                        <div className="flex items-start gap-4">
-                          <span className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-display text-lg shadow-sm">
-                            {index + 1}
-                          </span>
-                          <div className="flex-1 pt-1">
-                            <h3 className="text-lg font-semibold text-foreground">{bc.question_title}</h3>
-                            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                              {bc.question_description}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Answer Input */}
-                        <div className="pt-2">
-                          <Textarea
-                            value={responses[bc.id] || ''}
-                            onChange={(e) => setResponses(prev => ({ ...prev, [bc.id]: e.target.value }))}
-                            placeholder="Write your answer here..."
-                            rows={5}
-                            disabled={isSubmitting}
-                            className="resize-none bg-background border-border/50 focus:border-primary transition-colors"
-                          />
-                          <div className="flex items-center justify-between mt-2">
-                            {errors[`response_${bc.id}`] ? (
-                              <p className="text-sm text-destructive">{errors[`response_${bc.id}`]}</p>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">
-                                {charCount < minChars ? `Minimum ${minChars} characters recommended` : ''}
-                              </p>
-                            )}
-                            <span className={`text-xs tabular-nums ${
-                              charCount < minChars 
-                                ? 'text-muted-foreground' 
-                                : charCount < recommendedChars 
-                                  ? 'text-primary' 
-                                  : 'text-green-600'
-                            }`}>
-                              {charCount} / {recommendedChars}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
 
             {/* Submit Button */}
             <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>

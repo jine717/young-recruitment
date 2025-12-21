@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
 
     const recruiters = [
       { email: "management@ytalents.nl", password: "Ymanagement123!", name: "Management", role: "management" },
+      { email: "admin@ytalents.nl", password: "Admin123!", name: "Admin", role: "admin" },
     ];
 
     const results = [];

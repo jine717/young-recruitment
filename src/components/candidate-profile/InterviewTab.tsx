@@ -64,7 +64,7 @@ export function InterviewTab({
         applicationStatus={applicationStatus}
       />
       <InterviewQuestionsSection applicationId={applicationId} jobId={jobId} />
-      <InterviewAnalysisCard applicationId={applicationId} />
+      <InterviewAnalysisCard applicationId={applicationId} candidateName={candidateName} />
       <InterviewScheduleCard 
         interviews={interviews} 
         isLoading={interviewsLoading} 
@@ -73,6 +73,7 @@ export function InterviewTab({
         applicationId={applicationId}
         candidateName={candidateName}
         jobTitle={jobTitle}
+        applicationStatus={applicationStatus}
       />
     </div>
   );

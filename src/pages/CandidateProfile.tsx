@@ -25,9 +25,11 @@ import { CandidateAIAssistant } from '@/components/candidate-profile/CandidateAI
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Gavel, CheckCircle, StickyNote } from 'lucide-react';
+import { Briefcase, Users, Gavel, CheckCircle, StickyNote, FileVideo, Award } from 'lucide-react';
+import { BCQTab } from '@/components/candidate-profile/BCQTab';
 import { RecruiterNotes } from '@/components/candidate-profile/RecruiterNotes';
 import { HiringDecisionModal } from '@/components/candidate-profile/HiringDecisionModal';
+import { FinalEvaluationTab } from '@/components/candidate-profile/FinalEvaluationTab';
 import { useToast } from '@/hooks/use-toast';
 import type { CandidateContext } from '@/hooks/useAIAssistant';
 
@@ -41,8 +43,16 @@ interface ApplicationDetail {
   cv_url: string | null;
   disc_url: string | null;
   business_case_completed: boolean;
+  business_case_completed_at: string | null;
   ai_evaluation_status: string | null;
   created_at: string;
+  // BCQ fields
+  bcq_access_token: string | null;
+  bcq_invitation_sent_at: string | null;
+  bcq_link_opened_at: string | null;
+  bcq_started_at: string | null;
+  bcq_response_time_minutes: number | null;
+  bcq_delayed: boolean | null;
   job: {
     id: string;
     title: string;
@@ -142,7 +152,7 @@ export default function CandidateProfile() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isCompletingReview, setIsCompletingReview] = useState(false);
+  
   
   // Track if we've already auto-transitioned to prevent duplicate calls
   const hasAutoTransitioned = useRef(false);
@@ -168,22 +178,6 @@ export default function CandidateProfile() {
     }
   }, [application?.id, application?.status, canEdit]);
 
-  // Handle completing review (all sections reviewed → status = reviewed)
-  const handleCompleteReview = async () => {
-    if (!application || !isReviewComplete(reviewProgress)) return;
-    
-    setIsCompletingReview(true);
-    try {
-      await updateStatus(application.id, 'reviewed' as any);
-      queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast({ title: 'Review completed', description: 'Candidate status updated to Reviewed' });
-    } catch (error) {
-      toast({ title: 'Error completing review', variant: 'destructive' });
-    } finally {
-      setIsCompletingReview(false);
-    }
-  };
 
   // Build comprehensive candidate context for AI Assistant
   const candidateContext: CandidateContext | null = useMemo(() => {
@@ -383,8 +377,6 @@ export default function CandidateProfile() {
         return 'decision_offer';
       case 'rejected':
         return 'decision_rejection';
-      case 'under_review':
-        return 'status_update';
       default:
         return null;
     }
@@ -461,9 +453,11 @@ export default function CandidateProfile() {
           aiRecommendation={aiEvaluation?.recommendation ?? null}
           aiLoading={aiLoading}
           initialScore={aiEvaluation?.initial_overall_score ?? null}
+          preBcqScore={aiEvaluation?.pre_bcq_overall_score ?? null}
           evaluationStage={aiEvaluation?.evaluation_stage ?? null}
           applicationId={application.id}
           canEdit={canEdit}
+          bcqDelayed={application.bcq_delayed}
         />
 
         {/* Schedule Interview Modal */}
@@ -494,10 +488,24 @@ export default function CandidateProfile() {
                 <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
+            <TabsTrigger value="bcq" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <FileVideo className="w-4 h-4" />
+              BCQ
+              {application.business_case_completed && aiEvaluation?.evaluation_stage !== 'initial' && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="interview" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
               <Users className="w-4 h-4" />
               Interview
               {documentAnalyses?.some(d => (d.document_type as string) === 'interview' && d.status === 'completed') && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="final" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-young-sm">
+              <Award className="w-4 h-4" />
+              Final Evaluation
+              {documentAnalyses?.some(d => (d.document_type as string) === 'final_evaluation' && d.status === 'completed') && (
                 <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </TabsTrigger>
@@ -529,10 +537,30 @@ export default function CandidateProfile() {
               onReviewSection={(section, reviewed) => {
                 updateReviewSection.mutate({ applicationId: application.id, section, reviewed });
               }}
-              onCompleteReview={handleCompleteReview}
-              isCompletingReview={isCompletingReview}
               canEdit={canEdit}
               applicationStatus={application.status}
+            />
+          </TabsContent>
+
+          <TabsContent value="bcq" className="mt-0">
+            <BCQTab
+              applicationId={application.id}
+              jobId={application.job_id}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              candidateEmail={application.candidate_email || application.profile.email || ''}
+              canEdit={canEdit}
+              bcqAccessToken={application.bcq_access_token}
+              bcqInvitationSentAt={application.bcq_invitation_sent_at}
+              bcqLinkOpenedAt={application.bcq_link_opened_at}
+              bcqStartedAt={application.bcq_started_at}
+              businessCaseCompleted={application.business_case_completed}
+              businessCaseCompletedAt={application.business_case_completed_at}
+              bcqResponseTimeMinutes={application.bcq_response_time_minutes}
+              bcqDelayed={application.bcq_delayed}
+              reviewProgress={reviewProgress}
+              applicationStatus={application.status}
+              evaluationStage={aiEvaluation?.evaluation_stage || null}
+              aiEvaluation={aiEvaluation}
             />
           </TabsContent>
 
@@ -547,6 +575,15 @@ export default function CandidateProfile() {
               onScheduleInterview={() => setShowScheduleModal(true)}
               candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
               jobTitle={application.job.title}
+            />
+          </TabsContent>
+
+          <TabsContent value="final" className="mt-0">
+            <FinalEvaluationTab
+              applicationId={application.id}
+              candidateName={application.candidate_name || application.profile.full_name || 'Candidate'}
+              aiEvaluation={aiEvaluation}
+              documentAnalyses={documentAnalyses}
             />
           </TabsContent>
         </Tabs>
