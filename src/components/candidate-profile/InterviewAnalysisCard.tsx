@@ -87,9 +87,10 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
   }
 
   // Has analysis - show collapsible card with results
-  const scoreChange = analysis!.score_change_explanation;
-  const isPositive = scoreChange.change > 0;
-  const isNegative = scoreChange.change < 0;
+  const scoreChange = analysis?.score_change_explanation;
+  const changeValue = scoreChange?.change ?? 0;
+  const isPositive = changeValue > 0;
+  const isNegative = changeValue < 0;
 
   const getChangeIcon = () => {
     if (isPositive) return <TrendingUp className="w-5 h-5" />;
@@ -175,23 +176,23 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
                     AI Score Updated
                   </h4>
                   <Badge variant="outline" className={getChangeColor()}>
-                    {isPositive ? '+' : ''}{scoreChange.change} pts
+                    {isPositive ? '+' : ''}{changeValue} pts
                   </Badge>
                 </div>
                 
                 <div className="flex items-center gap-4 mb-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-muted-foreground">{scoreChange.previous_score}</div>
+                    <div className="text-2xl font-bold text-muted-foreground">{scoreChange?.previous_score ?? '-'}</div>
                     <div className="text-xs text-muted-foreground">Before</div>
                   </div>
                   <div className="text-2xl">→</div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{scoreChange.new_score}</div>
+                    <div className="text-2xl font-bold">{scoreChange?.new_score ?? '-'}</div>
                     <div className="text-xs text-muted-foreground">After</div>
                   </div>
                 </div>
 
-                {scoreChange.reasons_for_change.length > 0 && (
+                {scoreChange?.reasons_for_change && scoreChange.reasons_for_change.length > 0 && (
                   <div className="space-y-1">
                     {scoreChange.reasons_for_change.map((reason, idx) => (
                       <div key={idx} className="flex items-start gap-2 text-sm">
