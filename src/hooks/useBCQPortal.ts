@@ -204,24 +204,80 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
   const submitResponse = useCallback(async (questionId: string, videoBlob: Blob) => {
     if (!application) return;
 
+    // Clear any previous errors
+    setError(null);
+
+    // Validate video blob before attempting upload
+    if (!videoBlob || videoBlob.size === 0) {
+      console.error('Video validation failed: Empty blob', { size: videoBlob?.size, type: videoBlob?.type });
+      setError('Recording is empty. Please try recording again.');
+      return;
+    }
+
+    // Check for reasonable size limit (100MB)
+    const maxSizeBytes = 100 * 1024 * 1024;
+    if (videoBlob.size > maxSizeBytes) {
+      console.error('Video validation failed: Too large', { size: videoBlob.size, maxSize: maxSizeBytes });
+      setError(`Recording is too large (${(videoBlob.size / 1024 / 1024).toFixed(1)}MB). Please record a shorter video.`);
+      return;
+    }
+
+    console.log('Starting video upload:', { 
+      questionId, 
+      blobSize: videoBlob.size, 
+      blobType: videoBlob.type,
+      applicationId: application.id 
+    });
+
     // Record start time on first response
     await recordStarted();
 
     setIsUploading(true);
 
     try {
-      // Upload video to storage
+      // Upload video to storage with retry logic
       const fileName = `${application.id}/${questionId}.webm`;
-      const { error: uploadError } = await supabase.storage
-        .from('business-case-videos')
-        .upload(fileName, videoBlob, {
-          contentType: 'video/webm',
-          upsert: true
+      let uploadAttempts = 0;
+      const maxAttempts = 2;
+      let lastUploadError: Error | null = null;
+
+      while (uploadAttempts < maxAttempts) {
+        uploadAttempts++;
+        console.log(`Upload attempt ${uploadAttempts}/${maxAttempts}...`);
+
+        const { error: uploadError } = await supabase.storage
+          .from('business-case-videos')
+          .upload(fileName, videoBlob, {
+            contentType: 'video/webm',
+            upsert: true
+          });
+
+        if (!uploadError) {
+          console.log('Upload successful on attempt', uploadAttempts);
+          lastUploadError = null;
+          break;
+        }
+
+        console.error('Upload error on attempt', uploadAttempts, ':', {
+          message: uploadError.message,
+          name: uploadError.name,
+          statusCode: (uploadError as any).statusCode,
+          error: uploadError
         });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload video');
+        lastUploadError = new Error(uploadError.message);
+
+        if (uploadAttempts >= maxAttempts) {
+          break;
+        }
+
+        // Wait before retry
+        console.log('Waiting 1s before retry...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      if (lastUploadError) {
+        throw new Error(`Failed to upload video after ${maxAttempts} attempts: ${lastUploadError.message}`);
       }
 
       // Get public URL
@@ -230,6 +286,7 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         .getPublicUrl(fileName);
 
       const videoUrl = urlData.publicUrl;
+      console.log('Video URL obtained:', videoUrl);
 
       // Create or update response record
       const { data: respData, error: respError } = await supabase
@@ -246,9 +303,16 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         .single();
 
       if (respError) {
-        console.error('Response save error:', respError);
-        throw new Error('Failed to save response');
+        console.error('Response save error:', {
+          message: respError.message,
+          code: respError.code,
+          details: respError.details,
+          hint: respError.hint
+        });
+        throw new Error(`Failed to save response: ${respError.message}`);
       }
+
+      console.log('Response record saved:', respData.id);
 
       setIsUploading(false);
       setIsTranscribing(true);
@@ -256,7 +320,9 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
       // Transcribe the video
       try {
         // Convert blob to base64 safely (handles large files)
+        console.log('Converting video to base64 for transcription...');
         const base64Audio = await blobToBase64(videoBlob);
+        console.log('Base64 conversion complete, invoking transcription function...');
 
         const { data: transcriptionData, error: transcriptionError } = await supabase.functions
           .invoke('transcribe-video', {
@@ -268,9 +334,14 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
           });
 
         if (transcriptionError) {
-          console.error('Transcription error:', transcriptionError);
+          console.error('Transcription error:', {
+            message: transcriptionError.message,
+            name: transcriptionError.name,
+            context: transcriptionError.context
+          });
           setError('Transcription failed. Analysis will be available later.');
         } else if (transcriptionData?.text) {
+          console.log('Transcription successful, updating response...');
           // Build update data with transcription and fluency analysis
           const updateData: Record<string, unknown> = { 
             transcription: transcriptionData.text 
@@ -329,8 +400,9 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         goToNextQuestion();
       }
     } catch (err) {
-      console.error('Submit response error:', err);
-      setError('Failed to submit response. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('Submit response error:', { error: err, message: errorMessage });
+      setError(`Failed to submit response: ${errorMessage}`);
       setIsUploading(false);
       setIsTranscribing(false);
     }
