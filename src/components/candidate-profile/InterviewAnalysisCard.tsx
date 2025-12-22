@@ -209,45 +209,49 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center p-3 bg-muted/30 rounded-lg">
                 <div className="text-lg font-semibold text-[hsl(var(--young-blue))]">
-                  {analysis!.new_skills_score}
+                  {analysis?.new_skills_score ?? '-'}
                 </div>
                 <div className="text-xs text-muted-foreground">Skills</div>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-lg">
                 <div className="text-lg font-semibold text-[hsl(var(--young-gold))]">
-                  {analysis!.new_communication_score}
+                  {analysis?.new_communication_score ?? '-'}
                 </div>
                 <div className="text-xs text-muted-foreground">Communication</div>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-lg">
                 <div className="text-lg font-semibold text-[hsl(var(--young-khaki))]">
-                  {analysis!.new_cultural_fit_score}
+                  {analysis?.new_cultural_fit_score ?? '-'}
                 </div>
                 <div className="text-xs text-muted-foreground">Cultural Fit</div>
               </div>
             </div>
 
             {/* Summary */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Summary</h4>
-              <p className="text-sm text-muted-foreground">{analysis!.interview_summary}</p>
-            </div>
+            {analysis?.interview_summary && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Summary</h4>
+                <p className="text-sm text-muted-foreground">{analysis.interview_summary}</p>
+              </div>
+            )}
 
             {/* Performance Assessment */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Performance Assessment</h4>
-              <p className="text-sm text-muted-foreground">{analysis!.performance_assessment}</p>
-            </div>
+            {analysis?.performance_assessment && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Performance Assessment</h4>
+                <p className="text-sm text-muted-foreground">{analysis.performance_assessment}</p>
+              </div>
+            )}
 
             {/* Strengths */}
-            {analysis!.strengths_demonstrated.length > 0 && (
+            {analysis?.strengths_demonstrated && analysis.strengths_demonstrated.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                   Strengths Demonstrated
                 </h4>
                 <div className="space-y-1">
-                  {analysis!.strengths_demonstrated.map((strength, idx) => (
+                  {analysis.strengths_demonstrated.map((strength, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <span className="text-[hsl(var(--young-blue))]">•</span>
                       <span>{strength}</span>
@@ -258,14 +262,14 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
             )}
 
             {/* Concerns */}
-            {analysis!.concerns_identified.length > 0 && (
+            {analysis?.concerns_identified && analysis.concerns_identified.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-[hsl(var(--young-gold))]" />
                   Concerns Identified
                 </h4>
                 <div className="space-y-1">
-                  {analysis!.concerns_identified.map((concern, idx) => (
+                  {analysis.concerns_identified.map((concern, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <span className="text-[hsl(var(--young-gold))]">•</span>
                       <span>{concern}</span>
@@ -276,14 +280,14 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
             )}
 
             {/* Areas Needing Clarification */}
-            {analysis!.areas_needing_clarification && analysis!.areas_needing_clarification.length > 0 && (
+            {analysis?.areas_needing_clarification && analysis.areas_needing_clarification.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-[hsl(var(--young-blue))]" />
                   Areas Needing Clarification
                 </h4>
                 <div className="space-y-1">
-                  {analysis!.areas_needing_clarification.map((area, idx) => (
+                  {analysis.areas_needing_clarification.map((area, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <span className="text-[hsl(var(--young-blue))]">•</span>
                       <span>{area}</span>
@@ -294,20 +298,22 @@ export function InterviewAnalysisCard({ applicationId, candidateName = 'Candidat
             )}
 
             {/* Next Steps */}
-            <div className="space-y-2 p-3 bg-[hsl(var(--young-blue))]/10 rounded-lg">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-[hsl(var(--young-blue))]" />
-                Recommended Next Steps
-              </h4>
-              <p className="text-sm text-muted-foreground">{analysis!.next_steps_recommendation}</p>
-            </div>
+            {analysis?.next_steps_recommendation && (
+              <div className="space-y-2 p-3 bg-[hsl(var(--young-blue))]/10 rounded-lg">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-[hsl(var(--young-blue))]" />
+                  Recommended Next Steps
+                </h4>
+                <p className="text-sm text-muted-foreground">{analysis.next_steps_recommendation}</p>
+              </div>
+            )}
 
             {/* Follow-up Questions */}
-            {analysis!.suggested_follow_up_questions && analysis!.suggested_follow_up_questions.length > 0 && (
+            {analysis?.suggested_follow_up_questions && analysis.suggested_follow_up_questions.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Suggested Follow-up Questions</h4>
                 <div className="space-y-2">
-                  {analysis!.suggested_follow_up_questions.map((question, idx) => (
+                  {analysis.suggested_follow_up_questions.map((question, idx) => (
                     <div key={idx} className="p-2 bg-muted/30 rounded text-sm">
                       {idx + 1}. {question}
                     </div>
