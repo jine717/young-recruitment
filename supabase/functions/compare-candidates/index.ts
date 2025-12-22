@@ -752,9 +752,86 @@ IMPORTANT ANALYSIS REQUIREMENTS:
                     },
                     required: ['application_id', 'candidate_name', 'has_interview']
                   }
+                },
+                bcq_video_performance: {
+                  type: 'array',
+                  description: 'BCQ video performance analysis for each candidate',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      application_id: { type: 'string' },
+                      candidate_name: { type: 'string' },
+                      avg_fluency_score: { type: 'number', description: 'Average fluency score across all BCQ videos 0-100' },
+                      avg_content_score: { type: 'number', description: 'Average content quality score across all BCQ videos 0-100' },
+                      fluency_details: {
+                        type: 'object',
+                        properties: {
+                          pronunciation: { type: 'number' },
+                          pace: { type: 'number' },
+                          hesitation: { type: 'number' },
+                          grammar: { type: 'number' }
+                        }
+                      },
+                      responses: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            question_title: { type: 'string' },
+                            transcription_excerpt: { type: 'string', description: 'Brief excerpt from transcription (50-100 chars)' },
+                            fluency_score: { type: 'number' },
+                            content_score: { type: 'number' },
+                            content_summary: { type: 'string' }
+                          }
+                        }
+                      }
+                    },
+                    required: ['application_id', 'candidate_name']
+                  }
+                },
+                stage_progression: {
+                  type: 'array',
+                  description: 'Score progression through the 4 evaluation phases',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      application_id: { type: 'string' },
+                      candidate_name: { type: 'string' },
+                      initial_score: { type: 'number', description: 'Initial screening score' },
+                      post_bcq_score: { type: 'number', description: 'Score after BCQ assessment' },
+                      post_interview_score: { type: 'number', description: 'Score after interview' },
+                      final_score: { type: 'number', description: 'Final overall score' },
+                      evaluation_stage: { type: 'string', description: 'Current evaluation stage' },
+                      progression_trend: { type: 'string', enum: ['improving', 'declining', 'stable', 'unknown'] },
+                      score_change: { type: 'number', description: 'Total score change from initial to current' }
+                    },
+                    required: ['application_id', 'candidate_name', 'evaluation_stage', 'progression_trend']
+                  }
+                },
+                phase_completion: {
+                  type: 'array',
+                  description: 'Phase completion status for each candidate',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      application_id: { type: 'string' },
+                      candidate_name: { type: 'string' },
+                      phases_completed: {
+                        type: 'object',
+                        properties: {
+                          initial_screening: { type: 'boolean' },
+                          bcq_assessment: { type: 'boolean' },
+                          interview: { type: 'boolean' },
+                          final_evaluation: { type: 'boolean' }
+                        }
+                      },
+                      completion_percentage: { type: 'number', description: 'Percentage of phases completed (0-100)' }
+                    },
+                    required: ['application_id', 'candidate_name', 'phases_completed', 'completion_percentage']
+                  }
                 }
               },
-              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks', 'business_case_analysis', 'interview_performance_analysis']
+              required: ['executive_summary', 'rankings', 'comparison_matrix', 'recommendation', 'risks', 'business_case_analysis', 'interview_performance_analysis', 'bcq_video_performance', 'stage_progression', 'phase_completion']
             }
           }
         }],

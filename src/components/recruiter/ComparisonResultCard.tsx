@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExecutiveReportModal } from './ExecutiveReportModal';
 import { InterviewPerformanceSection } from './InterviewPerformanceSection';
+import { BCQVideoPerformanceSection } from './BCQVideoPerformanceSection';
+import { StageProgressionSection } from './StageProgressionSection';
 import { ComparisonAIAssistant } from './ComparisonAIAssistant';
 import type { PresentationContent, ViableCandidate, CandidateRanking, ComparisonMatrixItem, BusinessCaseAnalysisItem, InterviewPerformanceItem, CandidateRisk } from './ExecutiveReportContent';
 
@@ -425,6 +427,23 @@ export function ComparisonResultCard({ result, jobTitle = 'Position', jobId }: C
           </div>
         </CardContent>
       </Card>
+
+      {/* Stage Progression Comparison - NEW 4-phase workflow */}
+      {result.stage_progression && result.stage_progression.length > 0 && (
+        <StageProgressionSection
+          stageProgression={result.stage_progression}
+          phaseCompletion={result.phase_completion}
+          rankings={result.rankings}
+        />
+      )}
+
+      {/* BCQ Video Performance - NEW */}
+      {result.bcq_video_performance && result.bcq_video_performance.length > 0 && (
+        <BCQVideoPerformanceSection
+          bcqVideoPerformance={result.bcq_video_performance}
+          rankings={result.rankings}
+        />
+      )}
 
       {/* Interview Performance Analysis */}
       {result.interview_performance_analysis && result.interview_performance_analysis.length > 0 && (
