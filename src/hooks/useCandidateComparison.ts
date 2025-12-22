@@ -71,6 +71,53 @@ export interface InterviewPerformanceAnalysis {
   concerns_raised?: string[];
 }
 
+// NEW: BCQ Video Performance Analysis
+export interface BCQVideoPerformance {
+  application_id: string;
+  candidate_name: string;
+  avg_fluency_score: number | null;
+  avg_content_score: number | null;
+  fluency_details: {
+    pronunciation: number | null;
+    pace: number | null;
+    hesitation: number | null;
+    grammar: number | null;
+  };
+  responses: {
+    question_title: string;
+    transcription_excerpt: string | null;
+    fluency_score: number | null;
+    content_score: number | null;
+    content_summary: string | null;
+  }[];
+}
+
+// NEW: Stage Progression Tracking
+export interface StageProgression {
+  application_id: string;
+  candidate_name: string;
+  initial_score: number | null;
+  post_bcq_score: number | null;
+  post_interview_score: number | null;
+  final_score: number | null;
+  evaluation_stage: string;
+  progression_trend: 'improving' | 'declining' | 'stable' | 'unknown';
+  score_change: number | null;
+}
+
+// NEW: Phase Completion Status
+export interface PhaseCompletionStatus {
+  application_id: string;
+  candidate_name: string;
+  phases_completed: {
+    initial_screening: boolean;
+    bcq_assessment: boolean;
+    interview: boolean;
+    final_evaluation: boolean;
+  };
+  completion_percentage: number;
+}
+
 export interface ComparisonResult {
   executive_summary: string;
   rankings: CandidateRanking[];
@@ -79,6 +126,10 @@ export interface ComparisonResult {
   risks: CandidateRisk[];
   business_case_analysis?: BusinessCaseAnalysisItem[];
   interview_performance_analysis?: InterviewPerformanceAnalysis[];
+  // NEW: 4-phase workflow additions
+  bcq_video_performance?: BCQVideoPerformance[];
+  stage_progression?: StageProgression[];
+  phase_completion?: PhaseCompletionStatus[];
 }
 
 export interface JobWithApplicationCount {

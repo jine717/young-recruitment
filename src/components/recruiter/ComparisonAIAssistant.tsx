@@ -33,38 +33,52 @@ export const ComparisonAIAssistant = ({ comparisonContext, isOpen, onOpenChange 
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Generate comparison-specific suggested questions
+  // Generate comparison-specific suggested questions for 4-phase workflow
   const suggestedQuestions = useMemo(() => {
     const topCandidate = comparisonContext.result.recommendation.top_choice;
     const alternative = comparisonContext.result.recommendation.alternative;
     const rankings = comparisonContext.result.rankings;
+    const hasBCQVideo = !!comparisonContext.result.bcq_video_performance?.length;
+    const hasStageProgression = !!comparisonContext.result.stage_progression?.length;
     
     const questions: string[] = [
       `Why did you recommend ${topCandidate} over the other candidates?`,
-      `What specific evidence supports choosing ${topCandidate}?`,
-      `What are the key risks with ${topCandidate} and how can we address them?`,
     ];
     
+    // Phase 1: Initial Screening
+    questions.push('Compare their initial screening scores - who made the best first impression?');
+    
+    // Phase 2: BCQ Video Assessment
+    if (hasBCQVideo || comparisonContext.result.business_case_analysis?.length) {
+      questions.push('Who showed the best fluency and communication in BCQ video responses?');
+      questions.push('Compare their problem-solving approaches in the business case questions');
+    }
+    
+    // Phase 3: Interview Performance
+    if (comparisonContext.result.interview_performance_analysis?.length) {
+      questions.push('How did interview performance change their rankings from initial screening?');
+    }
+    
+    // Phase 4: Stage Progression
+    if (hasStageProgression) {
+      questions.push('Which candidate showed the most improvement across evaluation phases?');
+    }
+    
+    // Alternative candidate
     if (alternative && alternative !== 'None') {
       questions.push(`In what scenarios would ${alternative} be a better choice?`);
     }
     
+    // Risk assessment
+    questions.push(`What are the key risks with ${topCandidate} and how can we address them?`);
+    
+    // Differentiation
     if (rankings.length > 2) {
       const lastCandidate = rankings[rankings.length - 1].candidate_name;
       questions.push(`What would ${lastCandidate} need to improve to be competitive?`);
     }
     
-    if (comparisonContext.result.business_case_analysis?.length) {
-      questions.push('Compare their business case responses - who showed the best problem-solving?');
-    }
-    
-    if (comparisonContext.result.interview_performance_analysis?.length) {
-      questions.push('How did interview performance affect the final rankings?');
-    }
-    
-    questions.push('What interview questions would help differentiate these candidates further?');
-    
-    return questions.slice(0, 5);
+    return questions.slice(0, 6);
   }, [comparisonContext]);
 
   useEffect(() => {
