@@ -245,11 +245,16 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         uploadAttempts++;
         console.log(`Upload attempt ${uploadAttempts}/${maxAttempts}...`);
 
+        // First, try to remove existing file (ignore errors if it doesn't exist)
+        await supabase.storage
+          .from('business-case-videos')
+          .remove([fileName]);
+
+        // Then upload new file (without upsert to avoid RLS issues)
         const { error: uploadError } = await supabase.storage
           .from('business-case-videos')
           .upload(fileName, videoBlob, {
-            contentType: 'video/webm',
-            upsert: true
+            contentType: 'video/webm'
           });
 
         if (!uploadError) {
