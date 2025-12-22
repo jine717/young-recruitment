@@ -47,12 +47,48 @@ interface DISCAnalysis {
   work_style: string | null;
 }
 
+// NEW: BCQ Video Analysis interface
+interface BCQVideoAnalysis {
+  question_id: string;
+  question_title: string;
+  question_description: string;
+  transcription: string | null;
+  fluency_overall_score: number | null;
+  fluency_pronunciation_score: number | null;
+  fluency_pace_score: number | null;
+  fluency_hesitation_score: number | null;
+  fluency_grammar_score: number | null;
+  content_quality_score: number | null;
+  content_summary: string | null;
+  content_strengths: string[];
+  content_areas_to_probe: string[];
+  text_response: string | null;
+  has_video: boolean;
+}
+
+// NEW: Final Evaluation interface
+interface FinalEvaluation {
+  final_overall_score: number | null;
+  final_recommendation: string | null;
+  stage_progression: {
+    initial_score: number | null;
+    post_bcq_score: number | null;
+    post_interview_score: number | null;
+    final_score: number | null;
+  } | null;
+  key_strengths: string[];
+  critical_concerns: string[];
+  hiring_considerations: string[];
+  summary: string | null;
+}
+
 interface CandidateData {
   application_id: string;
   candidate_name: string;
   candidate_email: string;
   ai_score: number | null;
   initial_ai_score: number | null;
+  pre_bcq_score: number | null;
   evaluation_stage: string | null;
   ai_evaluation: {
     overall_score: number | null;
@@ -64,19 +100,20 @@ interface CandidateData {
     concerns: string[] | null;
     recommendation: string | null;
     initial_overall_score: number | null;
+    pre_bcq_overall_score: number | null;
+    initial_recommendation: string | null;
+    pre_bcq_recommendation: string | null;
   } | null;
-  business_case_responses: {
-    question_id: string;
-    question_title: string;
-    question_description: string;
-    text_response: string | null;
-  }[];
+  // Updated: BCQ video responses with transcription and fluency data
+  bcq_video_responses: BCQVideoAnalysis[];
   // NEW: Interview data
   interview_evaluation: InterviewEvaluation | null;
   interview_analysis: InterviewAnalysis | null;
   recruiter_notes: RecruiterNote[];
   cv_analysis: CVAnalysis | null;
   disc_analysis: DISCAnalysis | null;
+  // NEW: Final evaluation
+  final_evaluation: FinalEvaluation | null;
 }
 
 interface BusinessCaseQuestion {
@@ -148,11 +185,22 @@ serve(async (req) => {
         .eq('application_id', appId)
         .maybeSingle();
 
-      // Get business case responses with question details
+      // Get business case responses with VIDEO analysis data (transcription, fluency, content)
       const { data: responses } = await supabase
         .from('business_case_responses')
         .select(`
           text_response,
+          transcription,
+          fluency_overall_score,
+          fluency_pronunciation_score,
+          fluency_pace_score,
+          fluency_hesitation_score,
+          fluency_grammar_score,
+          content_quality_score,
+          content_summary,
+          content_strengths,
+          content_areas_to_probe,
+          video_url,
           business_case_id,
           business_cases!inner(id, question_title, question_description, question_number)
         `)
@@ -202,6 +250,15 @@ serve(async (req) => {
         .eq('application_id', appId)
         .order('created_at', { ascending: false });
 
+      // NEW: Get final evaluation
+      const { data: finalEvalDoc } = await supabase
+        .from('document_analyses')
+        .select('analysis, summary')
+        .eq('application_id', appId)
+        .eq('document_type', 'final_evaluation')
+        .eq('status', 'completed')
+        .maybeSingle();
+
       // Parse interview analysis from document
       let interviewAnalysis: InterviewAnalysis | null = null;
       if (interviewAnalysisDoc?.analysis) {
@@ -240,12 +297,47 @@ serve(async (req) => {
         };
       }
 
+      // Parse final evaluation
+      let finalEvaluation: FinalEvaluation | null = null;
+      if (finalEvalDoc?.analysis) {
+        const analysis = finalEvalDoc.analysis as any;
+        finalEvaluation = {
+          final_overall_score: analysis.final_overall_score || null,
+          final_recommendation: analysis.final_recommendation || null,
+          stage_progression: analysis.stage_progression || null,
+          key_strengths: analysis.key_strengths || [],
+          critical_concerns: analysis.critical_concerns || [],
+          hiring_considerations: analysis.hiring_considerations || [],
+          summary: finalEvalDoc.summary || analysis.summary || null,
+        };
+      }
+
+      // Build BCQ video responses with all analysis data
+      const bcqVideoResponses: BCQVideoAnalysis[] = responses?.map(r => ({
+        question_id: (r.business_cases as any).id,
+        question_title: (r.business_cases as any).question_title,
+        question_description: (r.business_cases as any).question_description || '',
+        transcription: r.transcription || null,
+        fluency_overall_score: r.fluency_overall_score || null,
+        fluency_pronunciation_score: r.fluency_pronunciation_score || null,
+        fluency_pace_score: r.fluency_pace_score || null,
+        fluency_hesitation_score: r.fluency_hesitation_score || null,
+        fluency_grammar_score: r.fluency_grammar_score || null,
+        content_quality_score: r.content_quality_score || null,
+        content_summary: r.content_summary || null,
+        content_strengths: r.content_strengths || [],
+        content_areas_to_probe: r.content_areas_to_probe || [],
+        text_response: r.text_response || null,
+        has_video: !!r.video_url,
+      })) || [];
+
       candidatesData.push({
         application_id: app.id,
         candidate_name: app.candidate_name,
         candidate_email: app.candidate_email,
         ai_score: app.ai_score,
         initial_ai_score: aiEval?.initial_overall_score || null,
+        pre_bcq_score: aiEval?.pre_bcq_overall_score || null,
         evaluation_stage: aiEval?.evaluation_stage || 'initial',
         ai_evaluation: aiEval ? {
           overall_score: aiEval.overall_score,
@@ -257,14 +349,12 @@ serve(async (req) => {
           concerns: aiEval.concerns,
           recommendation: aiEval.recommendation,
           initial_overall_score: aiEval.initial_overall_score,
+          pre_bcq_overall_score: aiEval.pre_bcq_overall_score || null,
+          initial_recommendation: aiEval.initial_recommendation || null,
+          pre_bcq_recommendation: aiEval.pre_bcq_recommendation || null,
         } : null,
-        business_case_responses: responses?.map(r => ({
-          question_id: (r.business_cases as any).id,
-          question_title: (r.business_cases as any).question_title,
-          question_description: (r.business_cases as any).question_description || '',
-          text_response: r.text_response,
-        })) || [],
-        // NEW: Interview and document data
+        bcq_video_responses: bcqVideoResponses,
+        // Interview and document data
         interview_evaluation: interviewEval ? {
           technical_score: interviewEval.technical_score,
           communication_score: interviewEval.communication_score,
@@ -283,6 +373,7 @@ serve(async (req) => {
         })) || [],
         cv_analysis: cvAnalysis,
         disc_analysis: discAnalysis,
+        final_evaluation: finalEvaluation,
       });
     }
 
@@ -292,30 +383,44 @@ serve(async (req) => {
 
     // Build comprehensive comparison prompt with all candidate data
     const candidatesInfo = candidatesData.map((c, i) => {
-      // Calculate score trajectory if post-interview
-      const scoreChange = c.initial_ai_score && c.ai_score 
-        ? c.ai_score - c.initial_ai_score 
-        : null;
-      const scoreTrajectory = scoreChange !== null 
-        ? `${c.initial_ai_score} → ${c.ai_score} (${scoreChange > 0 ? '+' : ''}${scoreChange})` 
-        : 'N/A';
+      // Calculate 4-phase score trajectory
+      const phaseScores = {
+        initial: c.initial_ai_score ?? c.ai_evaluation?.initial_overall_score ?? null,
+        post_bcq: c.pre_bcq_score ?? c.ai_evaluation?.pre_bcq_overall_score ?? null,
+        post_interview: c.ai_score ?? c.ai_evaluation?.overall_score ?? null,
+        final: c.final_evaluation?.final_overall_score ?? null,
+      };
+
+      // Build score trajectory string
+      const trajectoryParts: string[] = [];
+      if (phaseScores.initial !== null) trajectoryParts.push(`Initial: ${phaseScores.initial}`);
+      if (phaseScores.post_bcq !== null) trajectoryParts.push(`Post-BCQ: ${phaseScores.post_bcq}`);
+      if (phaseScores.post_interview !== null) trajectoryParts.push(`Post-Interview: ${phaseScores.post_interview}`);
+      if (phaseScores.final !== null) trajectoryParts.push(`Final: ${phaseScores.final}`);
+      const scoreTrajectory = trajectoryParts.length > 0 ? trajectoryParts.join(' → ') : 'N/A';
+
+      // Determine completed phases
+      const completedPhases: string[] = ['PHASE 1: Initial Screening'];
+      if (c.bcq_video_responses.length > 0 && c.bcq_video_responses.some(r => r.has_video || r.text_response)) {
+        completedPhases.push('PHASE 2: BCQ Assessment');
+      }
+      if (c.interview_evaluation || c.interview_analysis) {
+        completedPhases.push('PHASE 3: Interview');
+      }
+      if (c.final_evaluation) {
+        completedPhases.push('PHASE 4: Final Evaluation');
+      }
 
       return `
 ### Candidate ${i + 1}: ${c.candidate_name}
-**Evaluation Stage:** ${c.evaluation_stage === 'post_interview' ? 'POST-INTERVIEW (has been interviewed)' : 'INITIAL (application stage only)'}
+**Completed Phases:** ${completedPhases.join(', ')}
+**Score Trajectory:** ${scoreTrajectory}
 
-## AI Evaluation Scores
-- Current AI Score: ${c.ai_evaluation?.overall_score ?? 'N/A'}/100
-- Skills Match: ${c.ai_evaluation?.skills_match_score ?? 'N/A'}/100
-- Communication: ${c.ai_evaluation?.communication_score ?? 'N/A'}/100
-- Cultural Fit: ${c.ai_evaluation?.cultural_fit_score ?? 'N/A'}/100
-- AI Recommendation: ${c.ai_evaluation?.recommendation ?? 'N/A'}
-- Summary: ${c.ai_evaluation?.summary ?? 'No summary available'}
-- Strengths: ${c.ai_evaluation?.strengths?.join(', ') ?? 'None identified'}
-- Concerns: ${c.ai_evaluation?.concerns?.join(', ') ?? 'None identified'}
-${c.evaluation_stage === 'post_interview' ? `- Score Trajectory: ${scoreTrajectory}` : ''}
+═══════════════════════════════════════════════════════════════
+## PHASE 1: INITIAL SCREENING
+═══════════════════════════════════════════════════════════════
 
-## CV Analysis
+### CV Analysis
 ${c.cv_analysis ? `
 - Experience: ${c.cv_analysis.experience_years ? `${c.cv_analysis.experience_years} years` : 'Unknown'}
 - Key Skills: ${c.cv_analysis.key_skills?.join(', ') || 'Not analyzed'}
@@ -324,7 +429,7 @@ ${c.cv_analysis ? `
 - CV Red Flags: ${c.cv_analysis.red_flags?.join(', ') || 'None identified'}
 ` : 'No CV analysis available'}
 
-## DISC Personality Profile
+### DISC Personality Profile
 ${c.disc_analysis ? `
 - Profile Type: ${c.disc_analysis.profile_type || 'Unknown'}
 - Key Traits: ${c.disc_analysis.traits?.join(', ') || 'Not analyzed'}
@@ -332,7 +437,42 @@ ${c.disc_analysis ? `
 - Work Style: ${c.disc_analysis.work_style || 'Not specified'}
 ` : 'No DISC analysis available'}
 
-## Interview Performance
+### Initial AI Evaluation
+- Initial Score: ${phaseScores.initial ?? 'N/A'}/100
+- Initial Recommendation: ${c.ai_evaluation?.initial_recommendation ?? 'N/A'}
+
+═══════════════════════════════════════════════════════════════
+## PHASE 2: BCQ VIDEO ASSESSMENT
+═══════════════════════════════════════════════════════════════
+
+${c.bcq_video_responses.length > 0 ? c.bcq_video_responses.map((bcq: BCQVideoAnalysis) => `
+**Question:** ${bcq.question_title}
+**Description:** ${bcq.question_description || 'No description'}
+
+${bcq.has_video ? `
+**Video Analysis:**
+- Fluency Overall Score: ${bcq.fluency_overall_score ?? 'N/A'}/100
+  - Pronunciation: ${bcq.fluency_pronunciation_score ?? 'N/A'}/100
+  - Pace: ${bcq.fluency_pace_score ?? 'N/A'}/100
+  - Hesitation: ${bcq.fluency_hesitation_score ?? 'N/A'}/100
+  - Grammar: ${bcq.fluency_grammar_score ?? 'N/A'}/100
+- Content Quality Score: ${bcq.content_quality_score ?? 'N/A'}/100
+- Content Summary: ${bcq.content_summary || 'Not analyzed'}
+- Content Strengths: ${bcq.content_strengths?.join(', ') || 'None identified'}
+- Areas to Probe: ${bcq.content_areas_to_probe?.join(', ') || 'None identified'}
+- Transcription: ${bcq.transcription ? `"${bcq.transcription.substring(0, 500)}${bcq.transcription.length > 500 ? '...' : ''}"` : 'No transcription available'}
+` : ''}
+
+${bcq.text_response ? `**Text Response:** ${bcq.text_response}` : 'No text response provided'}
+`).join('\n---\n') : 'No BCQ responses submitted'}
+
+- Post-BCQ Score: ${phaseScores.post_bcq ?? 'N/A'}/100
+- Post-BCQ Recommendation: ${c.ai_evaluation?.pre_bcq_recommendation ?? 'N/A'}
+
+═══════════════════════════════════════════════════════════════
+## PHASE 3: INTERVIEW PERFORMANCE
+═══════════════════════════════════════════════════════════════
+
 ${c.interview_evaluation ? `
 **Recruiter Evaluation:**
 - Technical Score: ${c.interview_evaluation.technical_score ?? 'N/A'}/5
@@ -355,18 +495,35 @@ ${c.interview_analysis.score_change_explanation ? `- Score Change Explanation: $
 ` : ''}
 
 ${c.recruiter_notes.length > 0 ? `
-**Recruiter Notes from Interview:**
+**Recruiter Notes:**
 ${c.recruiter_notes.map(n => `- ${n.note_text}`).join('\n')}
 ` : ''}
 
-## Business Case Responses
-${c.business_case_responses.map(r => `
-**Question:** ${r.question_title}
-**Description:** ${r.question_description}
-**${c.candidate_name}'s Response:** ${r.text_response || 'No response provided'}
-`).join('\n')}
+- Post-Interview Score: ${phaseScores.post_interview ?? 'N/A'}/100
+- Post-Interview Recommendation: ${c.ai_evaluation?.recommendation ?? 'N/A'}
+
+═══════════════════════════════════════════════════════════════
+## PHASE 4: FINAL EVALUATION
+═══════════════════════════════════════════════════════════════
+
+${c.final_evaluation ? `
+- Final Score: ${c.final_evaluation.final_overall_score ?? 'N/A'}/100
+- Final Recommendation: ${c.final_evaluation.final_recommendation || 'N/A'}
+- Key Strengths: ${c.final_evaluation.key_strengths?.join(', ') || 'None identified'}
+- Critical Concerns: ${c.final_evaluation.critical_concerns?.join(', ') || 'None identified'}
+- Hiring Considerations: ${c.final_evaluation.hiring_considerations?.join(', ') || 'None specified'}
+- Summary: ${c.final_evaluation.summary || 'No summary available'}
+` : 'Final evaluation not yet completed'}
+
+### Current AI Evaluation Summary
+- Current Score: ${c.ai_evaluation?.overall_score ?? 'N/A'}/100
+- Skills Match: ${c.ai_evaluation?.skills_match_score ?? 'N/A'}/100
+- Communication: ${c.ai_evaluation?.communication_score ?? 'N/A'}/100
+- Cultural Fit: ${c.ai_evaluation?.cultural_fit_score ?? 'N/A'}/100
+- Strengths: ${c.ai_evaluation?.strengths?.join(', ') ?? 'None identified'}
+- Concerns: ${c.ai_evaluation?.concerns?.join(', ') ?? 'None identified'}
 `;
-    }).join('\n---\n');
+    }).join('\n\n═══════════════════════════════════════════════════════════════\n═══════════════════════════════════════════════════════════════\n\n');
 
     // List of business case questions for the AI to analyze
     const businessCaseInfo = businessCaseQuestions.length > 0 
@@ -377,7 +534,7 @@ ${c.business_case_responses.map(r => `
 
     const systemPrompt = `You are an expert recruitment analyst for Young, a company that values: Fearless, Unusual, Down to earth, Agility, Determination, and Authenticity.
 
-Your task is to compare final candidates for a position and provide a clear, actionable recommendation.
+Your task is to compare final candidates for a position using the 4-PHASE EVALUATION WORKFLOW and provide a clear, actionable recommendation.
 
 Job Position: ${job.title}
 Job Description: ${job.description}
@@ -385,43 +542,67 @@ Requirements: ${job.requirements?.join(', ') || 'Not specified'}
 ${businessCaseInfo}
 ${customPrompt ? `\n### Custom Evaluation Instructions from Recruiter:\n${customPrompt}\n` : ''}
 
-CRITICAL: Analyze candidates considering BOTH application AND interview performance:
+═══════════════════════════════════════════════════════════════
+## 4-PHASE EVALUATION WORKFLOW
+═══════════════════════════════════════════════════════════════
 
-## 1. Application Stage Assessment
+### PHASE 1: INITIAL SCREENING
 - CV/Resume analysis (experience, skills, education, identified strengths and red flags)
 - DISC personality profile (communication style, work style, team fit)
-- Business Case responses (problem-solving approach, communication quality)
+- Initial AI score and recommendation
 
-## 2. Interview Stage Assessment (if available)
+### PHASE 2: BCQ VIDEO ASSESSMENT
+- Video responses to business case questions
+- FLUENCY ANALYSIS: Pronunciation, Pace, Hesitation, Grammar scores
+- CONTENT QUALITY: Response quality, strengths, areas to probe
+- Transcription analysis of verbal responses
+- Text responses (if available)
+- Post-BCQ score and recommendation
+
+### PHASE 3: INTERVIEW PERFORMANCE
 - Recruiter's evaluation scores (technical, communication, cultural fit, problem-solving)
 - Recruiter's observations, notes, and overall impression
 - AI interview analysis results
-- Demonstrated strengths vs. identified concerns during interview
+- Demonstrated strengths vs. identified concerns
+- Post-Interview score and recommendation
 
-## 3. Performance Trajectory Analysis
-- Initial AI Score vs Post-Interview Score (improvement or decline)
-- Gap between written responses (Business Case) and verbal performance (Interview)
-- Consistency between CV claims and interview performance
+### PHASE 4: FINAL EVALUATION
+- Consolidated final score
+- Final recommendation
+- Key strengths and critical concerns
+- Hiring considerations
 
-IMPORTANT CONSIDERATIONS:
-- A candidate may excel in Business Case but struggle in interview, or vice versa
-- Weight both application AND interview performance equally when both are available
-- Highlight any discrepancies between written and verbal performance
-- Consider personality insights from DISC when evaluating cultural fit
-- Use recruiter notes as valuable firsthand observations
+═══════════════════════════════════════════════════════════════
+## ANALYSIS GUIDELINES
+═══════════════════════════════════════════════════════════════
 
-Be direct and decisive in your recommendation. For candidates with interviews, the interview performance should significantly influence your assessment.`;
+CRITICAL ANALYSIS POINTS:
+1. **Score Trajectory**: Track how candidates evolved through phases (improved vs declined)
+2. **BCQ Video Performance**: Compare fluency scores, content quality, and actual transcriptions
+3. **Written vs Verbal Gap**: Analyze differences between text responses and video performance
+4. **Phase Completion**: Note which candidates have completed all phases vs partial completion
+5. **Consistency**: Look for consistency between CV claims, BCQ performance, and interview results
 
-    const userPrompt = `Compare these ${candidatesData.length} candidates and provide your analysis:
+WEIGHTING CONSIDERATIONS:
+- If BCQ video analysis is available, fluency and content scores are critical indicators
+- Interview performance should significantly influence final recommendations
+- Consider the full score trajectory when making recommendations
+- Candidates with incomplete phases should be flagged
+
+Be direct and decisive in your recommendation. Consider the complete evaluation journey of each candidate.`;
+
+    const userPrompt = `Compare these ${candidatesData.length} candidates using the 4-PHASE EVALUATION WORKFLOW:
 
 ${candidatesInfo}
 
 Provide a comprehensive comparison with a clear winner recommendation. 
 
-IMPORTANT: 
-1. For the business_case_analysis section, analyze each business case question separately
-2. For the interview_performance_analysis section, compare interview performance across all candidates who have been interviewed
-3. Highlight any differences between application-stage performance and interview performance`;
+IMPORTANT ANALYSIS REQUIREMENTS:
+1. For business_case_analysis: Analyze each BCQ question separately, including VIDEO FLUENCY scores and CONTENT QUALITY analysis
+2. For interview_performance_analysis: Compare interview performance and score trajectory for candidates who have been interviewed
+3. Consider PHASE COMPLETION - note if some candidates haven't completed all phases
+4. Analyze SCORE TRAJECTORY - how each candidate improved or declined through phases
+5. Compare BCQ VIDEO PERFORMANCE - fluency scores, content quality, and actual transcriptions`;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
