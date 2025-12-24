@@ -724,7 +724,7 @@ const RecruiterDashboard = () => {
                   const isSelected = selectedIds.has(app.id);
                   return <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
                           <>
-                            <TableRow className={`cursor-pointer hover:bg-muted/50 ${isSelected ? 'bg-primary/5' : ''}`} onClick={() => evaluation && toggleRow(app.id)}>
+                            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => evaluation && toggleRow(app.id)}>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 {canEdit && (
                                   <Checkbox
@@ -839,31 +839,10 @@ const RecruiterDashboard = () => {
                                       </Link>
                                     </DropdownMenuItem>
                                     {canEdit && (
-                                      <>
-                                        {(app.ai_evaluation_status === 'failed' || app.business_case_completed && !app.ai_evaluation_status) && (
-                                          <DropdownMenuItem onClick={() => handleRetryAI(app.id)}>
-                                            <RefreshCw className="h-4 w-4 mr-2" />
-                                            Run AI Analysis
-                                          </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "under_review")}>
-                                          Mark Review
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "interview")}>
-                                          Move to Interview
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "hired")}>
-                                          Mark as Hired
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(app.id, "rejected")} className="text-destructive">
-                                          Reject
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => setDeleteConfirmId(app.id)} className="text-destructive">
-                                          <Trash2 className="h-4 w-4 mr-2" />
-                                          Delete
-                                        </DropdownMenuItem>
-                                      </>
+                                      <DropdownMenuItem onClick={() => setDeleteConfirmId(app.id)} className="text-destructive">
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
