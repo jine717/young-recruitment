@@ -13,7 +13,8 @@ export interface CVAnalysis {
 }
 
 export interface DISCAnalysis {
-  profile_type: 'D' | 'I' | 'S' | 'C';
+  is_valid_disc?: boolean;
+  profile_type: 'D' | 'I' | 'S' | 'C' | 'INVALID';
   profile_description: string;
   dominant_traits: string[];
   communication_style: string;

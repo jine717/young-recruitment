@@ -18,7 +18,8 @@ interface CVAnalysis {
 }
 
 interface DISCAnalysis {
-  profile_type: 'D' | 'I' | 'S' | 'C';
+  is_valid_disc: boolean;
+  profile_type: 'D' | 'I' | 'S' | 'C' | 'INVALID';
   profile_description: string;
   dominant_traits: string[];
   communication_style: string;
@@ -43,9 +44,22 @@ Extract and analyze:
 
 Be objective and thorough in your analysis.`;
 
-const DISC_ANALYSIS_PROMPT = `You are an expert in DISC personality assessments. Analyze this DISC assessment document and provide a structured analysis.
+const DISC_ANALYSIS_PROMPT = `You are an expert in DISC personality assessments. 
 
-Identify and analyze:
+IMPORTANT: First, verify if this document is actually a DISC personality assessment. A valid DISC assessment typically contains:
+- DISC profile scores or percentages (D, I, S, C values)
+- Personality trait analysis based on DISC methodology
+- Behavioral assessment results
+- Charts or graphs showing DISC dimensions
+- Reference to DISC, DiSC, or similar behavioral assessment terminology
+
+If this is NOT a DISC assessment (e.g., an invoice, CV, contract, receipt, or any other document), you MUST:
+- Set is_valid_disc to false
+- Set profile_type to "INVALID"
+- Explain what type of document this actually is in profile_description
+- Leave other fields with placeholder values
+
+If it IS a valid DISC assessment, analyze:
 1. The dominant profile type (D, I, S, or C)
 2. A description of what this profile means
 3. The person's dominant personality traits
@@ -228,12 +242,13 @@ serve(async (req) => {
         type: 'function',
         function: {
           name: 'analyze_disc',
-          description: 'Provide structured DISC assessment analysis',
+          description: 'Provide structured DISC assessment analysis or indicate if document is invalid',
           parameters: {
             type: 'object',
             properties: {
-              profile_type: { type: 'string', enum: ['D', 'I', 'S', 'C'], description: 'Dominant DISC profile type' },
-              profile_description: { type: 'string', description: 'Description of what this profile means' },
+              is_valid_disc: { type: 'boolean', description: 'Whether this document is actually a DISC assessment' },
+              profile_type: { type: 'string', enum: ['D', 'I', 'S', 'C', 'INVALID'], description: 'Dominant DISC profile type, or INVALID if not a DISC document' },
+              profile_description: { type: 'string', description: 'Description of the profile, or explanation of what this document actually is if invalid' },
               dominant_traits: { type: 'array', items: { type: 'string' } },
               communication_style: { type: 'string' },
               work_style: { type: 'string' },
@@ -242,7 +257,7 @@ serve(async (req) => {
               management_tips: { type: 'string' },
               team_fit_considerations: { type: 'string' }
             },
-            required: ['profile_type', 'profile_description', 'dominant_traits', 'communication_style', 'work_style', 'strengths', 'potential_challenges', 'management_tips', 'team_fit_considerations']
+            required: ['is_valid_disc', 'profile_type', 'profile_description', 'dominant_traits', 'communication_style', 'work_style', 'strengths', 'potential_challenges', 'management_tips', 'team_fit_considerations']
           }
         }
       }
@@ -295,6 +310,36 @@ serve(async (req) => {
       analysis = JSON.parse(toolCall.function.arguments);
     } else {
       throw new Error('No structured analysis returned from AI');
+    }
+
+    // Check if DISC document is valid
+    if (documentType === 'disc') {
+      const discAnalysis = analysis as DISCAnalysis;
+      if (!discAnalysis.is_valid_disc || discAnalysis.profile_type === 'INVALID') {
+        console.log('Invalid DISC document detected:', discAnalysis.profile_description);
+        
+        // Update with completed status but mark as invalid
+        await supabase
+          .from('document_analyses')
+          .update({
+            status: 'completed',
+            analysis: analysis,
+            summary: `Invalid Document: ${discAnalysis.profile_description}`,
+            error_message: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('application_id', applicationId)
+          .eq('document_type', documentType);
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          analysis,
+          summary: `This document is not a DISC assessment. ${discAnalysis.profile_description}`,
+          is_valid: false
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Generate summary
