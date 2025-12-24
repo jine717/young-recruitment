@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Sparkles, Loader2, ChevronDown } from 'lucide-react';
+import { FileText, Eye, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentAnalyses, useTriggerDocumentAnalysis } from '@/hooks/useDocumentAnalysis';
 import { DocumentAnalysisCard } from './DocumentAnalysisCard';
@@ -45,7 +45,7 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
     return data.signedUrl;
   };
 
-  const handleDownload = async (url: string | null, bucketName: string) => {
+  const handleViewDocument = async (url: string | null, bucketName: string) => {
     if (!url) return;
 
     const signedUrl = await getSignedUrl(bucketName, url);
@@ -142,10 +142,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(cvUrl, 'cvs')}
+                      onClick={() => handleViewDocument(cvUrl, 'cvs')}
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Document
                     </Button>
                   </div>
                 )}
@@ -185,10 +185,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(discUrl, 'disc-assessments')}
+                      onClick={() => handleViewDocument(discUrl, 'disc-assessments')}
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Document
                     </Button>
                   </div>
                 )}
