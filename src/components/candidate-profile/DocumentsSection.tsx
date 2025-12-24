@@ -7,6 +7,7 @@ import { FileText, Eye, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentAnalyses, useTriggerDocumentAnalysis } from '@/hooks/useDocumentAnalysis';
 import { DocumentAnalysisCard } from './DocumentAnalysisCard';
+import { DocumentViewerModal } from './DocumentViewerModal';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentsSectionProps {
@@ -23,6 +24,12 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
   const [isOpen, setIsOpen] = useState(false);
   const [analyzingCv, setAnalyzingCv] = useState(false);
   const [analyzingDisc, setAnalyzingDisc] = useState(false);
+  
+  // Document viewer modal state
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [viewerTitle, setViewerTitle] = useState('');
+  const [loadingViewer, setLoadingViewer] = useState(false);
 
   const cvAnalysis = analyses?.find(a => a.document_type === 'cv');
   const discAnalysis = analyses?.find(a => a.document_type === 'disc');
@@ -45,13 +52,42 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
     return data.signedUrl;
   };
 
-  const handleViewDocument = async (url: string | null, bucketName: string) => {
+  const handleViewDocument = async (url: string | null, bucketName: string, title: string) => {
     if (!url) return;
 
-    const signedUrl = await getSignedUrl(bucketName, url);
-    if (signedUrl) {
-      window.open(signedUrl, '_blank');
+    setLoadingViewer(true);
+    setViewerTitle(title);
+    setIsViewerOpen(true);
+
+    try {
+      const signedUrl = await getSignedUrl(bucketName, url);
+      if (!signedUrl) throw new Error('Could not get signed URL');
+
+      // Download as blob to create local URL (avoids ad-blocker interference)
+      const response = await fetch(signedUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      setViewerUrl(blobUrl);
+    } catch (error) {
+      console.error('Error loading document:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not load document. Please try again.',
+        variant: 'destructive',
+      });
+      setIsViewerOpen(false);
+    } finally {
+      setLoadingViewer(false);
     }
+  };
+
+  const handleCloseViewer = () => {
+    if (viewerUrl) {
+      URL.revokeObjectURL(viewerUrl);
+    }
+    setViewerUrl(null);
+    setIsViewerOpen(false);
   };
 
   const handleAnalyze = async (documentType: 'cv' | 'disc', documentPath: string | null) => {
@@ -142,9 +178,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewDocument(cvUrl, 'cvs')}
+                      onClick={() => handleViewDocument(cvUrl, 'cvs', 'CV / Resume')}
+                      disabled={loadingViewer}
                     >
-                      <Eye className="w-4 h-4 mr-2" />
+                      {loadingViewer && viewerTitle === 'CV / Resume' ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4 mr-2" />
+                      )}
                       View Document
                     </Button>
                   </div>
@@ -185,9 +226,14 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewDocument(discUrl, 'disc-assessments')}
+                      onClick={() => handleViewDocument(discUrl, 'disc-assessments', 'DISC Assessment')}
+                      disabled={loadingViewer}
                     >
-                      <Eye className="w-4 h-4 mr-2" />
+                      {loadingViewer && viewerTitle === 'DISC Assessment' ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4 mr-2" />
+                      )}
                       View Document
                     </Button>
                   </div>
@@ -198,6 +244,13 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+      <DocumentViewerModal
+        isOpen={isViewerOpen}
+        onClose={handleCloseViewer}
+        documentUrl={viewerUrl}
+        documentTitle={viewerTitle}
+        isLoading={loadingViewer}
+      />
     </Card>
   );
 }
