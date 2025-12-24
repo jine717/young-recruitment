@@ -6,7 +6,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { PdfViewer } from './PdfViewer';
 
 interface DocumentViewerModalProps {
@@ -44,20 +44,15 @@ export function DocumentViewerModal({
               Visor de documento PDF
             </DialogDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              disabled={!documentUrl || isLoading}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={!documentUrl || isLoading}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
         </DialogHeader>
         
         <div className="flex-1 min-h-0 bg-muted/30">
