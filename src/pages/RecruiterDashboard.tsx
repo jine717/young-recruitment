@@ -7,12 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Loader2, MoreHorizontal, Clock, Users, Briefcase, ChevronDown, Sparkles, RefreshCw, Plus, Trash2, ChevronLeft, ChevronRight, Check, Filter, X, BarChart3, FileCheck, FileQuestion, Eye, Video, CheckCircle, XCircle, UserCircle, Send, Award } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { BulkActionsToolbar } from "@/components/recruiter/BulkActionsToolbar";
-import { useBulkActions } from "@/hooks/useBulkActions";
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication, type ApplicationWithDetails } from "@/hooks/useApplications";
 import { useAIEvaluations, useTriggerAIAnalysis, type AIEvaluation } from "@/hooks/useAIEvaluations";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
@@ -86,11 +84,9 @@ const RecruiterDashboard = () => {
   const [sortBy, setSortBy] = useState<string>("date");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { isUpdating, bulkUpdateStatus, bulkSendNotification, exportApplications } = useBulkActions();
   
   // Fetch recruiters for assignment dropdown
   const { data: recruiters = [] } = useRecruiters();
@@ -287,44 +283,6 @@ const RecruiterDashboard = () => {
     });
   };
 
-  const toggleSelection = (id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (!filteredApplications) return;
-    if (selectedIds.size === filteredApplications.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredApplications.map(a => a.id)));
-    }
-  };
-
-  const handleBulkStatusChange = async (status: ApplicationWithDetails['status']) => {
-    await bulkUpdateStatus(Array.from(selectedIds), status);
-    setSelectedIds(new Set());
-  };
-
-  const handleBulkNotification = async (type: string) => {
-    await bulkSendNotification(Array.from(selectedIds), type);
-  };
-
-  const handleExport = () => {
-    if (!filteredApplications) return;
-    const selectedApps = selectedIds.size > 0
-      ? filteredApplications.filter(a => selectedIds.has(a.id))
-      : filteredApplications;
-    exportApplications(selectedApps);
-  };
-
   if (roleLoading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -470,18 +428,6 @@ const RecruiterDashboard = () => {
         <div className="container mx-auto max-w-7xl">
           <Card>
             <CardContent className="p-0">
-              {canEdit && selectedIds.size > 0 && (
-                <div className="p-4 border-b">
-                  <BulkActionsToolbar
-                    selectedCount={selectedIds.size}
-                    onClearSelection={() => setSelectedIds(new Set())}
-                    onStatusChange={handleBulkStatusChange}
-                    onSendNotification={handleBulkNotification}
-                    onExport={handleExport}
-                    isUpdating={isUpdating}
-                  />
-                </div>
-              )}
               {isLoading ? (
                 <div className="py-8 space-y-4">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -511,26 +457,6 @@ const RecruiterDashboard = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[40px]">
-                          {canEdit && (
-                            <Checkbox
-                              checked={paginatedApplications.length > 0 && paginatedApplications.every(a => selectedIds.has(a.id))}
-                              onCheckedChange={() => {
-                                const pageIds = paginatedApplications.map(a => a.id);
-                                const allSelected = pageIds.every(id => selectedIds.has(id));
-                                if (allSelected) {
-                                  setSelectedIds(prev => {
-                                    const newSet = new Set(prev);
-                                    pageIds.forEach(id => newSet.delete(id));
-                                    return newSet;
-                                  });
-                                } else {
-                                  setSelectedIds(prev => new Set([...prev, ...pageIds]));
-                                }
-                              }}
-                            />
-                          )}
-                        </TableHead>
                         <TableHead className="w-[80px]">
                           <DropdownMenu>
                             <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary cursor-pointer font-medium">
@@ -721,18 +647,9 @@ const RecruiterDashboard = () => {
                       {paginatedApplications.map(app => {
                   const evaluation = evaluationsMap.get(app.id);
                   const isExpanded = expandedRows.has(app.id);
-                  const isSelected = selectedIds.has(app.id);
                   return <Collapsible key={app.id} open={isExpanded} onOpenChange={() => toggleRow(app.id)} asChild>
                           <>
                             <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => evaluation && toggleRow(app.id)}>
-                              <TableCell onClick={e => e.stopPropagation()}>
-                                {canEdit && (
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={() => toggleSelection(app.id)}
-                                  />
-                                )}
-                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <AIScoreBadge 
