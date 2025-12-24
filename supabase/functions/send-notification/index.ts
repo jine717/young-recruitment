@@ -615,8 +615,11 @@ serve(async (req: Request) => {
     console.log(`Sending email to ${candidateEmail}: ${subject}`);
 
     // Send email via Resend
+    const fromAddress = "Young Recruitment <no.reply@young-recruitment.com>";
+    console.log(`Using from address: ${fromAddress}`);
+
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Young Recruitment <no.reply@young-recruitment.com>",
+      from: fromAddress,
       to: [candidateEmail],
       subject,
       html,
