@@ -504,7 +504,7 @@ function getEmailTemplate(
                 You'll answer a series of business case questions via <strong>video recording</strong> in English.
               </p>
               <p style="font-size: 14px; margin: 0; color: ${brandColors.khaki};">
-                Each response has a maximum duration of <strong>3 minutes</strong>.
+                Each response has a maximum duration of <strong>5 minutes</strong>.
               </p>
             </td>
           </tr>
