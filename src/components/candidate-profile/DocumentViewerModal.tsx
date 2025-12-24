@@ -6,7 +6,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, ExternalLink, Loader2 } from 'lucide-react';
+import { Download, X, Loader2 } from 'lucide-react';
 import { PdfViewer } from './PdfViewer';
 
 interface DocumentViewerModalProps {
@@ -34,11 +34,6 @@ export function DocumentViewerModal({
     document.body.removeChild(link);
   };
 
-  const handleOpenInNewTab = () => {
-    if (!documentUrl) return;
-    window.open(documentUrl, '_blank');
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0">
@@ -58,15 +53,6 @@ export function DocumentViewerModal({
             >
               <Download className="w-4 h-4 mr-2" />
               Download
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenInNewTab}
-              disabled={!documentUrl || isLoading}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open in Tab
             </Button>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-4 h-4" />
