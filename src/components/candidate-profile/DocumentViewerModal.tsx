@@ -76,11 +76,17 @@ export function DocumentViewerModal({
               </div>
             </div>
           ) : documentUrl ? (
-            <iframe
-              src={documentUrl}
-              className="w-full h-full border-0"
-              title={documentTitle}
-            />
+            <object
+              data={documentUrl}
+              type="application/pdf"
+              className="w-full h-full"
+            >
+              <iframe
+                src={documentUrl}
+                className="w-full h-full border-0"
+                title={documentTitle}
+              />
+            </object>
           ) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground">No document available</p>

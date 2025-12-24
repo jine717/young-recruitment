@@ -63,9 +63,10 @@ export function DocumentsSection({ applicationId, cvUrl, discUrl }: DocumentsSec
       const signedUrl = await getSignedUrl(bucketName, url);
       if (!signedUrl) throw new Error('Could not get signed URL');
 
-      // Download as blob to create local URL (avoids ad-blocker interference)
+      // Download as blob with explicit PDF MIME type
       const response = await fetch(signedUrl);
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const blobUrl = URL.createObjectURL(blob);
       
       setViewerUrl(blobUrl);
