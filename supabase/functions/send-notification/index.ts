@@ -616,7 +616,7 @@ serve(async (req: Request) => {
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Young Recruitment <onboarding@resend.dev>",
+      from: "Young Recruitment <no.reply@young-recruitment.com>",
       to: [candidateEmail],
       subject,
       html,
