@@ -14,6 +14,7 @@ const DISC_COLORS = {
   I: 'bg-[hsl(var(--young-gold))]/20 text-[hsl(var(--young-gold))] border-[hsl(var(--young-gold))]/30',
   S: 'bg-[hsl(var(--young-blue))]/20 text-[hsl(var(--young-blue))] border-[hsl(var(--young-blue))]/30',
   C: 'bg-[hsl(var(--young-khaki))]/20 text-[hsl(var(--young-khaki))] border-[hsl(var(--young-khaki))]/30',
+  INVALID: 'bg-destructive/10 text-destructive border-destructive/30',
 };
 
 const DISC_LABELS = {
@@ -21,6 +22,7 @@ const DISC_LABELS = {
   I: 'Influence',
   S: 'Steadiness',
   C: 'Conscientiousness',
+  INVALID: 'Invalid Document',
 };
 
 export function DocumentAnalysisCard({ analysis }: DocumentAnalysisCardProps) {
@@ -163,6 +165,29 @@ function CVAnalysisContent({ data }: { data: CVAnalysis }) {
 }
 
 function DISCAnalysisContent({ data }: { data: DISCAnalysis }) {
+  // Check if document is invalid
+  if (data.profile_type === 'INVALID' || data.is_valid_disc === false) {
+    return (
+      <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+          <div>
+            <h4 className="font-semibold text-destructive">Invalid Document</h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              This document is not a DISC personality assessment.
+            </p>
+            <p className="text-sm mt-2">
+              {data.profile_description}
+            </p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Please upload a valid DISC assessment document to see the personality analysis.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Profile Type Badge */}
