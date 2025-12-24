@@ -4,9 +4,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, X } from 'lucide-react';
 import { PdfViewer } from './PdfViewer';
 
 interface DocumentViewerModalProps {
@@ -36,7 +37,7 @@ export function DocumentViewerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 [&>button]:hidden">
         <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b shrink-0">
           <div>
             <DialogTitle className="text-lg font-semibold">{documentTitle}</DialogTitle>
@@ -44,15 +45,22 @@ export function DocumentViewerModal({
               Visor de documento PDF
             </DialogDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            disabled={!documentUrl || isLoading}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Download
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={!documentUrl || isLoading}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <X className="w-4 h-4" />
+              </Button>
+            </DialogClose>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 min-h-0 bg-muted/30">
