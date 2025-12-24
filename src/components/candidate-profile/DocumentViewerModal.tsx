@@ -3,9 +3,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X, ExternalLink, Loader2 } from 'lucide-react';
+import { PdfViewer } from './PdfViewer';
 
 interface DocumentViewerModalProps {
   isOpen: boolean;
@@ -41,7 +43,12 @@ export function DocumentViewerModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b shrink-0">
-          <DialogTitle className="text-lg font-semibold">{documentTitle}</DialogTitle>
+          <div>
+            <DialogTitle className="text-lg font-semibold">{documentTitle}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Visor de documento PDF
+            </DialogDescription>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -76,17 +83,7 @@ export function DocumentViewerModal({
               </div>
             </div>
           ) : documentUrl ? (
-            <object
-              data={documentUrl}
-              type="application/pdf"
-              className="w-full h-full"
-            >
-              <iframe
-                src={documentUrl}
-                className="w-full h-full border-0"
-                title={documentTitle}
-              />
-            </object>
+            <PdfViewer url={documentUrl} onDownload={handleDownload} />
           ) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground">No document available</p>
