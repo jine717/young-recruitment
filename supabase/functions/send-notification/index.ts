@@ -614,8 +614,8 @@ serve(async (req: Request) => {
 
     console.log(`Sending email to ${candidateEmail}: ${subject}`);
 
-    // Send email via Resend - using default Resend sender until domain is verified
-    const fromAddress = "Young Recruitment <onboarding@resend.dev>";
+    // Send email via Resend with verified domain
+    const fromAddress = "Young Recruitment <notification@young-recruitment.com>";
     console.log(`Using from address: ${fromAddress}`);
 
     const { data: emailData, error: emailError } = await resend.emails.send({
