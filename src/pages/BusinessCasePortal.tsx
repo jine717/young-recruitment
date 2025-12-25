@@ -19,10 +19,8 @@ export default function BusinessCasePortal() {
     isLoading,
     isValidToken,
     isUploading,
-    isTranscribing,
     isCompleted,
     error,
-    responseTimeMinutes,
     submitResponse,
     goToNextQuestion,
     goToPreviousQuestion
@@ -146,7 +144,6 @@ export default function BusinessCasePortal() {
               questionIndex={currentQuestionIndex}
               totalQuestions={businessCases.length}
               isUploading={isUploading}
-              isTranscribing={isTranscribing}
               isCompleted={isCurrentQuestionCompleted}
               onRecordingComplete={(blob) => submitResponse(currentQuestion.id, blob)}
             />
@@ -155,7 +152,7 @@ export default function BusinessCasePortal() {
             <div className="flex items-center justify-between pt-4">
               <Button
                 onClick={goToPreviousQuestion}
-                disabled={currentQuestionIndex === 0 || isUploading || isTranscribing}
+                disabled={currentQuestionIndex === 0 || isUploading}
                 variant="outline"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
@@ -171,8 +168,7 @@ export default function BusinessCasePortal() {
                 disabled={
                   currentQuestionIndex === businessCases.length - 1 || 
                   !isCurrentQuestionCompleted ||
-                  isUploading || 
-                  isTranscribing
+                  isUploading
                 }
                 variant="outline"
               >

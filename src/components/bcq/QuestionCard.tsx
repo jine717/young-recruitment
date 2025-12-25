@@ -16,7 +16,6 @@ interface QuestionCardProps {
   questionIndex: number;
   totalQuestions: number;
   isUploading: boolean;
-  isTranscribing: boolean;
   isCompleted: boolean;
   onRecordingComplete: (blob: Blob) => void;
 }
@@ -26,11 +25,9 @@ export function QuestionCard({
   questionIndex,
   totalQuestions,
   isUploading,
-  isTranscribing,
   isCompleted,
   onRecordingComplete
 }: QuestionCardProps) {
-  const isProcessing = isUploading || isTranscribing;
   
   return (
     <Card className="border-border bg-card shadow-sm">
@@ -89,11 +86,11 @@ export function QuestionCard({
               Response recorded!
             </span>
           </div>
-        ) : isProcessing ? (
+        ) : isUploading ? (
           <div className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg border border-primary/20">
             <Loader2 className="w-6 h-6 text-primary animate-spin mb-2" />
             <span className="text-sm font-medium text-foreground">
-              {isUploading ? 'Uploading...' : 'Transcribing...'}
+              Uploading...
             </span>
             <span className="text-xs text-muted-foreground">
               Please wait
