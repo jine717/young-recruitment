@@ -1,12 +1,112 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Square, RotateCcw, Check, Camera, AlertCircle, Mic } from 'lucide-react';
+import { Video, Square, RotateCcw, Check, Camera, AlertCircle, Mic, VideoOff, RefreshCw, Settings } from 'lucide-react';
 
 interface VideoRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
   maxDuration?: number; // Default 180 seconds (3 min)
   disabled?: boolean;
 }
+
+type PermissionErrorType = 'denied' | 'not_found' | 'in_use' | 'constraints' | 'unknown' | null;
+
+// Get browser-specific instructions for enabling camera access
+const getBrowserInstructions = (): { browser: string; steps: string[] } => {
+  const ua = navigator.userAgent.toLowerCase();
+  
+  if (ua.includes('chrome') && !ua.includes('edg')) {
+    return {
+      browser: 'Chrome',
+      steps: [
+        'Click the camera icon in the address bar (left of the URL)',
+        'Select "Always allow" for camera and microphone',
+        'Click "Done" and refresh the page'
+      ]
+    };
+  } else if (ua.includes('firefox')) {
+    return {
+      browser: 'Firefox',
+      steps: [
+        'Click the camera icon next to the URL',
+        'Select "Allow" for both camera and microphone',
+        'Refresh the page if needed'
+      ]
+    };
+  } else if (ua.includes('safari') && !ua.includes('chrome')) {
+    return {
+      browser: 'Safari',
+      steps: [
+        'Go to Safari → Settings for This Website',
+        'Set Camera and Microphone to "Allow"',
+        'Refresh the page'
+      ]
+    };
+  } else if (ua.includes('edg')) {
+    return {
+      browser: 'Edge',
+      steps: [
+        'Click the lock icon in the address bar',
+        'Click "Permissions for this site"',
+        'Set Camera and Microphone to "Allow"'
+      ]
+    };
+  }
+  
+  return {
+    browser: 'your browser',
+    steps: [
+      'Open your browser settings',
+      'Find "Site Settings" or "Permissions"',
+      'Allow camera and microphone access for this site'
+    ]
+  };
+};
+
+// Get error details based on error type
+const getErrorDetails = (errorType: PermissionErrorType): {
+  icon: typeof AlertCircle;
+  title: string;
+  description: string;
+  showBrowserInstructions: boolean;
+} => {
+  switch (errorType) {
+    case 'denied':
+      return {
+        icon: AlertCircle,
+        title: 'Permission Denied',
+        description: 'Camera and microphone access was blocked. Please allow access to continue.',
+        showBrowserInstructions: true
+      };
+    case 'not_found':
+      return {
+        icon: VideoOff,
+        title: 'Camera Not Found',
+        description: 'No camera was detected on your device. Please connect a camera and try again.',
+        showBrowserInstructions: false
+      };
+    case 'in_use':
+      return {
+        icon: Camera,
+        title: 'Camera In Use',
+        description: 'Your camera is being used by another application. Please close other apps using the camera and try again.',
+        showBrowserInstructions: false
+      };
+    case 'constraints':
+      return {
+        icon: Settings,
+        title: 'Camera Not Compatible',
+        description: 'Your camera doesn\'t support the required settings. Please try a different camera if available.',
+        showBrowserInstructions: false
+      };
+    default:
+      return {
+        icon: AlertCircle,
+        title: 'Camera Error',
+        description: 'An unexpected error occurred while accessing your camera. Please try again.',
+        showBrowserInstructions: true
+      };
+  }
+};
 
 // Get the best supported MIME type for video recording with audio
 const getSupportedMimeType = (): string => {
@@ -36,6 +136,8 @@ export function VideoRecorder({
 }: VideoRecorderProps) {
   const [status, setStatus] = useState<'idle' | 'preview' | 'recording' | 'recorded'>('idle');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permissionError, setPermissionError] = useState<PermissionErrorType>(null);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -69,6 +171,9 @@ export function VideoRecorder({
   }, []);
 
   const startCamera = useCallback(async () => {
+    setIsRequestingPermission(true);
+    setPermissionError(null);
+    
     try {
       // Ultra-optimized settings for minimal file size (~10-12 MB for 5 min)
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -132,9 +237,25 @@ export function VideoRecorder({
       
       // Get supported MIME type
       mimeTypeRef.current = getSupportedMimeType();
-    } catch (err) {
-      console.error('Camera access denied:', err);
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      
+      // Identify specific error type
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionError('denied');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setPermissionError('not_found');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setPermissionError('in_use');
+      } else if (err.name === 'OverconstrainedError') {
+        setPermissionError('constraints');
+      } else {
+        setPermissionError('unknown');
+      }
+      
       setHasPermission(false);
+    } finally {
+      setIsRequestingPermission(false);
     }
   }, []);
 
@@ -295,16 +416,50 @@ export function VideoRecorder({
     };
   }, [stopStream]);
 
-  if (hasPermission === false) {
+  // Permission error UI with specific messages
+  if (hasPermission === false && permissionError) {
+    const errorDetails = getErrorDetails(permissionError);
+    const browserInfo = getBrowserInstructions();
+    const IconComponent = errorDetails.icon;
+    
     return (
       <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-muted/30 rounded-lg border border-border">
-        <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-destructive mb-3" />
-        <h3 className="text-base font-semibold text-foreground mb-2">Camera Access Required</h3>
-        <p className="text-sm text-muted-foreground text-center mb-3">
-          Please enable camera and microphone access in your browser settings.
+        <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+          <IconComponent className="w-6 h-6 text-destructive" />
+        </div>
+        
+        <h3 className="text-base font-semibold text-foreground mb-2 text-center">
+          {errorDetails.title}
+        </h3>
+        
+        <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+          {errorDetails.description}
         </p>
-        <Button onClick={startCamera} variant="outline" size="sm">
-          Try Again
+        
+        {errorDetails.showBrowserInstructions && (
+          <div className="w-full max-w-sm bg-background rounded-lg border border-border p-4 mb-4">
+            <p className="text-xs font-medium text-foreground mb-2">
+              How to enable in {browserInfo.browser}:
+            </p>
+            <ol className="text-xs text-muted-foreground space-y-1.5">
+              {browserInfo.steps.map((step, index) => (
+                <li key={index} className="flex gap-2">
+                  <span className="text-primary font-medium">{index + 1}.</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        
+        <Button 
+          onClick={startCamera} 
+          variant="outline" 
+          size="sm"
+          disabled={isRequestingPermission}
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRequestingPermission ? 'animate-spin' : ''}`} />
+          {isRequestingPermission ? 'Requesting...' : 'Try Again'}
         </Button>
       </div>
     );
@@ -320,12 +475,21 @@ export function VideoRecorder({
         </p>
         <Button 
           onClick={startCamera} 
-          disabled={disabled}
+          disabled={disabled || isRequestingPermission}
           size="sm"
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          <Camera className="w-4 h-4 mr-2" />
-          Start Camera
+          {isRequestingPermission ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Requesting Access...
+            </>
+          ) : (
+            <>
+              <Camera className="w-4 h-4 mr-2" />
+              Start Camera
+            </>
+          )}
         </Button>
       </div>
     );
