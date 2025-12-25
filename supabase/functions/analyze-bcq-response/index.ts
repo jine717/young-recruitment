@@ -78,20 +78,42 @@ serve(async (req) => {
     }
 
     // Prepare video for audio analysis (if available)
+    // Limit video size to 7MB to avoid memory issues
+    const MAX_VIDEO_SIZE_BYTES = 7 * 1024 * 1024; // 7MB
     let videoBase64: string | null = null;
+    let skipFluencyReason: string | null = null;
+    
     if (response.video_url) {
       try {
         console.log('Fetching video for audio analysis...');
         const videoResponse = await fetch(response.video_url);
         if (videoResponse.ok) {
-          const videoBuffer = await videoResponse.arrayBuffer();
-          videoBase64 = arrayBufferToBase64(videoBuffer);
-          console.log('Video fetched successfully, base64 length:', videoBase64.length);
+          const contentLength = videoResponse.headers.get('content-length');
+          const videoSize = contentLength ? parseInt(contentLength, 10) : 0;
+          
+          console.log('Video size:', videoSize, 'bytes (', (videoSize / 1024 / 1024).toFixed(2), 'MB)');
+          
+          if (videoSize > MAX_VIDEO_SIZE_BYTES) {
+            console.warn(`Video too large for fluency analysis: ${(videoSize / 1024 / 1024).toFixed(2)}MB > ${(MAX_VIDEO_SIZE_BYTES / 1024 / 1024)}MB limit`);
+            skipFluencyReason = `Video too large (${(videoSize / 1024 / 1024).toFixed(1)}MB)`;
+          } else {
+            const videoBuffer = await videoResponse.arrayBuffer();
+            // Double check actual buffer size
+            if (videoBuffer.byteLength > MAX_VIDEO_SIZE_BYTES) {
+              console.warn(`Video buffer too large: ${(videoBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+              skipFluencyReason = `Video too large (${(videoBuffer.byteLength / 1024 / 1024).toFixed(1)}MB)`;
+            } else {
+              videoBase64 = arrayBufferToBase64(videoBuffer);
+              console.log('Video fetched successfully, base64 length:', videoBase64.length);
+            }
+          }
         } else {
           console.warn('Failed to fetch video:', videoResponse.status);
+          skipFluencyReason = `Failed to fetch video: ${videoResponse.status}`;
         }
       } catch (videoError) {
         console.warn('Error fetching video:', videoError);
+        skipFluencyReason = `Error fetching video: ${videoError instanceof Error ? videoError.message : 'Unknown'}`;
       }
     }
 
@@ -340,6 +362,26 @@ Use the analyze_fluency tool to provide your assessment.`
   } catch (error) {
     console.error('Analysis error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Try to update status to 'error' so it doesn't stay stuck in 'analyzing'
+    try {
+      const { responseId } = await req.clone().json().catch(() => ({ responseId: null }));
+      if (responseId) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        await supabase
+          .from('business_case_responses')
+          .update({ content_analysis_status: 'error' })
+          .eq('id', responseId);
+        
+        console.log('Updated status to error for response:', responseId);
+      }
+    } catch (updateError) {
+      console.error('Failed to update status to error:', updateError);
+    }
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {

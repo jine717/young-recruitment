@@ -123,11 +123,14 @@ export function useUpdateApplicationStatus() {
 
 export function useDeleteApplication() {
   return async (applicationId: string) => {
-    const { error } = await supabase
-      .from('applications')
-      .delete()
-      .eq('id', applicationId);
+    // Use edge function to delete application and all associated files
+    const { data, error } = await supabase.functions.invoke('delete-application-cascade', {
+      body: { applicationId }
+    });
 
     if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    
+    return data;
   };
 }

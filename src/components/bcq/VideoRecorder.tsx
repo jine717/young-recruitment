@@ -31,7 +31,7 @@ const getSupportedMimeType = (): string => {
 
 export function VideoRecorder({ 
   onRecordingComplete, 
-  maxDuration = 180,
+  maxDuration = 300, // Default 5 minutes
   disabled = false 
 }: VideoRecorderProps) {
   const [status, setStatus] = useState<'idle' | 'preview' | 'recording' | 'recorded'>('idle');
@@ -70,12 +70,18 @@ export function VideoRecorder({
 
   const startCamera = useCallback(async () => {
     try {
+      // Ultra-optimized settings for minimal file size (~10-12 MB for 5 min)
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { 
+          facingMode: 'user', 
+          width: { ideal: 640, max: 640 },    // 360p widescreen
+          height: { ideal: 360, max: 360 },   // 360p - sufficient for face visibility
+          frameRate: { ideal: 20, max: 24 }   // Lower framerate for smaller files
+        },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 44100
+          sampleRate: 22050    // Reduced - sufficient for voice clarity
         }
       });
       
@@ -147,8 +153,12 @@ export function VideoRecorder({
     chunksRef.current = [];
     setElapsedTime(0);
     
-    // Use detected MIME type or let browser choose default
-    const options: MediaRecorderOptions = {};
+    // Ultra-optimized bitrate settings for minimal file sizes
+    // Target: ~10-12 MB for 5 minutes
+    const options: MediaRecorderOptions = {
+      videoBitsPerSecond: 300000,    // 300 kbps for video (sufficient for 360p talking head)
+      audioBitsPerSecond: 48000      // 48 kbps for audio (clear voice quality)
+    };
     if (mimeTypeRef.current) {
       options.mimeType = mimeTypeRef.current;
     }
@@ -306,7 +316,7 @@ export function VideoRecorder({
         <Camera className="w-10 h-10 sm:w-12 sm:h-12 text-primary mb-3" />
         <h3 className="text-base font-semibold text-foreground mb-1">Ready to Record</h3>
         <p className="text-sm text-muted-foreground text-center mb-3">
-          Max recording time: <span className="font-medium text-foreground">3 minutes</span>
+          Max recording time: <span className="font-medium text-foreground">5 minutes</span>
         </p>
         <Button 
           onClick={startCamera} 
@@ -395,7 +405,7 @@ export function VideoRecorder({
               </div>
             )}
             <span className="text-xs text-muted-foreground">
-              Max: <span className="font-medium text-foreground">3 min</span>
+              Max: <span className="font-medium text-foreground">5 min</span>
             </span>
             <Button
               onClick={startRecording}

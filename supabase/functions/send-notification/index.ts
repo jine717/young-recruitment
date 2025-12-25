@@ -504,7 +504,7 @@ function getEmailTemplate(
                 You'll answer a series of business case questions via <strong>video recording</strong> in English.
               </p>
               <p style="font-size: 14px; margin: 0; color: ${brandColors.khaki};">
-                Each response has a maximum duration of <strong>3 minutes</strong>.
+                Each response has a maximum duration of <strong>5 minutes</strong>.
               </p>
             </td>
           </tr>
@@ -614,9 +614,12 @@ serve(async (req: Request) => {
 
     console.log(`Sending email to ${candidateEmail}: ${subject}`);
 
-    // Send email via Resend
+    // Send email via Resend with verified domain
+    const fromAddress = "Young Recruitment <notification@young-recruitment.com>";
+    console.log(`Using from address: ${fromAddress}`);
+
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Young Recruitment <onboarding@resend.dev>",
+      from: fromAddress,
       to: [candidateEmail],
       subject,
       html,
