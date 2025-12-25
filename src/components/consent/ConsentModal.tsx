@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Loader2, Shield, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, Shield, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -327,26 +327,16 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
               <ScrollArea className="h-[350px] border rounded-lg p-4 bg-muted/20">
                 <AuthorizationContent />
               </ScrollArea>
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="authorization"
-                    checked={authorizationAccepted}
-                    onCheckedChange={(checked) => setAuthorizationAccepted(checked === true)}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor="authorization" className="text-sm font-medium cursor-pointer">
-                    I have read and accept the Candidate Authorization
-                  </Label>
-                </div>
-                <a
-                  href="/legal/candidate-authorization.pdf"
-                  download="YOUNG_SPAIN_Candidate_Authorization.pdf"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </a>
+              <div className="flex items-center gap-2 mt-4">
+                <Checkbox
+                  id="authorization"
+                  checked={authorizationAccepted}
+                  onCheckedChange={(checked) => setAuthorizationAccepted(checked === true)}
+                  disabled={isLoading}
+                />
+                <Label htmlFor="authorization" className="text-sm font-medium cursor-pointer">
+                  I have read and accept the Candidate Authorization
+                </Label>
               </div>
             </div>
           ) : (
@@ -358,26 +348,16 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
               <ScrollArea className="h-[350px] border rounded-lg p-4 bg-muted/20">
                 <CookiePolicyContent />
               </ScrollArea>
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="cookies"
-                    checked={cookiesAccepted}
-                    onCheckedChange={(checked) => setCookiesAccepted(checked === true)}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor="cookies" className="text-sm font-medium cursor-pointer">
-                    I have read and accept the Cookie Policy
-                  </Label>
-                </div>
-                <a
-                  href="/legal/cookies-policy.pdf"
-                  download="YOUNG_SPAIN_Cookie_Policy.pdf"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </a>
+              <div className="flex items-center gap-2 mt-4">
+                <Checkbox
+                  id="cookies"
+                  checked={cookiesAccepted}
+                  onCheckedChange={(checked) => setCookiesAccepted(checked === true)}
+                  disabled={isLoading}
+                />
+                <Label htmlFor="cookies" className="text-sm font-medium cursor-pointer">
+                  I have read and accept the Cookie Policy
+                </Label>
               </div>
             </div>
           )}
