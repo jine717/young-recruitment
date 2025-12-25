@@ -10,9 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Loader2, Shield, FileText } from 'lucide-react';
+import { Download, Loader2, Shield, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -272,11 +271,20 @@ function AuthorizationContent() {
 export default function ConsentModal({ open, onAccept, onCancel, isLoading }: ConsentModalProps) {
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [authorizationAccepted, setAuthorizationAccepted] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'authorization' | 'cookies'>('authorization');
 
-  const canSubmit = cookiesAccepted && authorizationAccepted;
+  const handleContinue = () => {
+    if (authorizationAccepted) {
+      setCurrentStep('cookies');
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep('authorization');
+  };
 
   const handleAccept = () => {
-    if (canSubmit) {
+    if (cookiesAccepted && authorizationAccepted) {
       onAccept();
     }
   };
@@ -291,32 +299,31 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <Shield className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Shield className="h-5 w-5 text-primary" />
+              </div>
+              <DialogTitle className="font-display text-xl">Data Protection Consent</DialogTitle>
             </div>
-            <DialogTitle className="font-display text-xl">Data Protection Consent</DialogTitle>
+            <span className="text-sm text-muted-foreground font-medium">
+              Step {currentStep === 'authorization' ? '1' : '2'} of 2
+            </span>
           </div>
           <DialogDescription>
-            Before submitting your application, please review and accept our data protection policies. 
-            Your privacy is important to us.
+            {currentStep === 'authorization' 
+              ? 'Please review and accept the Candidate Authorization to continue.'
+              : 'Please review and accept the Cookie Policy to submit your application.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 py-4">
-          <Tabs defaultValue="authorization" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="authorization" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Candidate Authorization
-              </TabsTrigger>
-              <TabsTrigger value="cookies" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Cookie Policy
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="authorization" className="flex-1 min-h-0 mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+          {currentStep === 'authorization' ? (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-foreground">Candidate Authorization</h3>
+              </div>
               <ScrollArea className="h-[350px] border rounded-lg p-4 bg-muted/20">
                 <AuthorizationContent />
               </ScrollArea>
@@ -341,9 +348,13 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
                   Download PDF
                 </a>
               </div>
-            </TabsContent>
-
-            <TabsContent value="cookies" className="flex-1 min-h-0 mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+            </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-foreground">Cookie Policy</h3>
+              </div>
               <ScrollArea className="h-[350px] border rounded-lg p-4 bg-muted/20">
                 <CookiePolicyContent />
               </ScrollArea>
@@ -368,56 +379,70 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
                   Download PDF
                 </a>
               </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Acceptance status summary */}
-          <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${authorizationAccepted ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-                <span className={authorizationAccepted ? 'text-foreground' : 'text-muted-foreground'}>
-                  Candidate Authorization {authorizationAccepted ? '✓' : '(pending)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${cookiesAccepted ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-                <span className={cookiesAccepted ? 'text-foreground' : 'text-muted-foreground'}>
-                  Cookie Policy {cookiesAccepted ? '✓' : '(pending)'}
-                </span>
-              </div>
             </div>
-          </div>
+          )}
 
-          <p className="text-xs text-muted-foreground text-center pt-3">
+          <p className="text-xs text-muted-foreground text-center pt-4">
             By accepting, you confirm that you have read and understood both documents. 
             Your consent will be recorded for compliance purposes.
           </p>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="sm:w-auto w-full"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAccept}
-            disabled={!canSubmit || isLoading}
-            className="sm:w-auto w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Accept & Submit Application'
-            )}
-          </Button>
+          {currentStep === 'authorization' ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                disabled={isLoading}
+                className="sm:w-auto w-full"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleContinue}
+                disabled={!authorizationAccepted}
+                className="sm:w-auto w-full"
+              >
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={isLoading}
+                className="sm:w-auto w-full"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                disabled={isLoading}
+                className="sm:w-auto w-full"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAccept}
+                disabled={!cookiesAccepted || isLoading}
+                className="sm:w-auto w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Accept & Submit Application'
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
