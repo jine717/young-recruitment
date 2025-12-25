@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.analyze-final]
 verify_jwt = false
+
+[functions.delete-application-cascade]
+verify_jwt = false
