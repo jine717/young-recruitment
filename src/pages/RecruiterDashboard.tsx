@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
+import { useApplicationsRealtime } from "@/hooks/useApplicationsRealtime";
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
@@ -64,6 +65,9 @@ const statusIcons: Record<string, React.ReactNode> = {
   hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
 const RecruiterDashboard = () => {
+  // Enable real-time updates for applications
+  useApplicationsRealtime();
+  
   const {
     data: applications,
     isLoading,
