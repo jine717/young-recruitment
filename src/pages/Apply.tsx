@@ -12,6 +12,7 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { z } from 'zod';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ConsentModal from '@/components/consent/ConsentModal';
 
 const applicationSchema = z.object({
   candidateName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -19,6 +20,10 @@ const applicationSchema = z.object({
   cvFile: z.instanceof(File, { message: 'Please upload your CV' }),
   discFile: z.instanceof(File, { message: 'Please upload your DISC assessment' }),
 });
+
+// Version identifiers for the consent documents
+const COOKIES_POLICY_VERSION = '2025-12-23';
+const AUTHORIZATION_VERSION = '2025-12-23';
 
 export default function Apply() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +38,7 @@ export default function Apply() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -84,6 +90,7 @@ export default function Apply() {
     return !!data && !error;
   };
 
+  // Validate form fields before showing consent modal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -119,6 +126,14 @@ export default function Apply() {
       return;
     }
 
+    // Show consent modal instead of submitting directly
+    setShowConsentModal(true);
+  };
+
+  // Process application after consent is accepted
+  const processApplication = async () => {
+    if (!job || !cvFile || !discFile) return;
+
     setIsSubmitting(true);
 
     try {
@@ -126,8 +141,8 @@ export default function Apply() {
       const identifier = `${Date.now()}-${candidateEmail.replace(/[^a-z0-9]/gi, '_')}`;
 
       // Upload files
-      const cvPath = await uploadFile(cvFile!, 'cvs', identifier);
-      const discPath = await uploadFile(discFile!, 'disc-assessments', identifier);
+      const cvPath = await uploadFile(cvFile, 'cvs', identifier);
+      const discPath = await uploadFile(discFile, 'disc-assessments', identifier);
 
       // Generate application ID client-side to avoid SELECT permission requirement
       const applicationId = crypto.randomUUID();
@@ -148,6 +163,23 @@ export default function Apply() {
 
       if (appError) throw appError;
 
+      // Save consent record for GDPR/LOPDGDD compliance
+      const { error: consentError } = await supabase
+        .from('candidate_consents')
+        .insert({
+          application_id: applicationId,
+          cookies_policy_accepted: true,
+          authorization_statement_accepted: true,
+          cookies_policy_version: COOKIES_POLICY_VERSION,
+          authorization_statement_version: AUTHORIZATION_VERSION,
+          user_agent: navigator.userAgent,
+        });
+
+      if (consentError) {
+        console.error('Failed to save consent record:', consentError);
+        // Don't block the application, but log the error
+      }
+
       // Send application received notification (silent - page already shows confirmation)
       sendNotification.mutate({ 
         applicationId: applicationId, 
@@ -164,6 +196,7 @@ export default function Apply() {
         // Don't show error to candidate - analysis can be retriggered by recruiter
       });
 
+      setShowConsentModal(false);
       setSubmitted(true);
     } catch (error) {
       console.error('Application error:', error);
@@ -175,6 +208,10 @@ export default function Apply() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConsentCancel = () => {
+    setShowConsentModal(false);
   };
 
   if (jobLoading) {
@@ -393,6 +430,14 @@ export default function Apply() {
       </div>
 
       <Footer />
+
+      {/* Consent Modal */}
+      <ConsentModal
+        open={showConsentModal}
+        onAccept={processApplication}
+        onCancel={handleConsentCancel}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }
