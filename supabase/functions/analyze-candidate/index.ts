@@ -568,7 +568,7 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
 
     console.log("Evaluation parsed:", evaluation);
 
-    // Store the evaluation
+    // Store the evaluation - including initial scores for preservation across stages
     const { error: evalError } = await supabase.from("ai_evaluations").upsert({
       application_id: applicationId,
       overall_score: evaluation.overall_score,
@@ -580,6 +580,13 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
       communication_score: evaluation.communication_score,
       cultural_fit_score: evaluation.cultural_fit_score,
       raw_response: aiData,
+      // Save as initial scores for preservation across evaluation stages
+      initial_overall_score: evaluation.overall_score,
+      initial_skills_match_score: evaluation.skills_match_score,
+      initial_communication_score: evaluation.communication_score,
+      initial_cultural_fit_score: evaluation.cultural_fit_score,
+      initial_recommendation: evaluation.recommendation,
+      evaluation_stage: 'initial',
     }, { onConflict: "application_id" });
 
     if (evalError) {
