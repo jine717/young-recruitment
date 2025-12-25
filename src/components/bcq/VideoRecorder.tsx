@@ -70,18 +70,18 @@ export function VideoRecorder({
 
   const startCamera = useCallback(async () => {
     try {
-      // Optimized settings for smaller file sizes while maintaining sufficient quality
+      // Ultra-optimized settings for minimal file size (~10-12 MB for 5 min)
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'user', 
-          width: { ideal: 640, max: 854 },    // Reduced from 1280 - sufficient for talking head
-          height: { ideal: 480, max: 480 },   // Reduced from 720 - 480p is enough for face
-          frameRate: { ideal: 24, max: 30 }   // Limited framerate for smaller files
+          width: { ideal: 640, max: 640 },    // 360p widescreen
+          height: { ideal: 360, max: 360 },   // 360p - sufficient for face visibility
+          frameRate: { ideal: 20, max: 24 }   // Lower framerate for smaller files
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 22050    // Reduced from 44100 - sufficient for voice
+          sampleRate: 22050    // Reduced - sufficient for voice clarity
         }
       });
       
@@ -153,11 +153,11 @@ export function VideoRecorder({
     chunksRef.current = [];
     setElapsedTime(0);
     
-    // Optimized bitrate settings for smaller file sizes
-    // Target: ~20MB for 5 minutes instead of ~100MB+
+    // Ultra-optimized bitrate settings for minimal file sizes
+    // Target: ~10-12 MB for 5 minutes
     const options: MediaRecorderOptions = {
-      videoBitsPerSecond: 500000,    // 500 kbps for video (sufficient for talking head)
-      audioBitsPerSecond: 64000      // 64 kbps for audio (clear voice quality)
+      videoBitsPerSecond: 300000,    // 300 kbps for video (sufficient for 360p talking head)
+      audioBitsPerSecond: 48000      // 48 kbps for audio (clear voice quality)
     };
     if (mimeTypeRef.current) {
       options.mimeType = mimeTypeRef.current;
