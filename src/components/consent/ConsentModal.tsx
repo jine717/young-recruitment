@@ -56,44 +56,17 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
         </DialogHeader>
 
         <div className="flex-1 min-h-0 py-4">
-          <Tabs defaultValue="cookies" className="h-full flex flex-col">
+          <Tabs defaultValue="authorization" className="h-full flex flex-col">
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="cookies" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Cookie Policy
-              </TabsTrigger>
               <TabsTrigger value="authorization" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Candidate Authorization
               </TabsTrigger>
+              <TabsTrigger value="cookies" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Cookie Policy
+              </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="cookies" className="flex-1 min-h-0 mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="flex-1 min-h-0 h-[400px] border rounded-lg overflow-hidden bg-muted/20">
-                <PdfViewer url="/legal/cookies-policy.pdf" />
-              </div>
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="cookies"
-                    checked={cookiesAccepted}
-                    onCheckedChange={(checked) => setCookiesAccepted(checked === true)}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor="cookies" className="text-sm font-medium cursor-pointer">
-                    I have read and accept the Cookie Policy
-                  </Label>
-                </div>
-                <a
-                  href="/legal/cookies-policy.pdf"
-                  download="YOUNG_SPAIN_Cookie_Policy.pdf"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </a>
-              </div>
-            </TabsContent>
 
             <TabsContent value="authorization" className="flex-1 min-h-0 mt-0 data-[state=active]:flex data-[state=active]:flex-col">
               <div className="flex-1 min-h-0 h-[400px] border rounded-lg overflow-hidden bg-muted/20">
@@ -114,6 +87,33 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
                 <a
                   href="/legal/candidate-authorization.pdf"
                   download="YOUNG_SPAIN_Candidate_Authorization.pdf"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </a>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cookies" className="flex-1 min-h-0 mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="flex-1 min-h-0 h-[400px] border rounded-lg overflow-hidden bg-muted/20">
+                <PdfViewer url="/legal/cookies-policy.pdf" />
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="cookies"
+                    checked={cookiesAccepted}
+                    onCheckedChange={(checked) => setCookiesAccepted(checked === true)}
+                    disabled={isLoading}
+                  />
+                  <Label htmlFor="cookies" className="text-sm font-medium cursor-pointer">
+                    I have read and accept the Cookie Policy
+                  </Label>
+                </div>
+                <a
+                  href="/legal/cookies-policy.pdf"
+                  download="YOUNG_SPAIN_Cookie_Policy.pdf"
                   className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Download className="h-4 w-4" />
