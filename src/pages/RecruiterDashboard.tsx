@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { AIScoreBadge } from "@/components/recruiter/AIScoreBadge";
 import { AIEvaluationCard } from "@/components/recruiter/AIEvaluationCard";
 import { AIAssistant } from "@/components/recruiter/AIAssistant";
+import { useApplicationsRealtime } from "@/hooks/useApplicationsRealtime";
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   under_review: "bg-muted text-muted-foreground",
@@ -64,6 +65,9 @@ const statusIcons: Record<string, React.ReactNode> = {
   hired: <CheckCircle className="h-3 w-3 mr-1" />
 };
 const RecruiterDashboard = () => {
+  // Enable real-time updates for applications
+  useApplicationsRealtime();
+  
   const {
     data: applications,
     isLoading,
@@ -529,29 +533,56 @@ const RecruiterDashboard = () => {
                                 {statusFilter === "all" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              {/* Initial phase */}
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("pending")} className="flex items-center justify-between">
                                 New
                                 {statusFilter === "pending" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("under_review")} className="flex items-center justify-between">
-                                Review
+                                In Review
                                 {statusFilter === "under_review" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("reviewed")} className="flex items-center justify-between">
+                                Reviewed
+                                {statusFilter === "reviewed" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {/* BCQ phase */}
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("bcq_sent")} className="flex items-center justify-between">
                                 BCQ Sent
                                 {statusFilter === "bcq_sent" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("bcq_received")} className="flex items-center justify-between">
+                                BCQ Received
+                                {statusFilter === "bcq_received" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {/* Interview phase */}
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("pre_interview")} className="flex items-center justify-between">
+                                Pre Interview
+                                {statusFilter === "pre_interview" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("interview")} className="flex items-center justify-between">
                                 Interview
                                 {statusFilter === "interview" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusFilterChange("rejected")} className="flex items-center justify-between">
-                                Rejected
-                                {statusFilter === "rejected" && <Check className="h-4 w-4 ml-2" />}
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("interviewed")} className="flex items-center justify-between">
+                                Interviewed
+                                {statusFilter === "interviewed" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {/* Final phase */}
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("evaluated")} className="flex items-center justify-between">
+                                Evaluated
+                                {statusFilter === "evaluated" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusFilterChange("hired")} className="flex items-center justify-between">
                                 Hired
                                 {statusFilter === "hired" && <Check className="h-4 w-4 ml-2" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusFilterChange("rejected")} className="flex items-center justify-between">
+                                Rejected
+                                {statusFilter === "rejected" && <Check className="h-4 w-4 ml-2" />}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

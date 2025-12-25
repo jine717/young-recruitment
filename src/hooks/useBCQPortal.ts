@@ -38,21 +38,6 @@ interface BCQResponse {
   fluency_notes: string | null;
 }
 
-// Helper function to convert blob to base64 safely (handles large files)
-const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:video/webm;base64,")
-      const base64Data = base64.split(',')[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
-
 export function useBCQPortal(applicationId: string | undefined, token: string | undefined) {
   const [application, setApplication] = useState<Application | null>(null);
   const [businessCases, setBusinessCases] = useState<BusinessCase[]>([]);
@@ -62,7 +47,6 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
   const [isLoading, setIsLoading] = useState(true);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -320,81 +304,14 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
       console.log('Response record saved:', respData.id);
 
       setIsUploading(false);
-      setIsTranscribing(true);
 
-      // Transcribe the video
-      try {
-        // Convert blob to base64 safely (handles large files)
-        console.log('Converting video to base64 for transcription...');
-        const base64Audio = await blobToBase64(videoBlob);
-        console.log('Base64 conversion complete, invoking transcription function...');
-
-        const { data: transcriptionData, error: transcriptionError } = await supabase.functions
-          .invoke('transcribe-video', {
-            body: {
-              audio: base64Audio,
-              contentType: 'video/webm',
-              language: 'en'
-            }
-          });
-
-        if (transcriptionError) {
-          console.error('Transcription error:', {
-            message: transcriptionError.message,
-            name: transcriptionError.name,
-            context: transcriptionError.context
-          });
-          setError('Transcription failed. Analysis will be available later.');
-        } else if (transcriptionData?.text) {
-          console.log('Transcription successful, updating response...');
-          // Build update data with transcription and fluency analysis
-          const updateData: Record<string, unknown> = { 
-            transcription: transcriptionData.text 
-          };
-          
-          // Add fluency analysis if available
-          if (transcriptionData.fluency_analysis) {
-            updateData.fluency_pronunciation_score = transcriptionData.fluency_analysis.pronunciation_score;
-            updateData.fluency_pace_score = transcriptionData.fluency_analysis.pace_rhythm_score;
-            updateData.fluency_hesitation_score = transcriptionData.fluency_analysis.hesitation_score;
-            updateData.fluency_grammar_score = transcriptionData.fluency_analysis.grammar_score;
-            updateData.fluency_overall_score = transcriptionData.fluency_analysis.overall_fluency_score;
-            updateData.fluency_notes = transcriptionData.fluency_analysis.fluency_notes;
-          }
-
-          // Update response with transcription and fluency data
-          await supabase
-            .from('business_case_responses')
-            .update(updateData)
-            .eq('id', respData.id);
-
-          // Update local state with all fluency data
-          setResponses(prev => ({
-            ...prev,
-            [questionId]: {
-              ...respData,
-              transcription: transcriptionData.text,
-              fluency_pronunciation_score: transcriptionData.fluency_analysis?.pronunciation_score ?? null,
-              fluency_pace_score: transcriptionData.fluency_analysis?.pace_rhythm_score ?? null,
-              fluency_hesitation_score: transcriptionData.fluency_analysis?.hesitation_score ?? null,
-              fluency_grammar_score: transcriptionData.fluency_analysis?.grammar_score ?? null,
-              fluency_overall_score: transcriptionData.fluency_analysis?.overall_fluency_score ?? null,
-              fluency_notes: transcriptionData.fluency_analysis?.fluency_notes ?? null
-            }
-          }));
-        }
-      } catch (transcriptError) {
-        console.error('Transcription failed:', transcriptError);
-        setError('Transcription failed. Analysis will be available later.');
-      }
-
-      // Update local responses
+      // Update local responses (transcription will be done on-demand by recruiter)
       setResponses(prev => ({
         ...prev,
         [questionId]: respData
       }));
 
-      setIsTranscribing(false);
+      console.log('Video uploaded successfully. Transcription will be done by recruiter on demand.');
 
       // Check if all questions are answered
       const completedCount = Object.keys(responses).length + 1;
@@ -409,7 +326,6 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
       console.error('Submit response error:', { error: err, message: errorMessage });
       setError(`Failed to submit response: ${errorMessage}`);
       setIsUploading(false);
-      setIsTranscribing(false);
     }
   }, [application, businessCases.length, responses, recordStarted]);
 
@@ -484,7 +400,6 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
     isLoading,
     isValidToken,
     isUploading,
-    isTranscribing,
     isCompleted,
     error,
     responseTimeMinutes,

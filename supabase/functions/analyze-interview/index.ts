@@ -354,14 +354,11 @@ serve(async (req) => {
     // Update AI evaluation with new scores, preserving initial scores
     const { data: existingEval } = await supabase
       .from("ai_evaluations")
-      .select("id, overall_score, skills_match_score, communication_score, cultural_fit_score, recommendation, evaluation_stage")
+      .select("id, overall_score, skills_match_score, communication_score, cultural_fit_score, recommendation, evaluation_stage, initial_overall_score, initial_skills_match_score, initial_communication_score, initial_cultural_fit_score, initial_recommendation")
       .eq("application_id", applicationId)
       .maybeSingle();
 
     if (existingEval) {
-      // If this is the first interview analysis, preserve initial scores
-      const isFirstInterviewAnalysis = existingEval.evaluation_stage !== 'post_interview';
-      
       const updateData: Record<string, unknown> = {
         overall_score: newScore,
         skills_match_score: analysisResult.new_skills_score,
@@ -371,13 +368,17 @@ serve(async (req) => {
         evaluation_stage: 'post_interview'
       };
 
-      // Only save initial scores on first interview analysis
-      if (isFirstInterviewAnalysis) {
+      // Only save initial scores if they don't exist yet (NULL)
+      // This preserves the true initial scores from analyze-candidate
+      if (existingEval.initial_overall_score === null) {
         updateData.initial_overall_score = existingEval.overall_score;
         updateData.initial_skills_match_score = existingEval.skills_match_score;
         updateData.initial_communication_score = existingEval.communication_score;
         updateData.initial_cultural_fit_score = existingEval.cultural_fit_score;
         updateData.initial_recommendation = existingEval.recommendation;
+        console.log("Saving initial scores as fallback (were NULL):", existingEval.overall_score);
+      } else {
+        console.log("Initial scores already exist, preserving:", existingEval.initial_overall_score);
       }
 
       const { error: updateError } = await supabase

@@ -274,10 +274,6 @@ export default function RecruiterJobsList() {
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/business-case`)}>
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Business Case
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => toggleStatus(job)}>
                                   {job.status === 'published' ? (
                                     <>

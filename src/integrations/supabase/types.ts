@@ -395,6 +395,50 @@ export type Database = {
           },
         ]
       }
+      candidate_consents: {
+        Row: {
+          accepted_at: string
+          application_id: string
+          authorization_statement_accepted: boolean
+          authorization_statement_version: string
+          cookies_policy_accepted: boolean
+          cookies_policy_version: string
+          created_at: string
+          id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          application_id: string
+          authorization_statement_accepted?: boolean
+          authorization_statement_version: string
+          cookies_policy_accepted?: boolean
+          cookies_policy_version: string
+          created_at?: string
+          id?: string
+          user_agent?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          application_id?: string
+          authorization_statement_accepted?: boolean
+          authorization_statement_version?: string
+          cookies_policy_accepted?: boolean
+          cookies_policy_version?: string
+          created_at?: string
+          id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_consents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
