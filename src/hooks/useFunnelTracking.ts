@@ -5,6 +5,7 @@ import type { Json } from '@/integrations/supabase/types';
 
 // Event types for the application funnel
 export type FunnelEventType =
+  | 'homepage_viewed'
   | 'jobs_list_viewed'
   | 'job_card_clicked'
   | 'job_detail_viewed'
