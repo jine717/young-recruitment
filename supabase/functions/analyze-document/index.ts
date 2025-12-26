@@ -152,7 +152,16 @@ serve(async (req) => {
 
     // For PDFs, we'll send the base64 content to the AI
     const documentBuffer = await documentResponse.arrayBuffer();
-    const base64Content = btoa(String.fromCharCode(...new Uint8Array(documentBuffer)));
+    
+    // Convert to base64 in chunks to avoid stack overflow with large files
+    const uint8Array = new Uint8Array(documentBuffer);
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64Content = btoa(binaryString);
 
     // Determine content type
     const contentType = documentResponse.headers.get('content-type') || 'application/pdf';
