@@ -9,7 +9,7 @@ import { ConversionFunnelChart } from '@/components/analytics/ConversionFunnelCh
 import { ApplicationsTrendChart } from '@/components/analytics/ApplicationsTrendChart';
 import { AIScoreDistributionChart } from '@/components/analytics/AIScoreDistributionChart';
 import { JobPerformanceTable } from '@/components/analytics/JobPerformanceTable';
-import FunnelAnalyticsCard from '@/components/analytics/FunnelAnalyticsCard';
+// import FunnelAnalyticsCard from '@/components/analytics/FunnelAnalyticsCard'; // Temporarily hidden while collecting data
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 
 // Format duration as hours and minutes
@@ -160,10 +160,11 @@ export default function RecruiterAnalytics() {
         {/* Job Performance Table */}
         <JobPerformanceTable data={analytics.jobPerformance} />
 
-        {/* Candidate Journey Funnel */}
+        {/* Candidate Journey Funnel - Temporarily hidden while collecting data
         <div className="mt-6">
           <FunnelAnalyticsCard />
         </div>
+        */}
       </div>
     </DashboardLayout>
   );
