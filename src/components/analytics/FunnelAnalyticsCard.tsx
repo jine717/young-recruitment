@@ -4,19 +4,90 @@ import { useFunnelAnalytics } from "@/hooks/useFunnelAnalytics";
 import { useJobs } from "@/hooks/useJobs";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDown, TrendingUp, Users, Calendar } from "lucide-react";
+import { ArrowDown, TrendingUp, Users, Calendar, FlaskConical } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, Legend } from "recharts";
 import { format, parseISO } from "date-fns";
-
+import { Button } from "@/components/ui/button";
+import { trackFunnelEvent } from "@/hooks/useFunnelTracking";
+import { useToast } from "@/hooks/use-toast";
 const FunnelAnalyticsCard = () => {
   const [days, setDays] = useState(30);
   const [selectedJobId, setSelectedJobId] = useState<string>('all');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const { toast } = useToast();
   
   const { data: jobs } = useJobs();
-  const { data, isLoading, error } = useFunnelAnalytics(
+  const { data, isLoading, error, refetch } = useFunnelAnalytics(
     days, 
     selectedJobId === 'all' ? undefined : selectedJobId
   );
+
+  // Simulate a complete application funnel for testing
+  const simulateCompleteFunnel = async () => {
+    if (!jobs || jobs.length === 0) {
+      toast({
+        title: "No jobs available",
+        description: "Create at least one job to simulate funnel events.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSimulating(true);
+    const testJobId = jobs[0].id;
+    const testJobTitle = jobs[0].title;
+
+    try {
+      console.log('[Funnel Test] Starting simulation for job:', testJobId);
+      
+      // Simulate each step of the funnel
+      await trackFunnelEvent('jobs_list_viewed', null, { jobCount: jobs.length });
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('job_card_clicked', testJobId, { jobTitle: testJobTitle });
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('job_detail_viewed', testJobId, { jobTitle: testJobTitle });
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('apply_button_clicked', testJobId, { buttonLocation: 'test' });
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('apply_form_loaded', testJobId);
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('form_submitted', testJobId);
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('consent_modal_shown', testJobId);
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('consent_authorization_accepted', testJobId);
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('consent_completed', testJobId);
+      await new Promise(r => setTimeout(r, 100));
+      
+      await trackFunnelEvent('application_completed', testJobId, { applicationId: 'test-sim-' + Date.now() });
+
+      toast({
+        title: "Funnel simulation complete",
+        description: "All funnel events have been recorded. Refreshing data...",
+      });
+
+      // Refetch data to show new events
+      await refetch();
+    } catch (error) {
+      console.error('[Funnel Test] Simulation failed:', error);
+      toast({
+        title: "Simulation failed",
+        description: "Check the console for errors.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   if (error) {
     return (
@@ -45,6 +116,16 @@ const FunnelAnalyticsCard = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={simulateCompleteFunnel}
+                disabled={isSimulating}
+                title="Simulate a complete funnel journey for testing"
+              >
+                <FlaskConical className="h-4 w-4 mr-1" />
+                {isSimulating ? 'Simulating...' : 'Test Funnel'}
+              </Button>
               <Select value={days.toString()} onValueChange={(v) => setDays(parseInt(v))}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue />

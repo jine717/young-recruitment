@@ -209,8 +209,8 @@ export default function Apply() {
         // Don't show error to candidate - analysis can be retriggered by recruiter
       });
 
-      // Track application completed
-      trackEvent('application_completed', job.id, { applicationId });
+      // Track application completed - await to ensure it's recorded
+      await trackEvent('application_completed', job.id, { applicationId });
 
       setShowConsentModal(false);
       setSubmitted(true);

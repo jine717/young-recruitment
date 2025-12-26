@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { track } from '@vercel/analytics';
+import type { Json } from '@/integrations/supabase/types';
 
 // Event types for the application funnel
 export type FunnelEventType =
@@ -29,17 +30,70 @@ interface FunnelEventMetadata {
 }
 
 const SESSION_ID_KEY = 'funnel_session_id';
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
 
-// Generate or retrieve session ID from localStorage
+// Generate or retrieve session ID from localStorage with validation
 const getSessionId = (): string => {
   if (typeof window === 'undefined') return 'server';
   
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
+  try {
+    let sessionId = localStorage.getItem(SESSION_ID_KEY);
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!sessionId || !uuidRegex.test(sessionId)) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem(SESSION_ID_KEY, sessionId);
+      console.log('[Funnel] Created new session ID:', sessionId);
+    }
+    return sessionId;
+  } catch (error) {
+    // localStorage might be blocked - generate a temporary ID
+    console.warn('[Funnel] localStorage unavailable, using temporary session ID');
+    return crypto.randomUUID();
   }
-  return sessionId;
+};
+
+// Helper to insert event with retries
+const insertEventWithRetry = async (
+  eventData: {
+    event_type: string;
+    job_id: string | null;
+    session_id: string;
+    user_agent: string | null;
+    referrer: string | null;
+    metadata: Json;
+  },
+  retries: number = MAX_RETRIES
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('funnel_events')
+      .insert([eventData]);
+
+    if (error) {
+      console.error('[Funnel] DB insert error:', error.message, error.code, error.details);
+      
+      if (retries > 0) {
+        console.log(`[Funnel] Retrying insert... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        return insertEventWithRetry(eventData, retries - 1);
+      }
+      return false;
+    }
+    
+    console.log('[Funnel] Event inserted successfully:', eventData.event_type);
+    return true;
+  } catch (error) {
+    console.error('[Funnel] DB exception:', error);
+    
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      return insertEventWithRetry(eventData, retries - 1);
+    }
+    return false;
+  }
 };
 
 export const useFunnelTracking = () => {
@@ -53,8 +107,10 @@ export const useFunnelTracking = () => {
     eventType: FunnelEventType,
     jobId?: string | null,
     metadata?: FunnelEventMetadata
-  ) => {
+  ): Promise<boolean> => {
     const sessionId = sessionIdRef.current || getSessionId();
+    
+    console.log('[Funnel] Tracking event:', eventType, { jobId, sessionId, metadata });
     
     // Prepare Vercel Analytics payload (convert arrays to strings)
     const vercelPayload: Record<string, string | number | boolean | null> = {
@@ -75,33 +131,22 @@ export const useFunnelTracking = () => {
     try {
       track(eventType, vercelPayload);
     } catch (error) {
-      // Silently fail - don't block UX
-      console.debug('[Funnel] Vercel Analytics error:', error);
+      console.warn('[Funnel] Vercel Analytics error:', error);
     }
 
-    // Track in database (fire and forget)
-    try {
-      // Convert metadata to JSON-compatible format
-      const jsonMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
-      
-      const { error } = await supabase
-        .from('funnel_events')
-        .insert([{
-          event_type: eventType,
-          job_id: jobId || null,
-          session_id: sessionId,
-          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-          referrer: typeof document !== 'undefined' ? document.referrer : null,
-          metadata: jsonMetadata
-        }]);
-
-      if (error) {
-        console.debug('[Funnel] DB insert error:', error);
-      }
-    } catch (error) {
-      // Silently fail - don't block UX
-      console.debug('[Funnel] DB error:', error);
-    }
+    // Track in database with retry
+    const jsonMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
+    
+    const success = await insertEventWithRetry({
+      event_type: eventType,
+      job_id: jobId || null,
+      session_id: sessionId,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      referrer: typeof document !== 'undefined' ? document.referrer : null,
+      metadata: jsonMetadata
+    });
+    
+    return success;
   }, []);
 
   return { trackEvent };
@@ -112,8 +157,10 @@ export const trackFunnelEvent = async (
   eventType: FunnelEventType,
   jobId?: string | null,
   metadata?: FunnelEventMetadata
-) => {
+): Promise<boolean> => {
   const sessionId = getSessionId();
+  
+  console.log('[Funnel] Tracking event (standalone):', eventType, { jobId, sessionId, metadata });
   
   // Prepare Vercel Analytics payload (convert arrays to strings)
   const vercelPayload: Record<string, string | number | boolean | null> = {
@@ -134,25 +181,20 @@ export const trackFunnelEvent = async (
   try {
     track(eventType, vercelPayload);
   } catch (error) {
-    console.debug('[Funnel] Vercel Analytics error:', error);
+    console.warn('[Funnel] Vercel Analytics error:', error);
   }
 
-  // Track in database
-  try {
-    // Convert metadata to JSON-compatible format
-    const jsonMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
-    
-    await supabase
-      .from('funnel_events')
-      .insert([{
-        event_type: eventType,
-        job_id: jobId || null,
-        session_id: sessionId,
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        referrer: typeof document !== 'undefined' ? document.referrer : null,
-        metadata: jsonMetadata
-      }]);
-  } catch (error) {
-    console.debug('[Funnel] DB error:', error);
-  }
+  // Track in database with retry
+  const jsonMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
+  
+  const success = await insertEventWithRetry({
+    event_type: eventType,
+    job_id: jobId || null,
+    session_id: sessionId,
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    referrer: typeof document !== 'undefined' ? document.referrer : null,
+    metadata: jsonMetadata
+  });
+  
+  return success;
 };

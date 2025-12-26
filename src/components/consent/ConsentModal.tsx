@@ -275,10 +275,14 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading, jobI
   const [currentStep, setCurrentStep] = useState<'authorization' | 'cookies'>('authorization');
   const [hasTrackedOpen, setHasTrackedOpen] = useState(false);
 
-  // Lazy import to avoid circular dependencies
+  // Lazy import to avoid circular dependencies - await to ensure tracking completes
   const trackEvent = async (eventType: string, metadata?: Record<string, unknown>) => {
-    const { trackFunnelEvent } = await import('@/hooks/useFunnelTracking');
-    trackFunnelEvent(eventType as any, jobId || null, metadata);
+    try {
+      const { trackFunnelEvent } = await import('@/hooks/useFunnelTracking');
+      await trackFunnelEvent(eventType as any, jobId || null, metadata);
+    } catch (error) {
+      console.error('[ConsentModal] Failed to track event:', eventType, error);
+    }
   };
 
   // Track modal shown
@@ -303,9 +307,9 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading, jobI
     setCurrentStep('authorization');
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (cookiesAccepted && authorizationAccepted) {
-      trackEvent('consent_completed');
+      await trackEvent('consent_completed');
       onAccept();
     }
   };
