@@ -1,14 +1,28 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, ArrowRight, ArrowLeft, Building2 } from "lucide-react";
 import { useJobs } from "@/hooks/useJobs";
+import { useFunnelTracking } from "@/hooks/useFunnelTracking";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const Jobs = () => {
   const { data: jobs, isLoading, error } = useJobs();
+  const { trackEvent } = useFunnelTracking();
+
+  // Track page view
+  useEffect(() => {
+    if (!isLoading && jobs) {
+      trackEvent('jobs_list_viewed', null, { jobCount: jobs.length });
+    }
+  }, [isLoading, jobs, trackEvent]);
+
+  const handleJobClick = (jobId: string, jobTitle: string) => {
+    trackEvent('job_card_clicked', jobId, { jobTitle });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,8 +75,9 @@ const Jobs = () => {
               {jobs.map((job, index) => (
                 <Card 
                   key={job.id} 
-                  className="group shadow-young-sm hover-lift animate-fade-in"
+                  className="group shadow-young-sm hover-lift animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => handleJobClick(job.id, job.title)}
                 >
                   <CardHeader>
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

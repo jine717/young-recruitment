@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ interface ConsentModalProps {
   onAccept: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  jobId?: string;
 }
 
 const COOKIES_TABLE_DATA = [
@@ -268,13 +269,36 @@ function AuthorizationContent() {
   );
 }
 
-export default function ConsentModal({ open, onAccept, onCancel, isLoading }: ConsentModalProps) {
+export default function ConsentModal({ open, onAccept, onCancel, isLoading, jobId }: ConsentModalProps) {
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [authorizationAccepted, setAuthorizationAccepted] = useState(false);
   const [currentStep, setCurrentStep] = useState<'authorization' | 'cookies'>('authorization');
+  const [hasTrackedOpen, setHasTrackedOpen] = useState(false);
+
+  // Lazy import to avoid circular dependencies - await to ensure tracking completes
+  const trackEvent = async (eventType: string, metadata?: Record<string, unknown>) => {
+    try {
+      const { trackFunnelEvent } = await import('@/hooks/useFunnelTracking');
+      await trackFunnelEvent(eventType as any, jobId || null, metadata);
+    } catch (error) {
+      console.error('[ConsentModal] Failed to track event:', eventType, error);
+    }
+  };
+
+  // Track modal shown
+  useEffect(() => {
+    if (open && !hasTrackedOpen) {
+      trackEvent('consent_modal_shown');
+      setHasTrackedOpen(true);
+    }
+    if (!open) {
+      setHasTrackedOpen(false);
+    }
+  }, [open, hasTrackedOpen, jobId]);
 
   const handleContinue = () => {
     if (authorizationAccepted) {
+      trackEvent('consent_authorization_accepted');
       setCurrentStep('cookies');
     }
   };
@@ -283,14 +307,16 @@ export default function ConsentModal({ open, onAccept, onCancel, isLoading }: Co
     setCurrentStep('authorization');
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (cookiesAccepted && authorizationAccepted) {
+      await trackEvent('consent_completed');
       onAccept();
     }
   };
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen && !isLoading) {
+      trackEvent('consent_cancelled', { step: currentStep });
       onCancel();
     }
   };

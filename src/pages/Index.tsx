@@ -1,10 +1,18 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Target, Zap, Award } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useFunnelTracking } from "@/hooks/useFunnelTracking";
 
 const Index = () => {
+  const { trackEvent } = useFunnelTracking();
+
+  useEffect(() => {
+    trackEvent('homepage_viewed');
+  }, [trackEvent]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant="full" />
