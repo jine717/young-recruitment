@@ -1,15 +1,31 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock, ArrowLeft, Building2, CheckCircle, ExternalLink } from "lucide-react";
 import { useJob } from "@/hooks/useJobs";
+import { useFunnelTracking } from "@/hooks/useFunnelTracking";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: job, isLoading, error } = useJob(id);
+  const { trackEvent } = useFunnelTracking();
+
+  // Track page view
+  useEffect(() => {
+    if (!isLoading && job) {
+      trackEvent('job_detail_viewed', job.id, { jobTitle: job.title });
+    }
+  }, [isLoading, job, trackEvent]);
+
+  const handleApplyClick = (buttonLocation: string) => {
+    if (job) {
+      trackEvent('apply_button_clicked', job.id, { buttonLocation });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -189,7 +205,13 @@ const JobDetail = () => {
             Submit your application and take the first step towards joining our team of disruptors.
           </p>
           <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <Button size="lg" variant="young-primary" className="text-lg px-10 hover-glow" asChild>
+            <Button 
+              size="lg" 
+              variant="young-primary" 
+              className="text-lg px-10 hover-glow" 
+              asChild
+              onClick={() => handleApplyClick('cta_section')}
+            >
               <Link to={`/apply/${job.id}`}>
                 Start Application
               </Link>
