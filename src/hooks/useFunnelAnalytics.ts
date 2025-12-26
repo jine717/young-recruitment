@@ -33,6 +33,7 @@ export interface FunnelAnalyticsData {
 }
 
 const FUNNEL_STEPS_ORDER = [
+  { eventType: 'homepage_viewed', label: 'Visited Homepage' },
   { eventType: 'jobs_list_viewed', label: 'Viewed Jobs List' },
   { eventType: 'job_detail_viewed', label: 'Viewed Job Details' },
   { eventType: 'apply_button_clicked', label: 'Clicked Apply' },
