@@ -470,10 +470,6 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit based
               parameters: {
                 type: "object",
                 properties: {
-                  overall_score: {
-                    type: "number",
-                    description: "Overall compatibility score from 0-100, considering CV and DISC profile",
-                  },
                   summary: {
                     type: "string",
                     description: "2-3 sentence summary of the candidate including experience level and personality fit",
@@ -507,7 +503,6 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit based
                   },
                 },
                 required: [
-                  "overall_score",
                   "summary",
                   "strengths",
                   "concerns",
@@ -556,7 +551,16 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit based
       throw new Error("Failed to parse AI response");
     }
 
-    console.log("Evaluation parsed:", evaluation);
+    // Calculate overall_score from sub-scores using weighted average
+    // Skills Match (40%) + Communication (30%) + Cultural Fit (30%)
+    const calculatedOverallScore = Math.round(
+      (evaluation.skills_match_score * 0.40) +
+      (evaluation.communication_score * 0.30) +
+      (evaluation.cultural_fit_score * 0.30)
+    );
+    evaluation.overall_score = calculatedOverallScore;
+
+    console.log("Evaluation parsed with calculated overall_score:", evaluation);
 
     // Store the evaluation - including initial scores for preservation across stages
     const { error: evalError } = await supabase.from("ai_evaluations").upsert({
