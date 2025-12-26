@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { useJob } from '@/hooks/useJobs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 import { z } from 'zod';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -30,6 +31,7 @@ export default function Apply() {
   const { data: job, isLoading: jobLoading } = useJob(id);
   const { toast } = useToast();
   const sendNotification = useSendNotification();
+  const { trackEvent } = useFunnelTracking();
 
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
@@ -39,6 +41,13 @@ export default function Apply() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
+
+  // Track form loaded
+  useEffect(() => {
+    if (!jobLoading && job) {
+      trackEvent('apply_form_loaded', job.id);
+    }
+  }, [jobLoading, job, trackEvent]);
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -106,6 +115,7 @@ export default function Apply() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      trackEvent('form_validation_failed', job.id, { errors: Object.keys(newErrors) });
       toast({
         title: 'Missing Information',
         description: 'Please fill in all required fields',
@@ -126,6 +136,9 @@ export default function Apply() {
       return;
     }
 
+    // Track form submitted
+    trackEvent('form_submitted', job.id);
+    
     // Show consent modal instead of submitting directly
     setShowConsentModal(true);
   };
@@ -196,6 +209,9 @@ export default function Apply() {
         // Don't show error to candidate - analysis can be retriggered by recruiter
       });
 
+      // Track application completed
+      trackEvent('application_completed', job.id, { applicationId });
+
       setShowConsentModal(false);
       setSubmitted(true);
     } catch (error) {
@@ -211,6 +227,9 @@ export default function Apply() {
   };
 
   const handleConsentCancel = () => {
+    if (job) {
+      trackEvent('consent_cancelled', job.id, { step: showConsentModal ? 'modal_open' : 'before_modal' });
+    }
     setShowConsentModal(false);
   };
 
@@ -437,6 +456,7 @@ export default function Apply() {
         onAccept={processApplication}
         onCancel={handleConsentCancel}
         isLoading={isSubmitting}
+        jobId={job?.id}
       />
     </div>
   );
