@@ -111,37 +111,54 @@ const FunnelAnalyticsCard = () => {
               </div>
 
               {/* Funnel Visualization */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {data.funnelData.steps.map((step, index) => {
                   const prevStep = index > 0 ? data.funnelData.steps[index - 1] : null;
                   const dropOffRate = prevStep && prevStep.uniqueSessions > 0
                     ? ((prevStep.uniqueSessions - step.uniqueSessions) / prevStep.uniqueSessions * 100)
                     : 0;
-                  const widthPercent = data.funnelData.steps[0]?.uniqueSessions 
-                    ? (step.uniqueSessions / data.funnelData.steps[0].uniqueSessions * 100)
-                    : 0;
+                  const maxSessions = data.funnelData.steps[0]?.uniqueSessions || 1;
+                  const widthPercent = (step.uniqueSessions / maxSessions) * 100;
 
                   return (
-                    <div key={step.eventType}>
+                    <div key={step.eventType} className="space-y-1">
+                      {/* Drop-off indicator between steps */}
                       {index > 0 && dropOffRate > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-destructive py-1 pl-4">
-                          <TrendingDown className="h-3 w-3" />
-                          <span>{dropOffRate.toFixed(1)}% drop-off</span>
+                        <div className="flex items-center justify-end pr-16 py-0.5">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <ArrowDown className="h-3 w-3 text-destructive" />
+                            <span className="text-destructive font-medium">
+                              {dropOffRate.toFixed(0)}% drop
+                            </span>
+                          </div>
                         </div>
                       )}
-                      <div className="relative">
-                        <div 
-                          className="h-12 bg-primary/20 rounded-lg flex items-center px-4 transition-all"
-                          style={{ width: `${Math.max(widthPercent, 10)}%` }}
-                        >
+                      
+                      {/* Funnel step row */}
+                      <div className="flex items-center gap-4">
+                        {/* Label - fixed width, right aligned */}
+                        <div className="w-36 shrink-0 text-right">
+                          <span className="text-sm font-medium text-foreground">
+                            {step.label}
+                          </span>
+                        </div>
+                        
+                        {/* Progress bar container - full width */}
+                        <div className="flex-1 h-8 bg-muted rounded-md overflow-hidden">
                           <div 
-                            className="absolute inset-0 bg-primary rounded-lg transition-all"
-                            style={{ width: `${widthPercent}%`, maxWidth: '100%' }}
+                            className="h-full rounded-md transition-all duration-500 ease-out"
+                            style={{ 
+                              width: `${Math.max(widthPercent, step.uniqueSessions > 0 ? 3 : 0)}%`,
+                              background: `hsl(var(--primary) / ${1 - (index * 0.1)})`
+                            }}
                           />
-                          <div className="relative z-10 flex items-center justify-between w-full text-primary-foreground font-medium">
-                            <span className="text-sm">{step.label}</span>
-                            <span className="text-sm font-bold">{step.uniqueSessions}</span>
-                          </div>
+                        </div>
+                        
+                        {/* Count - fixed width, right aligned */}
+                        <div className="w-12 shrink-0 text-right">
+                          <span className="text-sm font-bold text-foreground">
+                            {step.uniqueSessions}
+                          </span>
                         </div>
                       </div>
                     </div>
