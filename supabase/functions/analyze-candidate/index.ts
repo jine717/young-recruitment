@@ -409,25 +409,6 @@ serve(async (req) => {
       discAnalysis: discAnalysis ? 'completed' : 'not available'
     });
 
-    // === STEP 2: Fetch business case responses ===
-    const { data: responses, error: respError } = await supabase
-      .from("business_case_responses")
-      .select(`
-        *,
-        business_cases (
-          question_title,
-          question_description,
-          question_number
-        )
-      `)
-      .eq("application_id", applicationId)
-      .order("created_at", { ascending: true });
-
-    if (respError) {
-      console.error("Failed to fetch responses:", respError);
-      throw new Error("Failed to fetch business case responses");
-    }
-
     // Fetch candidate profile
     const { data: profile } = await supabase
       .from("profiles")
@@ -435,28 +416,29 @@ serve(async (req) => {
       .eq("id", application.candidate_id)
       .maybeSingle();
 
-    // === STEP 3: Build prompt and run comprehensive AI evaluation ===
+    // === STEP 2: Build prompt and run comprehensive AI evaluation ===
     const job = application.jobs;
-    const prompt = buildAnalysisPrompt(job, responses || [], profile, application, cvAnalysis, discAnalysis);
+    const prompt = buildAnalysisPrompt(job, profile, application, cvAnalysis, discAnalysis);
 
     console.log("Calling Lovable AI for comprehensive evaluation...");
 
     // Build system prompt with custom instructions if provided
     const baseSystemPrompt = `You are an expert recruitment analyst for a modern, disruptive company called Young. 
-Your task is to analyze candidate applications comprehensively and provide a structured evaluation.
+Your task is to analyze candidate applications and provide a structured initial evaluation based on their documents.
 
-Consider ALL available information in your evaluation:
+This is the INITIAL screening phase. Focus on evaluating:
 1. **CV/Resume Analysis**: Experience level, years of experience, skills, education, work history, and any red flags identified
 2. **DISC Personality Profile**: Personality type, communication style, work preferences, strengths, challenges, and team fit considerations
-3. **Business Case Responses**: How they approach problems, quality of communication, depth of thinking, and alignment with the role
+
+NOTE: Business Case Questions (BCQ) are evaluated in a separate later stage of the process.
 
 Weighting guidelines for scores:
-- **skills_match_score**: Heavily weight the CV analysis (experience, skills matching requirements). If no CV analysis, base on responses.
-- **communication_score**: Consider both written responses AND DISC communication style. Look at clarity, structure, and professionalism.
-- **cultural_fit_score**: Use DISC profile traits (if available) alongside response content. Consider alignment with company values.
+- **skills_match_score**: Heavily weight the CV analysis (experience, skills matching requirements).
+- **communication_score**: Base on DISC communication style analysis. Look for clarity and professionalism indicators.
+- **cultural_fit_score**: Use DISC profile traits to assess alignment with company values.
 
 The company values: Fearless, Unusual, Down to earth, Agility, Determination, and Authenticity.
-Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
+Be fair but thorough. Look for potential, growth mindset, and cultural fit based on the available documents.`;
 
     const customInstructions = job?.ai_system_prompt;
     const systemPrompt = customInstructions 
@@ -488,10 +470,6 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
               parameters: {
                 type: "object",
                 properties: {
-                  overall_score: {
-                    type: "number",
-                    description: "Overall compatibility score from 0-100, considering CV, DISC, and responses",
-                  },
                   summary: {
                     type: "string",
                     description: "2-3 sentence summary of the candidate including experience level and personality fit",
@@ -499,33 +477,32 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
                   strengths: {
                     type: "array",
                     items: { type: "string" },
-                    description: "3-5 key strengths identified from CV, DISC profile, and responses",
+                    description: "3-5 key strengths identified from CV and DISC profile",
                   },
                   concerns: {
                     type: "array",
                     items: { type: "string" },
-                    description: "1-3 concerns or areas to probe, including any CV red flags or DISC challenges",
+                    description: "1-3 concerns or areas to probe in interview, including any CV red flags or DISC challenges",
                   },
                   recommendation: {
                     type: "string",
                     enum: ["proceed", "review", "reject"],
-                    description: "Recommendation for next steps based on complete profile analysis",
+                    description: "Recommendation for next steps based on document analysis",
                   },
                   skills_match_score: {
                     type: "number",
-                    description: "How well skills and experience match requirements (0-100), based primarily on CV analysis",
+                    description: "How well skills and experience match requirements (0-100), based on CV analysis",
                   },
                   communication_score: {
                     type: "number",
-                    description: "Quality of communication (0-100), considering responses and DISC communication style",
+                    description: "Predicted communication quality (0-100), based on DISC communication style",
                   },
                   cultural_fit_score: {
                     type: "number",
-                    description: "Alignment with company values (0-100), using DISC profile and response content",
+                    description: "Alignment with company values (0-100), based on DISC profile traits",
                   },
                 },
                 required: [
-                  "overall_score",
                   "summary",
                   "strengths",
                   "concerns",
@@ -574,7 +551,16 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
       throw new Error("Failed to parse AI response");
     }
 
-    console.log("Evaluation parsed:", evaluation);
+    // Calculate overall_score from sub-scores using weighted average
+    // Skills Match (40%) + Communication (30%) + Cultural Fit (30%)
+    const calculatedOverallScore = Math.round(
+      (evaluation.skills_match_score * 0.40) +
+      (evaluation.communication_score * 0.30) +
+      (evaluation.cultural_fit_score * 0.30)
+    );
+    evaluation.overall_score = calculatedOverallScore;
+
+    console.log("Evaluation parsed with calculated overall_score:", evaluation);
 
     // Store the evaluation - including initial scores for preservation across stages
     const { error: evalError } = await supabase.from("ai_evaluations").upsert({
@@ -646,11 +632,6 @@ Be fair but thorough. Look for potential, growth mindset, and cultural fit.`;
 
 function buildAnalysisPrompt(
   job: { title: string; description: string; requirements: string[] | null; responsibilities: string[] | null; ai_system_prompt?: string | null } | null,
-  responses: Array<{
-    text_response: string | null;
-    video_url: string | null;
-    business_cases: { question_title: string; question_description: string; question_number: number } | null;
-  }>,
   profile: { full_name: string | null; email: string | null } | null,
   application: { candidate_name: string | null; candidate_email: string | null } | null,
   cvAnalysis: CVAnalysis | null,
@@ -711,7 +692,7 @@ ${job?.responsibilities?.map((r, i) => `${i + 1}. ${r}`).join("\n") || "No speci
       prompt += `**Overall CV Impression:** ${cvAnalysis.overall_impression}\n\n`;
     }
   } else {
-    prompt += `No CV analysis available. Evaluate skills based on business case responses.\n\n`;
+    prompt += `No CV analysis available. Skills evaluation will be limited.\n\n`;
   }
 
   // === DISC ANALYSIS SECTION ===
@@ -754,40 +735,20 @@ ${job?.responsibilities?.map((r, i) => `${i + 1}. ${r}`).join("\n") || "No speci
       prompt += `**Management Tips:** ${discAnalysis.management_tips}\n\n`;
     }
   } else {
-    prompt += `No DISC assessment available. Evaluate personality and communication style based on business case responses.\n\n`;
-  }
-
-  // === BUSINESS CASE RESPONSES SECTION ===
-  prompt += `### Business Case Responses\n\n`;
-
-  if (responses.length === 0) {
-    prompt += "No responses provided.\n\n";
-  } else {
-    responses.forEach((response) => {
-      const bc = response.business_cases;
-      prompt += `**Question ${bc?.question_number || "?"}: ${bc?.question_title || "Unknown"}**
-${bc?.question_description || ""}
-
-`;
-      if (response.text_response) {
-        prompt += `**Response:** ${response.text_response}\n\n`;
-      } else if (response.video_url) {
-        prompt += `**Response:** [Video response submitted - evaluate based on the fact they completed a video response]\n\n`;
-      } else {
-        prompt += `**Response:** [No response provided]\n\n`;
-      }
-    });
+    prompt += `No DISC assessment available. Personality and communication evaluation will be limited.\n\n`;
   }
 
   prompt += `
 ### Evaluation Instructions
-Please analyze this candidate comprehensively using ALL available information and provide:
-1. An overall compatibility score (0-100) - weighing CV experience, DISC fit, and response quality
-2. A brief summary (2-3 sentences) that captures their experience level and personality
-3. Key strengths (3-5 points) from across CV, DISC, and responses
-4. Concerns or areas to probe in interview (1-3 points) including any red flags
-5. Your recommendation (proceed/review/reject) based on the complete profile
-6. Individual scores for skills match, communication, and cultural fit
+This is the INITIAL document-based screening. Please analyze this candidate using the CV and DISC documents and provide:
+1. An overall compatibility score (0-100) - based on CV experience and DISC personality fit
+2. A brief summary (2-3 sentences) that captures their experience level and personality type
+3. Key strengths (3-5 points) identified from CV and DISC profile
+4. Concerns or areas to probe in interview (1-3 points) including any red flags from CV or DISC challenges
+5. Your recommendation (proceed/review/reject) for moving to the next stage
+6. Individual scores for skills match, communication potential, and cultural fit
+
+NOTE: Business Case Questions (BCQ) will be evaluated separately in a later stage.
 
 Use the submit_evaluation function to provide your structured analysis.`;
 
