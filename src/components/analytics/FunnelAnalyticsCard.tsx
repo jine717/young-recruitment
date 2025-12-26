@@ -41,6 +41,9 @@ const FunnelAnalyticsCard = () => {
       console.log('[Funnel Test] Starting simulation for job:', testJobId);
       
       // Simulate each step of the funnel
+      await trackFunnelEvent('homepage_viewed', null, { source: 'simulation' });
+      await new Promise(r => setTimeout(r, 100));
+      
       await trackFunnelEvent('jobs_list_viewed', null, { jobCount: jobs.length });
       await new Promise(r => setTimeout(r, 100));
       
