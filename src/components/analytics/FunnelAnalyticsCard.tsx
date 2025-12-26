@@ -4,8 +4,9 @@ import { useFunnelAnalytics } from "@/hooks/useFunnelAnalytics";
 import { useJobs } from "@/hooks/useJobs";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDown, TrendingDown, TrendingUp, Users } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { ArrowDown, TrendingUp, Users, Calendar } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, Legend } from "recharts";
+import { format, parseISO } from "date-fns";
 
 const FunnelAnalyticsCard = () => {
   const [days, setDays] = useState(30);
@@ -173,6 +174,86 @@ const FunnelAnalyticsCard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Daily Trend Chart */}
+      {data && data.dailyTrend.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Daily Conversion Trend
+            </CardTitle>
+            <CardDescription>
+              Views and completed applications over the last 14 days
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={data.dailyTrend}
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) => format(parseISO(value), 'MMM d')}
+                    tick={{ fontSize: 12 }}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    className="text-muted-foreground"
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                          <p className="font-medium mb-2">
+                            {format(parseISO(label), 'MMM d, yyyy')}
+                          </p>
+                          <p className="text-sm flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-primary" />
+                            Views: {payload[0]?.value || 0}
+                          </p>
+                          <p className="text-sm flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full" style={{ background: 'hsl(var(--chart-2))' }} />
+                            Applications: {payload[1]?.value || 0}
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Legend
+                    formatter={(value) => (
+                      <span className="text-sm text-foreground">
+                        {value === 'views' ? 'Job Views' : 'Applications'}
+                      </span>
+                    )}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="applications"
+                    stroke="hsl(var(--chart-2))"
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: 'hsl(var(--chart-2))' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Job Performance Breakdown */}
       {data && data.jobBreakdown.length > 0 && (
