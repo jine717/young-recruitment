@@ -29,7 +29,7 @@ const Jobs = () => {
       <Navbar />
 
       {/* Header */}
-      <section className="pt-24 md:pt-32 pb-8 md:pb-12 px-4 md:px-6 bg-gradient-young-hero relative overflow-hidden">
+      <section className="pt-24 md:pt-32 pb-10 md:pb-14 px-4 md:px-6 bg-gradient-young-hero relative overflow-hidden">
         {/* Decorative blur orb */}
         <div className="absolute top-10 right-10 md:right-20 w-32 md:w-48 h-32 md:h-48 bg-young-blue/5 rounded-full blur-3xl pointer-events-none" />
         
@@ -46,7 +46,7 @@ const Jobs = () => {
       </section>
 
       {/* Job Listings */}
-      <section className="pb-16 md:pb-20 px-4 md:px-6">
+      <section className="py-8 md:py-12 px-4 md:px-6">
         <div className="container mx-auto max-w-5xl">
           {isLoading ? (
             <div className="space-y-4 md:space-y-6">

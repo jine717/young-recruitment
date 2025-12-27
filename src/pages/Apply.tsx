@@ -49,30 +49,81 @@ export default function Apply() {
     }
   }, [jobLoading, job, trackEvent]);
 
-  const handleFileChange = (
+  const [isValidatingFile, setIsValidatingFile] = useState(false);
+
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setFile: (file: File | null) => void
   ) => {
     const file = e.target.files?.[0] || null;
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+    if (!file) return;
+
+    // Client-side validation first (fast feedback)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload a file smaller than 2MB',
+        variant: 'destructive',
+      });
+      e.target.value = '';
+      return;
+    }
+
+    const allowedTypes = ['application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a PDF document only',
+        variant: 'destructive',
+      });
+      e.target.value = '';
+      return;
+    }
+
+    // Server-side validation (security - validates magic bytes)
+    setIsValidatingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { data, error } = await supabase.functions.invoke('validate-pdf', {
+        body: formData,
+      });
+
+      if (error) {
+        console.error('Server validation error:', error);
         toast({
-          title: 'File too large',
-          description: 'Please upload a file smaller than 10MB',
+          title: 'Validation Error',
+          description: 'Could not validate the file. Please try again.',
           variant: 'destructive',
         });
+        e.target.value = '';
         return;
       }
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!allowedTypes.includes(file.type)) {
+
+      if (!data?.valid) {
+        console.log('Server validation failed:', data?.error);
         toast({
-          title: 'Invalid file type',
-          description: 'Please upload a PDF or Word document',
+          title: 'Invalid PDF',
+          description: data?.error || 'The file does not appear to be a valid PDF document',
           variant: 'destructive',
         });
+        e.target.value = '';
         return;
       }
+
+      // File is valid, set it
       setFile(file);
+    } catch (err) {
+      console.error('File validation failed:', err);
+      toast({
+        title: 'Validation Error',
+        description: 'An error occurred while validating the file',
+        variant: 'destructive',
+      });
+      e.target.value = '';
+    } finally {
+      setIsValidatingFile(false);
     }
   };
 
@@ -360,13 +411,18 @@ export default function Apply() {
                     <input
                       id="cv"
                       type="file"
-                      accept=".pdf,.doc,.docx"
+                      accept=".pdf"
                       onChange={(e) => handleFileChange(e, setCvFile)}
                       className="hidden"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isValidatingFile}
                     />
-                    <label htmlFor="cv" className="cursor-pointer">
-                      {cvFile ? (
+                    <label htmlFor="cv" className={`cursor-pointer ${isValidatingFile ? 'pointer-events-none' : ''}`}>
+                      {isValidatingFile && !cvFile ? (
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span className="text-sm md:text-base">Validating PDF...</span>
+                        </div>
+                      ) : cvFile ? (
                         <div className="flex items-center justify-center gap-2 text-primary">
                           <CheckCircle className="h-5 w-5 flex-shrink-0" />
                           <span className="text-sm md:text-base break-all">{cvFile.name}</span>
@@ -375,7 +431,7 @@ export default function Apply() {
                         <div className="flex flex-col items-center gap-2">
                           <Upload className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                           <span className="text-muted-foreground text-sm md:text-base">
-                            Tap to upload CV (PDF or Word)
+                            Tap to upload CV (PDF only, max 2MB)
                           </span>
                         </div>
                       )}
@@ -393,13 +449,18 @@ export default function Apply() {
                     <input
                       id="disc"
                       type="file"
-                      accept=".pdf,.doc,.docx"
+                      accept=".pdf"
                       onChange={(e) => handleFileChange(e, setDiscFile)}
                       className="hidden"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isValidatingFile}
                     />
-                    <label htmlFor="disc" className="cursor-pointer">
-                      {discFile ? (
+                    <label htmlFor="disc" className={`cursor-pointer ${isValidatingFile ? 'pointer-events-none' : ''}`}>
+                      {isValidatingFile && !discFile ? (
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span className="text-sm md:text-base">Validating PDF...</span>
+                        </div>
+                      ) : discFile ? (
                         <div className="flex items-center justify-center gap-2 text-primary">
                           <CheckCircle className="h-5 w-5 flex-shrink-0" />
                           <span className="text-sm md:text-base break-all">{discFile.name}</span>
@@ -408,7 +469,7 @@ export default function Apply() {
                         <div className="flex flex-col items-center gap-2">
                           <Upload className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                           <span className="text-muted-foreground text-sm md:text-base">
-                            Tap to upload DISC Assessment (PDF)
+                            Tap to upload DISC Assessment (PDF, max 2MB)
                           </span>
                         </div>
                       )}
