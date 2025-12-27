@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   Select,
   SelectContent,
@@ -224,13 +225,10 @@ export default function JobEditor() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
+                  <RichTextEditor
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, description: value })}
                     placeholder="Job description..."
-                    rows={5}
-                    required
                   />
                 </div>
               </CardContent>

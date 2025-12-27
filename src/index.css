@@ -394,3 +394,63 @@
     page-break-inside: avoid;
   }
 }
+
+/* Rich Text Editor Styles */
+.rich-text-editor {
+  @apply overflow-hidden;
+}
+
+.rich-text-editor .rsw-editor {
+  @apply min-h-[120px];
+}
+
+.rich-text-editor .rsw-toolbar {
+  @apply bg-muted/50 border-b border-input px-2 py-1.5 flex gap-0.5 flex-wrap;
+}
+
+.rich-text-editor .rsw-btn {
+  @apply p-1.5 rounded hover:bg-accent/50 transition-colors text-foreground;
+}
+
+.rich-text-editor .rsw-btn[data-active="true"] {
+  @apply bg-accent text-accent-foreground;
+}
+
+.rich-text-editor .rsw-separator {
+  @apply mx-1 w-px h-6 bg-border self-center;
+}
+
+.rich-text-editor .rsw-ce {
+  @apply min-h-[100px] p-3 outline-none text-foreground;
+}
+
+.rich-text-editor .rsw-ce:focus {
+  @apply ring-0;
+}
+
+/* Prose styles for rendered rich text */
+.prose-job-description ul {
+  @apply list-disc pl-6 space-y-1;
+}
+
+.prose-job-description ol {
+  @apply list-decimal pl-6 space-y-1;
+}
+
+.prose-job-description strong, 
+.prose-job-description b {
+  @apply font-semibold;
+}
+
+.prose-job-description em,
+.prose-job-description i {
+  @apply italic;
+}
+
+.prose-job-description u {
+  @apply underline;
+}
+
+.prose-job-description p {
+  @apply mb-2;
+}
