@@ -1077,33 +1077,57 @@ export type Database = {
       review_progress: {
         Row: {
           ai_analysis_reviewed: boolean
+          ai_reviewed_at: string | null
+          ai_reviewed_by: string | null
           application_id: string
           business_case_reviewed: boolean
+          business_case_reviewed_at: string | null
+          business_case_reviewed_by: string | null
           created_at: string
           cv_analysis_reviewed: boolean
+          cv_reviewed_at: string | null
+          cv_reviewed_by: string | null
           disc_analysis_reviewed: boolean
+          disc_reviewed_at: string | null
+          disc_reviewed_by: string | null
           id: string
           recruiter_id: string
           updated_at: string
         }
         Insert: {
           ai_analysis_reviewed?: boolean
+          ai_reviewed_at?: string | null
+          ai_reviewed_by?: string | null
           application_id: string
           business_case_reviewed?: boolean
+          business_case_reviewed_at?: string | null
+          business_case_reviewed_by?: string | null
           created_at?: string
           cv_analysis_reviewed?: boolean
+          cv_reviewed_at?: string | null
+          cv_reviewed_by?: string | null
           disc_analysis_reviewed?: boolean
+          disc_reviewed_at?: string | null
+          disc_reviewed_by?: string | null
           id?: string
           recruiter_id: string
           updated_at?: string
         }
         Update: {
           ai_analysis_reviewed?: boolean
+          ai_reviewed_at?: string | null
+          ai_reviewed_by?: string | null
           application_id?: string
           business_case_reviewed?: boolean
+          business_case_reviewed_at?: string | null
+          business_case_reviewed_by?: string | null
           created_at?: string
           cv_analysis_reviewed?: boolean
+          cv_reviewed_at?: string | null
+          cv_reviewed_by?: string | null
           disc_analysis_reviewed?: boolean
+          disc_reviewed_at?: string | null
+          disc_reviewed_by?: string | null
           id?: string
           recruiter_id?: string
           updated_at?: string
@@ -1112,7 +1136,7 @@ export type Database = {
           {
             foreignKeyName: "review_progress_application_id_fkey"
             columns: ["application_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "applications"
             referencedColumns: ["id"]
           },
