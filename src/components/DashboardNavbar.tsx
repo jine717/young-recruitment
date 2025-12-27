@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardNavbarProps {
   user: {
@@ -22,8 +22,10 @@ interface DashboardNavbarProps {
 }
 
 export function DashboardNavbar({ user, isAdmin = false, showDashboardLink = false }: DashboardNavbarProps) {
+  const { signOut } = useAuth();
+  
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     window.location.href = '/';
   };
 
