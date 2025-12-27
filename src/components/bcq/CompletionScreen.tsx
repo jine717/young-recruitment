@@ -15,17 +15,17 @@ export function CompletionScreen({
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-lg w-full border-chart-1/20 bg-card shadow-lg">
-        <CardContent className="pt-8 pb-8 text-center space-y-6">
+        <CardContent className="pt-6 pb-6 sm:pt-8 sm:pb-8 px-4 sm:px-6 text-center space-y-4 sm:space-y-6">
           {/* Success Icon */}
           <div className="flex justify-center">
-            <div className="w-20 h-20 rounded-full bg-chart-1/10 flex items-center justify-center">
-              <CheckCircle2 className="w-12 h-12 text-chart-1" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-chart-1/10 flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-chart-1" />
             </div>
           </div>
           
           {/* Main Message */}
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
               All Done, {candidateName}!
             </h1>
             <p className="text-muted-foreground">
@@ -34,9 +34,9 @@ export function CompletionScreen({
           </div>
           
           {/* Stats */}
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-3 sm:py-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{totalQuestions}</div>
+              <div className="text-xl sm:text-2xl font-bold text-primary">{totalQuestions}</div>
               <div className="text-xs text-muted-foreground">Questions</div>
             </div>
           </div>

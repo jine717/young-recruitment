@@ -34,14 +34,14 @@ export function BCQProgressBar({
             <div
               key={index}
               className={cn(
-                "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all",
+                "flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-medium transition-all",
                 isCompleted && "bg-chart-1 text-white",
                 isCurrent && !isCompleted && "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background",
                 !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
               )}
             >
               {isCompleted ? (
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
               ) : (
                 index + 1
               )}
@@ -51,7 +51,7 @@ export function BCQProgressBar({
       </div>
       
       {/* Progress text */}
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-xs sm:text-sm text-muted-foreground">
         {completedQuestions.length} of {totalQuestions} questions completed
       </p>
     </div>

@@ -498,11 +498,12 @@ export function VideoRecorder({
   return (
     <div className="flex flex-col gap-3">
       {/* Video Preview/Playback - Responsive height */}
-      <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-h-[200px] sm:max-h-[240px] md:max-h-[280px]">
+      <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-h-[180px] sm:max-h-[220px] md:max-h-[280px]">
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
           playsInline
+          webkit-playsinline="true"
           autoPlay={status !== 'recorded'}
           muted={status !== 'recorded'}
         />
@@ -510,7 +511,7 @@ export function VideoRecorder({
         {/* Countdown overlay */}
         {countdown !== null && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-            <span className="text-7xl font-bold text-white animate-pulse">
+            <span className="text-5xl sm:text-7xl font-bold text-white animate-pulse">
               {countdown}
             </span>
           </div>
@@ -559,9 +560,9 @@ export function VideoRecorder({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
         {status === 'preview' && (
-          <>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
             {audioError && (
               <div className="flex items-center gap-1.5 text-destructive text-xs">
                 <Mic className="w-3.5 h-3.5" />
@@ -575,12 +576,12 @@ export function VideoRecorder({
               onClick={startRecording}
               disabled={disabled || countdown !== null || audioError}
               size="sm"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
             >
               <Video className="w-4 h-4 mr-1.5" />
               {countdown !== null ? `Starting in ${countdown}...` : 'Start Recording'}
             </Button>
-          </>
+          </div>
         )}
         
         {status === 'recording' && (
@@ -588,7 +589,7 @@ export function VideoRecorder({
             onClick={stopRecording}
             variant="outline"
             size="sm"
-            className="border-destructive text-destructive hover:bg-destructive/10"
+            className="border-destructive text-destructive hover:bg-destructive/10 w-full sm:w-auto"
           >
             <Square className="w-4 h-4 mr-1.5" />
             Stop Recording
@@ -596,11 +597,12 @@ export function VideoRecorder({
         )}
         
         {status === 'recorded' && (
-          <>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               onClick={resetRecording}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
             >
               <RotateCcw className="w-4 h-4 mr-1.5" />
               Re-record
@@ -608,12 +610,12 @@ export function VideoRecorder({
             <Button
               onClick={confirmRecording}
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
             >
               <Check className="w-4 h-4 mr-1.5" />
               Submit
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>
