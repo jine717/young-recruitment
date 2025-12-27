@@ -21,8 +21,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Store responseId early so we can use it in catch block
+  let parsedResponseId: string | null = null;
+
   try {
     const { responseId } = await req.json();
+    parsedResponseId = responseId;
     
     if (!responseId) {
       throw new Error('responseId is required');
@@ -315,23 +319,23 @@ Use the analyze_fluency tool to provide your assessment.`
       }
     }
 
-    // Build update data
+    // Build update data - IMPORTANT: Round all scores to integers for database
     const updateData: Record<string, unknown> = {
       // Content quality fields
-      content_quality_score: contentAnalysis.quality_score,
+      content_quality_score: Math.round(contentAnalysis.quality_score),
       content_strengths: contentAnalysis.strengths,
       content_areas_to_probe: contentAnalysis.areas_to_probe,
       content_summary: contentAnalysis.summary,
       content_analysis_status: 'completed'
     };
 
-    // Add fluency analysis if available
+    // Add fluency analysis if available - Round all scores to integers
     if (fluencyAnalysis) {
-      updateData.fluency_pronunciation_score = fluencyAnalysis.pronunciation_score;
-      updateData.fluency_pace_score = fluencyAnalysis.pace_rhythm_score;
-      updateData.fluency_hesitation_score = fluencyAnalysis.hesitation_score;
-      updateData.fluency_grammar_score = fluencyAnalysis.grammar_score;
-      updateData.fluency_overall_score = fluencyAnalysis.overall_fluency_score;
+      updateData.fluency_pronunciation_score = Math.round(fluencyAnalysis.pronunciation_score);
+      updateData.fluency_pace_score = Math.round(fluencyAnalysis.pace_rhythm_score);
+      updateData.fluency_hesitation_score = Math.round(fluencyAnalysis.hesitation_score);
+      updateData.fluency_grammar_score = Math.round(fluencyAnalysis.grammar_score);
+      updateData.fluency_overall_score = Math.round(fluencyAnalysis.overall_fluency_score);
       updateData.fluency_notes = fluencyAnalysis.fluency_notes;
     }
 
@@ -364,9 +368,9 @@ Use the analyze_fluency tool to provide your assessment.`
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // Try to update status to 'error' so it doesn't stay stuck in 'analyzing'
-    try {
-      const { responseId } = await req.clone().json().catch(() => ({ responseId: null }));
-      if (responseId) {
+    // Use parsedResponseId which was stored before any errors could occur
+    if (parsedResponseId) {
+      try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -374,12 +378,12 @@ Use the analyze_fluency tool to provide your assessment.`
         await supabase
           .from('business_case_responses')
           .update({ content_analysis_status: 'error' })
-          .eq('id', responseId);
+          .eq('id', parsedResponseId);
         
-        console.log('Updated status to error for response:', responseId);
+        console.log('Updated status to error for response:', parsedResponseId);
+      } catch (updateError) {
+        console.error('Failed to update status to error:', updateError);
       }
-    } catch (updateError) {
-      console.error('Failed to update status to error:', updateError);
     }
     
     return new Response(
