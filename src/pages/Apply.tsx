@@ -259,19 +259,19 @@ export default function Apply() {
       <div className="min-h-screen bg-background">
         <Navbar />
 
-        <div className="pt-32 pb-20 px-6">
+        <div className="pt-24 md:pt-32 pb-16 md:pb-20 px-4 md:px-6">
           <div className="container mx-auto max-w-2xl text-center">
-            <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
-              <CheckCircle className="h-10 w-10 text-primary" />
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8">
+              <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-primary" />
             </div>
-            <h1 className="font-display text-4xl md:text-5xl mb-4">APPLICATION SUBMITTED</h1>
-            <p className="text-xl text-muted-foreground mb-4">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-3 md:mb-4">APPLICATION SUBMITTED</h1>
+            <p className="text-base md:text-xl text-muted-foreground mb-3 md:mb-4">
               Thank you for applying for <strong>{job.title}</strong>. We've received your application.
             </p>
-            <p className="text-muted-foreground mb-8">
-              You'll receive an email at <strong>{candidateEmail}</strong> with instructions to complete the next step of our evaluation process.
+            <p className="text-sm md:text-base text-muted-foreground mb-6 md:mb-8">
+              You'll receive an email at <strong className="break-all">{candidateEmail}</strong> with instructions to complete the next step of our evaluation process.
             </p>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="w-full sm:w-auto">
               <Link to="/jobs">Browse More Positions</Link>
             </Button>
           </div>
@@ -285,49 +285,50 @@ export default function Apply() {
       <Navbar />
 
       {/* Application Form */}
-      <div className="pt-32 pb-20 px-6">
+      <div className="pt-24 md:pt-32 pb-16 md:pb-20 px-4 md:px-6">
         <div className="container mx-auto max-w-3xl">
           <Link
             to={`/jobs/${job.id}`}
-            className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-8"
+            className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-6 md:mb-8 text-sm md:text-base"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Job Details
           </Link>
 
-          <div className="mb-8">
-            <h1 className="font-display text-4xl md:text-5xl mb-2">
+          <div className="mb-6 md:mb-8">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-2 leading-tight">
               APPLY FOR {job.title.toUpperCase()}
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm md:text-lg">
               Complete the form below to submit your application.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             {/* Personal Information */}
             <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-xl">Personal Information</CardTitle>
-                <CardDescription>Tell us about yourself</CardDescription>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="font-display text-lg md:text-xl">Personal Information</CardTitle>
+                <CardDescription className="text-sm">Tell us about yourself</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+              <CardContent className="p-4 md:p-6 pt-0 md:pt-0 space-y-4">
+                <div className="grid gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
+                    <Label htmlFor="name" className="text-sm md:text-base">Full Name *</Label>
                     <Input
                       id="name"
                       value={candidateName}
                       onChange={(e) => setCandidateName(e.target.value)}
                       placeholder="John Doe"
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                     {errors.candidateName && (
-                      <p className="text-sm text-destructive">{errors.candidateName}</p>
+                      <p className="text-xs md:text-sm text-destructive">{errors.candidateName}</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="email" className="text-sm md:text-base">Email Address *</Label>
                     <Input
                       id="email"
                       type="email"
@@ -335,9 +336,10 @@ export default function Apply() {
                       onChange={(e) => setCandidateEmail(e.target.value)}
                       placeholder="you@example.com"
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                     {errors.candidateEmail && (
-                      <p className="text-sm text-destructive">{errors.candidateEmail}</p>
+                      <p className="text-xs md:text-sm text-destructive">{errors.candidateEmail}</p>
                     )}
                   </div>
                 </div>
@@ -346,15 +348,15 @@ export default function Apply() {
 
             {/* Documents */}
             <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-xl">Documents</CardTitle>
-                <CardDescription>Upload your CV and DISC assessment</CardDescription>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="font-display text-lg md:text-xl">Documents</CardTitle>
+                <CardDescription className="text-sm">Upload your CV and DISC assessment</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 md:p-6 pt-0 md:pt-0 space-y-4">
                 {/* CV Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="cv">CV / Resume *</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <Label htmlFor="cv" className="text-sm md:text-base">CV / Resume *</Label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center hover:border-primary/50 transition-colors">
                     <input
                       id="cv"
                       type="file"
@@ -366,28 +368,28 @@ export default function Apply() {
                     <label htmlFor="cv" className="cursor-pointer">
                       {cvFile ? (
                         <div className="flex items-center justify-center gap-2 text-primary">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>{cvFile.name}</span>
+                          <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                          <span className="text-sm md:text-base break-all">{cvFile.name}</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-2">
-                          <Upload className="h-8 w-8 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            Click to upload CV (PDF or Word)
+                          <Upload className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
+                          <span className="text-muted-foreground text-sm md:text-base">
+                            Tap to upload CV (PDF or Word)
                           </span>
                         </div>
                       )}
                     </label>
                   </div>
                   {errors.cvFile && (
-                    <p className="text-sm text-destructive">{errors.cvFile}</p>
+                    <p className="text-xs md:text-sm text-destructive">{errors.cvFile}</p>
                   )}
                 </div>
 
                 {/* DISC Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="disc">DISC Assessment Results *</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <Label htmlFor="disc" className="text-sm md:text-base">DISC Assessment Results *</Label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center hover:border-primary/50 transition-colors">
                     <input
                       id="disc"
                       type="file"
@@ -399,23 +401,23 @@ export default function Apply() {
                     <label htmlFor="disc" className="cursor-pointer">
                       {discFile ? (
                         <div className="flex items-center justify-center gap-2 text-primary">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>{discFile.name}</span>
+                          <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                          <span className="text-sm md:text-base break-all">{discFile.name}</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-2">
-                          <Upload className="h-8 w-8 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            Click to upload DISC Assessment (PDF)
+                          <Upload className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
+                          <span className="text-muted-foreground text-sm md:text-base">
+                            Tap to upload DISC Assessment (PDF)
                           </span>
                         </div>
                       )}
                     </label>
                   </div>
                   {errors.discFile && (
-                    <p className="text-sm text-destructive">{errors.discFile}</p>
+                    <p className="text-xs md:text-sm text-destructive">{errors.discFile}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Haven't taken the assessment?{' '}
                     <a
                       href="https://www.tonyrobbins.com/disc/"
@@ -431,15 +433,15 @@ export default function Apply() {
             </Card>
 
             {/* Submit Button */}
-            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full text-base md:text-lg" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Submitting Application...
+                  <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                  Submitting...
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-5 w-5" />
+                  <Send className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                   Submit Application
                 </>
               )}
