@@ -25,8 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff } from 'lucide-react';
+import { useAllJobs, useDeleteJob, useUpdateJob, useDuplicateJob } from '@/hooks/useJobsMutation';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, Copy, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,7 @@ export default function JobsList() {
   const { data: jobs, isLoading } = useAllJobs();
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
+  const duplicateJob = useDuplicateJob();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export default function JobsList() {
                     <TableHead>Title</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Location</TableHead>
+                    <TableHead>Candidates</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[100px]">Actions</TableHead>
@@ -120,6 +122,12 @@ export default function JobsList() {
                       <TableCell className="font-medium">{job.title}</TableCell>
                       <TableCell>{job.departments?.name || '-'}</TableCell>
                       <TableCell>{job.location}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-medium">
+                          <Users className="h-3 w-3 mr-1" />
+                          {job.applicationCount}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="capitalize">{job.type}</TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell>
@@ -133,6 +141,13 @@ export default function JobsList() {
                             <DropdownMenuItem onClick={() => navigate(`/admin/jobs/${job.id}/edit`)}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => duplicateJob.mutate(job.id)}
+                              disabled={duplicateJob.isPending}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigate(`/admin/jobs/${job.id}/business-case`)}>
                               <FileText className="h-4 w-4 mr-2" />

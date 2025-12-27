@@ -27,10 +27,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAllJobs, useDeleteJob, useUpdateJob } from '@/hooks/useJobsMutation';
+import { useAllJobs, useDeleteJob, useUpdateJob, useDuplicateJob } from '@/hooks/useJobsMutation';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar, Copy, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
@@ -49,6 +49,7 @@ export default function RecruiterJobsList() {
   const { data: jobs, isLoading } = useAllJobs();
   const deleteJob = useDeleteJob();
   const updateJob = useUpdateJob();
+  const duplicateJob = useDuplicateJob();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<DeleteJobInfo | null>(null);
@@ -237,6 +238,7 @@ export default function RecruiterJobsList() {
                       <TableHead>Title</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Location</TableHead>
+                      <TableHead>Candidates</TableHead>
                       <TableHead>Created by</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Status</TableHead>
@@ -250,6 +252,12 @@ export default function RecruiterJobsList() {
                         <TableCell className="font-medium">{job.title}</TableCell>
                         <TableCell>{job.departments?.name || '-'}</TableCell>
                         <TableCell>{job.location}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-medium">
+                            <Users className="h-3 w-3 mr-1" />
+                            {job.applicationCount}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {job.creator?.email || '-'}
                         </TableCell>
@@ -273,6 +281,13 @@ export default function RecruiterJobsList() {
                                 <DropdownMenuItem onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}>
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => duplicateJob.mutate(job.id)}
+                                  disabled={duplicateJob.isPending}
+                                >
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Duplicar
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => toggleStatus(job)}>
                                   {job.status === 'published' ? (

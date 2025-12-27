@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   Select,
   SelectContent,
@@ -295,6 +296,47 @@ export default function RecruiterJobEditor() {
     setFormData({ ...formData, [field]: newArray.length ? newArray : [''] });
   };
 
+  // Smart Paste: divide pasted multi-line text into separate items
+  const handleSmartPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    field: 'responsibilities' | 'requirements' | 'benefits' | 'tags',
+    currentIndex: number
+  ) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Split by newlines or common bullet point indicators
+    const lines = pastedText
+      .split(/\n|•|●|◦|▪|▸|→|[-–—]\s/)
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    // If only one line, let default paste behavior handle it
+    if (lines.length <= 1) {
+      return;
+    }
+    
+    e.preventDefault();
+    
+    const currentArray = [...formData[field]];
+    
+    // Replace current item with first line
+    currentArray[currentIndex] = lines[0];
+    
+    // Insert remaining lines after current index
+    const newItems = lines.slice(1);
+    const beforeIndex = currentArray.slice(0, currentIndex + 1);
+    const afterIndex = currentArray.slice(currentIndex + 1);
+    
+    const newArray = [...beforeIndex, ...newItems, ...afterIndex];
+    
+    setFormData({ ...formData, [field]: newArray });
+    
+    toast({
+      title: `${lines.length} items añadidos`,
+      description: `Se dividió el texto en ${lines.length} ${field} automáticamente`,
+    });
+  };
+
   const saveBusinessCases = async (jobId: string) => {
     const existingIds = existingBusinessCases?.map((bc) => bc.id) || [];
     const currentIds = businessCaseQuestions.filter((q) => q.id).map((q) => q.id!);
@@ -540,13 +582,10 @@ export default function RecruiterJobEditor() {
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description {canEdit && '*'}</Label>
-                    <Textarea
-                      id="description"
+                    <RichTextEditor
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(value) => setFormData({ ...formData, description: value })}
                       placeholder="Job description..."
-                      rows={5}
-                      required={canEdit}
                       disabled={!canEdit}
                     />
                   </div>
@@ -563,6 +602,7 @@ export default function RecruiterJobEditor() {
                       <Input
                         value={item}
                         onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
+                        onPaste={(e) => handleSmartPaste(e, 'responsibilities', index)}
                         placeholder="Add a responsibility..."
                         disabled={!canEdit}
                       />
@@ -602,6 +642,7 @@ export default function RecruiterJobEditor() {
                       <Input
                         value={item}
                         onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
+                        onPaste={(e) => handleSmartPaste(e, 'requirements', index)}
                         placeholder="Add a requirement..."
                         disabled={!canEdit}
                       />
@@ -641,6 +682,7 @@ export default function RecruiterJobEditor() {
                       <Input
                         value={item}
                         onChange={(e) => handleArrayChange('benefits', index, e.target.value)}
+                        onPaste={(e) => handleSmartPaste(e, 'benefits', index)}
                         placeholder="Add a benefit..."
                         disabled={!canEdit}
                       />
@@ -680,6 +722,7 @@ export default function RecruiterJobEditor() {
                       <Input
                         value={item}
                         onChange={(e) => handleArrayChange('tags', index, e.target.value)}
+                        onPaste={(e) => handleSmartPaste(e, 'tags', index)}
                         placeholder="Add a tag..."
                         disabled={!canEdit}
                       />

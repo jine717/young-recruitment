@@ -99,9 +99,11 @@ const JobDetail = () => {
             </span>
           </div>
           
-          <p className="text-body-lg text-muted-foreground leading-relaxed animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            {job.description}
-          </p>
+          <div 
+            className="text-body-lg text-muted-foreground leading-relaxed animate-fade-in prose-job-description" 
+            style={{ animationDelay: '0.3s' }}
+            dangerouslySetInnerHTML={{ __html: job.description }}
+          />
         </div>
       </section>
 
