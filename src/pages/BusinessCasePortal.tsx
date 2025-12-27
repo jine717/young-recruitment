@@ -149,18 +149,20 @@ export default function BusinessCasePortal() {
             />
 
             {/* Navigation */}
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between pt-4 gap-2">
               <Button
                 onClick={goToPreviousQuestion}
                 disabled={currentQuestionIndex === 0 || isUploading}
                 variant="outline"
+                size="sm"
+                className="px-2 sm:px-4"
               >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
+                <ChevronLeft className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Previous</span>
               </Button>
 
-              <span className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {businessCases.length}
+              <span className="text-xs sm:text-sm text-muted-foreground text-center">
+                {currentQuestionIndex + 1} / {businessCases.length}
               </span>
 
               <Button
@@ -171,9 +173,11 @@ export default function BusinessCasePortal() {
                   isUploading
                 }
                 variant="outline"
+                size="sm"
+                className="px-2 sm:px-4"
               >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="w-4 h-4 sm:ml-2" />
               </Button>
             </div>
           </div>
