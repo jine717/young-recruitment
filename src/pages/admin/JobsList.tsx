@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAllJobs, useDeleteJob, useUpdateJob, useDuplicateJob } from '@/hooks/useJobsMutation';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, Copy } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, Copy, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -110,6 +110,7 @@ export default function JobsList() {
                     <TableHead>Title</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Location</TableHead>
+                    <TableHead>Candidates</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[100px]">Actions</TableHead>
@@ -121,6 +122,12 @@ export default function JobsList() {
                       <TableCell className="font-medium">{job.title}</TableCell>
                       <TableCell>{job.departments?.name || '-'}</TableCell>
                       <TableCell>{job.location}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-medium">
+                          <Users className="h-3 w-3 mr-1" />
+                          {job.applicationCount}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="capitalize">{job.type}</TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell>
