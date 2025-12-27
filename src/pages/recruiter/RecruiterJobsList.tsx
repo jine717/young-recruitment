@@ -30,7 +30,7 @@ import {
 import { useAllJobs, useDeleteJob, useUpdateJob, useDuplicateJob } from '@/hooks/useJobsMutation';
 import { useRoleCheck } from '@/hooks/useRoleCheck';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar, Copy } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, FileText, Eye, EyeOff, ArrowLeft, Loader2, AlertTriangle, Calendar, Copy, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
@@ -238,6 +238,7 @@ export default function RecruiterJobsList() {
                       <TableHead>Title</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Location</TableHead>
+                      <TableHead>Candidates</TableHead>
                       <TableHead>Created by</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Status</TableHead>
@@ -251,6 +252,12 @@ export default function RecruiterJobsList() {
                         <TableCell className="font-medium">{job.title}</TableCell>
                         <TableCell>{job.departments?.name || '-'}</TableCell>
                         <TableCell>{job.location}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-medium">
+                            <Users className="h-3 w-3 mr-1" />
+                            {job.applicationCount}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {job.creator?.email || '-'}
                         </TableCell>

@@ -31,12 +31,18 @@ export function useAllJobs() {
         .select(`
           *, 
           departments (name),
-          creator:profiles!created_by (email)
+          creator:profiles!created_by (email),
+          applications (id)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Transform to include application count
+      return data.map(job => ({
+        ...job,
+        applicationCount: job.applications?.length || 0,
+      }));
     },
   });
 }
