@@ -19,6 +19,7 @@ import { useCreateJob, useUpdateJob, useAllJobs } from '@/hooks/useJobsMutation'
 import { useDepartments } from '@/hooks/useDepartments';
 import { Plus, X, Save, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type JobType = 'full-time' | 'part-time' | 'contract' | 'internship';
 type JobStatus = 'draft' | 'published' | 'closed';
@@ -31,6 +32,7 @@ export default function JobEditor() {
   const { data: departments } = useDepartments();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -104,6 +106,47 @@ export default function JobEditor() {
   ) => {
     const newArray = formData[field].filter((_, i) => i !== index);
     setFormData({ ...formData, [field]: newArray.length ? newArray : [''] });
+  };
+
+  // Smart Paste: divide pasted multi-line text into separate items
+  const handleSmartPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    field: 'responsibilities' | 'requirements' | 'benefits' | 'tags',
+    currentIndex: number
+  ) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Split by newlines or common bullet point indicators
+    const lines = pastedText
+      .split(/\n|•|●|◦|▪|▸|→|[-–—]\s/)
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    // If only one line, let default paste behavior handle it
+    if (lines.length <= 1) {
+      return;
+    }
+    
+    e.preventDefault();
+    
+    const currentArray = [...formData[field]];
+    
+    // Replace current item with first line
+    currentArray[currentIndex] = lines[0];
+    
+    // Insert remaining lines after current index
+    const newItems = lines.slice(1);
+    const beforeIndex = currentArray.slice(0, currentIndex + 1);
+    const afterIndex = currentArray.slice(currentIndex + 1);
+    
+    const newArray = [...beforeIndex, ...newItems, ...afterIndex];
+    
+    setFormData({ ...formData, [field]: newArray });
+    
+    toast({
+      title: `${lines.length} items añadidos`,
+      description: `Se dividió el texto en ${lines.length} ${field} automáticamente`,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'published') => {
@@ -244,6 +287,7 @@ export default function JobEditor() {
                     <Input
                       value={item}
                       onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
+                      onPaste={(e) => handleSmartPaste(e, 'responsibilities', index)}
                       placeholder="Add a responsibility..."
                     />
                     <Button
@@ -278,6 +322,7 @@ export default function JobEditor() {
                     <Input
                       value={item}
                       onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
+                      onPaste={(e) => handleSmartPaste(e, 'requirements', index)}
                       placeholder="Add a requirement..."
                     />
                     <Button
@@ -312,6 +357,7 @@ export default function JobEditor() {
                     <Input
                       value={item}
                       onChange={(e) => handleArrayChange('benefits', index, e.target.value)}
+                      onPaste={(e) => handleSmartPaste(e, 'benefits', index)}
                       placeholder="Add a benefit..."
                     />
                     <Button
@@ -346,6 +392,7 @@ export default function JobEditor() {
                     <Input
                       value={item}
                       onChange={(e) => handleArrayChange('tags', index, e.target.value)}
+                      onPaste={(e) => handleSmartPaste(e, 'tags', index)}
                       placeholder="Add a tag..."
                     />
                     <Button
