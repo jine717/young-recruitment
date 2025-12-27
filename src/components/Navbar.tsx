@@ -116,11 +116,7 @@ const Navbar = ({ variant = "simple" }: NavbarProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : (
-              <Button variant="ghost" asChild>
-                <Link to="/auth">Recruiter Login</Link>
-              </Button>
-            )}
+            ) : null}
           </div>
         )}
       </div>

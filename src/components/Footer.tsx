@@ -10,9 +10,18 @@ const Footer = () => {
         >
           YOUNG RECRUITMENT.
         </Link>
-        <p className="text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Young Recruitment. Unite to Disrupt.
-        </p>
+        <div className="flex items-center gap-4 text-sm">
+          <p className="text-muted-foreground">
+            © {new Date().getFullYear()} Young Recruitment. Unite to Disrupt.
+          </p>
+          <span className="text-border">·</span>
+          <Link 
+            to="/auth" 
+            className="text-muted-foreground/60 hover:text-muted-foreground transition-colors duration-200"
+          >
+            Acceso Recruiters
+          </Link>
+        </div>
       </div>
     </footer>
   );
