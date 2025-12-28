@@ -25,36 +25,40 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
     // Get authorization header to check if user is authenticated
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
+    const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
     
     let isAuthorized = false;
 
-    if (authHeader) {
-      // Try to authenticate with the provided token
-      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } }
-      });
-      
-      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-      
+    if (token) {
+      // Validate token and retrieve user
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
       if (user && !userError) {
         // Check if user has recruiter, admin, or management role
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        const { data: roles } = await supabaseAdmin
+        const { data: roles, error: rolesError } = await supabaseAdmin
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id);
-        
-        const allowedRoles = ['recruiter', 'admin', 'management'];
-        isAuthorized = roles?.some(r => allowedRoles.includes(r.role)) || false;
-        
-        if (isAuthorized) {
-          console.log('User authenticated with role:', roles?.map(r => r.role).join(', '));
+
+        if (rolesError) {
+          console.error('Error fetching user roles:', rolesError);
+        } else {
+          const allowedRoles = ['recruiter', 'admin', 'management'];
+          isAuthorized = roles?.some((r) => allowedRoles.includes(r.role)) || false;
+
+          if (isAuthorized) {
+            console.log('User authenticated with role:', roles?.map(r => r.role).join(', '));
+          }
         }
+      } else {
+        console.log('Token user lookup failed');
       }
+    } else {
+      console.log('No auth token provided');
     }
 
     // If not authenticated via user, check bcq_access_token for anonymous candidates
@@ -66,7 +70,7 @@ serve(async (req) => {
         .from('applications')
         .select('bcq_access_token')
         .eq('id', applicationId)
-        .single();
+        .maybeSingle();
       
       if (!appError && application && application.bcq_access_token === bcqAccessToken) {
         // Verify the video path belongs to this application
