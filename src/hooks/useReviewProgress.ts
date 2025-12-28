@@ -24,6 +24,17 @@ export interface ReviewProgress {
 
 export type ReviewSection = 'ai_analysis' | 'cv_analysis' | 'disc_analysis' | 'business_case';
 
+// Mapping from section names to actual database column names for audit fields
+const getAuditColumns = (section: ReviewSection): { reviewedBy: string; reviewedAt: string } => {
+  const mapping: Record<ReviewSection, { reviewedBy: string; reviewedAt: string }> = {
+    'ai_analysis': { reviewedBy: 'ai_reviewed_by', reviewedAt: 'ai_reviewed_at' },
+    'cv_analysis': { reviewedBy: 'cv_reviewed_by', reviewedAt: 'cv_reviewed_at' },
+    'disc_analysis': { reviewedBy: 'disc_reviewed_by', reviewedAt: 'disc_reviewed_at' },
+    'business_case': { reviewedBy: 'business_case_reviewed_by', reviewedAt: 'business_case_reviewed_at' },
+  };
+  return mapping[section];
+};
+
 // Shared review progress - same for all recruiters viewing the application
 export function useReviewProgress(applicationId: string | undefined) {
   return useQuery({
@@ -101,8 +112,7 @@ export function useUpdateReviewSection() {
       if (!userData.user) throw new Error('Not authenticated');
 
       const columnName = `${section}_reviewed`;
-      const reviewerColumn = `${section}_reviewed_by`;
-      const reviewedAtColumn = `${section}_reviewed_at`;
+      const { reviewedBy: reviewerColumn, reviewedAt: reviewedAtColumn } = getAuditColumns(section);
 
       // Check if shared record exists for this application
       const { data: existing } = await supabase
