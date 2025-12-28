@@ -508,10 +508,10 @@ export function VideoRecorder({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Video Preview/Playback - Mobile-optimized with vertical aspect ratio */}
-      <div className={`relative rounded-lg overflow-hidden bg-black ${
+      {/* Video Preview/Playback - Full width on mobile with fixed height */}
+      <div className={`relative rounded-lg overflow-hidden bg-black w-full ${
         isMobile 
-          ? 'aspect-[4/5] min-h-[320px] max-h-[420px]'  // Vertical aspect ratio for mobile selfies
+          ? 'h-[400px]'  // Fixed height, full width on mobile
           : 'aspect-video max-h-[220px] md:max-h-[280px]'  // Standard 16:9 for desktop
       }`}>
         <video

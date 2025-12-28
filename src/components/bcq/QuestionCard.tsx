@@ -70,10 +70,10 @@ export function QuestionCard({
               <VideoIcon className="w-3.5 h-3.5" />
               <span>Watch the explanation video first</span>
             </div>
-            <div className={`rounded-lg overflow-hidden bg-black ${
+            <div className={`rounded-lg overflow-hidden bg-black w-full ${
               isMobile 
-                ? 'aspect-[4/5] max-h-[280px]'  // Vertical for mobile
-                : 'aspect-video max-h-[220px]'   // Standard 16:9 for desktop
+                ? 'h-[280px]'  // Fixed height, full width on mobile
+                : 'aspect-video max-h-[220px]'  // Standard 16:9 for desktop
             }`}>
               <video
                 src={question.video_url}
