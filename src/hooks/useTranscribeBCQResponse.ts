@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { extractVideoPath } from '@/hooks/useVideoUrl';
 
 interface TranscribeParams {
   responseId: string;
@@ -18,13 +19,11 @@ export function useTranscribeBCQResponse() {
 
   return useMutation({
     mutationFn: async ({ responseId, videoUrl }: TranscribeParams) => {
-      // Extract video path from URL if needed
-      let videoPath = videoUrl;
-      if (videoPath.startsWith('http')) {
-        const match = videoPath.match(/\/business-case-videos\/(.+?)(?:\?|$)/);
-        if (match) {
-          videoPath = match[1];
-        }
+      // Extract video path from URL using shared utility
+      const videoPath = extractVideoPath(videoUrl);
+      
+      if (!videoPath) {
+        throw new Error('Invalid video URL: could not extract path');
       }
 
       // Call the edge function which will handle downloading from private storage
