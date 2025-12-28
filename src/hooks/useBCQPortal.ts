@@ -38,6 +38,27 @@ interface BCQResponse {
   fluency_notes: string | null;
 }
 
+/**
+ * Hook that manages the Business Case Questions (BCQ) workflow for a given application access token.
+ *
+ * @param applicationId - The application record ID to load BCQ data for.
+ * @param token - The BCQ access token used to validate access to the application.
+ * @returns An object exposing BCQ data, UI state flags, derived values, and action callbacks:
+ * - application: current Application or null
+ * - businessCases: list of BusinessCase items for the job
+ * - responses: map of business_case_id -> BCQResponse (stored video paths)
+ * - currentQuestionIndex: index of the active question
+ * - completedQuestions: indices of questions that have a recorded response
+ * - isLoading: `true` while initial data is loading
+ * - isValidToken: `true` if the provided token was validated, `false` if invalid, `null` while unknown
+ * - isUploading: `true` while a video upload is in progress
+ * - isCompleted: `true` when all questions have been completed
+ * - error: user-facing error message or `null`
+ * - responseTimeMinutes: minutes elapsed since the BCQ link was opened (if available)
+ * - submitResponse(questionId, videoBlob): upload and save a video response for the given question
+ * - goToNextQuestion(): advance to the next question if available
+ * - goToPreviousQuestion(): go to the previous question if available
+ */
 export function useBCQPortal(applicationId: string | undefined, token: string | undefined) {
   const [application, setApplication] = useState<Application | null>(null);
   const [businessCases, setBusinessCases] = useState<BusinessCase[]>([]);
@@ -269,21 +290,17 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         throw new Error(`Failed to upload video after ${maxAttempts} attempts: ${lastUploadError.message}`);
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('business-case-videos')
-        .getPublicUrl(fileName);
+      // Store only the path (not full URL) for security - signed URLs will be generated on demand
+      const videoPath = fileName;
+      console.log('Video path stored:', videoPath);
 
-      const videoUrl = urlData.publicUrl;
-      console.log('Video URL obtained:', videoUrl);
-
-      // Create or update response record
+      // Create or update response record - store only path, not full URL
       const { data: respData, error: respError } = await supabase
         .from('business_case_responses')
         .upsert({
           application_id: application.id,
           business_case_id: questionId,
-          video_url: videoUrl,
+          video_url: videoPath,
           completed_at: new Date().toISOString()
         }, {
           onConflict: 'application_id,business_case_id'

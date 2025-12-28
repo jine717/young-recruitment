@@ -24,7 +24,23 @@ export interface ReviewProgress {
 
 export type ReviewSection = 'ai_analysis' | 'cv_analysis' | 'disc_analysis' | 'business_case';
 
-// Shared review progress - same for all recruiters viewing the application
+// Mapping from section names to actual database column names for audit fields
+const getAuditColumns = (section: ReviewSection): { reviewedBy: string; reviewedAt: string } => {
+  const mapping: Record<ReviewSection, { reviewedBy: string; reviewedAt: string }> = {
+    'ai_analysis': { reviewedBy: 'ai_reviewed_by', reviewedAt: 'ai_reviewed_at' },
+    'cv_analysis': { reviewedBy: 'cv_reviewed_by', reviewedAt: 'cv_reviewed_at' },
+    'disc_analysis': { reviewedBy: 'disc_reviewed_by', reviewedAt: 'disc_reviewed_at' },
+    'business_case': { reviewedBy: 'business_case_reviewed_by', reviewedAt: 'business_case_reviewed_at' },
+  };
+  return mapping[section];
+};
+
+/**
+ * Provides a React Query hook that retrieves the shared review progress for a given application.
+ *
+ * @param applicationId - The application ID to fetch progress for; when `undefined`, the query remains disabled.
+ * @returns The query result containing the shared `ReviewProgress` record for the application, or `null` if no record exists or the current user is not authenticated.
+ */
 export function useReviewProgress(applicationId: string | undefined) {
   return useQuery({
     queryKey: ['review-progress', applicationId],
@@ -84,6 +100,14 @@ export function useCreateReviewProgress() {
   });
 }
 
+/**
+ * Creates a React Query mutation that updates a specific review section's reviewed flag and its audit fields for an application.
+ *
+ * The mutation will insert a new shared review_progress record for the application if none exists, or update the existing record.
+ * When `reviewed` is `true` the mutation sets the corresponding reviewer to the current user and records the reviewed timestamp; when `reviewed` is `false` it clears those audit fields.
+ *
+ * @returns The mutation object which resolves to the updated `ReviewProgress` record.
+ */
 export function useUpdateReviewSection() {
   const queryClient = useQueryClient();
 
@@ -101,8 +125,7 @@ export function useUpdateReviewSection() {
       if (!userData.user) throw new Error('Not authenticated');
 
       const columnName = `${section}_reviewed`;
-      const reviewerColumn = `${section}_reviewed_by`;
-      const reviewedAtColumn = `${section}_reviewed_at`;
+      const { reviewedBy: reviewerColumn, reviewedAt: reviewedAtColumn } = getAuditColumns(section);
 
       // Check if shared record exists for this application
       const { data: existing } = await supabase

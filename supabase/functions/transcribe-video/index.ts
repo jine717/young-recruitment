@@ -1,9 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/**
+ * Convert an ArrayBuffer to a base64-encoded string.
+ *
+ * @param buffer - The ArrayBuffer whose raw bytes will be encoded
+ * @returns The base64-encoded representation of `buffer`'s bytes
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,20 +27,48 @@ serve(async (req) => {
   }
 
   try {
-    const { audio, contentType = 'audio/webm', language = 'en' } = await req.json();
+    const { videoPath, responseId, audio, contentType = 'audio/webm', language = 'en' } = await req.json();
     
-    if (!audio) {
-      throw new Error('No audio data provided');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    let base64Audio: string;
+
+    // If videoPath is provided, download from private storage
+    if (videoPath) {
+      console.log('Downloading video from private storage:', videoPath);
+      
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { data: videoData, error: downloadError } = await supabase.storage
+        .from('business-case-videos')
+        .download(videoPath);
+
+      if (downloadError) {
+        throw new Error(`Failed to download video: ${downloadError.message}`);
+      }
+
+      if (!videoData) {
+        throw new Error('No video data received');
+      }
+
+      const videoBuffer = await videoData.arrayBuffer();
+      base64Audio = arrayBufferToBase64(videoBuffer);
+      console.log('Video downloaded, size:', videoBuffer.byteLength, 'bytes');
+    } else if (audio) {
+      // Legacy: audio passed directly as base64
+      base64Audio = audio;
+    } else {
+      throw new Error('Either videoPath or audio data is required');
     }
 
     console.log('Processing audio with Gemini for transcription...');
     console.log(`Content type: ${contentType}`);
     console.log(`Language: ${language}`);
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
 
     // Determine mime type for Gemini (use audio/* format)
     const mimeType = contentType.startsWith('video/') 
@@ -57,7 +101,7 @@ Use the transcribe_audio tool to return the transcription.`
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:${mimeType};base64,${audio}`
+                  url: `data:${mimeType};base64,${base64Audio}`
                 }
               }
             ]
@@ -120,6 +164,25 @@ Use the transcribe_audio tool to return the transcription.`
     
     console.log('Transcription successful');
     console.log('Transcription length:', analysisResult.transcription?.length || 0);
+
+    // If responseId is provided, update the database directly
+    if (responseId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { error: updateError } = await supabase
+        .from('business_case_responses')
+        .update({ transcription: analysisResult.transcription })
+        .eq('id', responseId);
+
+      if (updateError) {
+        console.error('Failed to save transcription:', updateError);
+        throw new Error(`Failed to save transcription: ${updateError.message}`);
+      }
+
+      console.log('Transcription saved to database for response:', responseId);
+    }
 
     return new Response(
       JSON.stringify({

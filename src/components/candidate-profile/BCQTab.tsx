@@ -31,6 +31,7 @@ import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
 import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
 import { useTranscribeBCQResponse } from '@/hooks/useTranscribeBCQResponse';
+import { useVideoUrl, extractVideoPath } from '@/hooks/useVideoUrl';
 import { PostBCQAnalysisModal } from './PostBCQAnalysisModal';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
@@ -667,6 +668,33 @@ interface ResponseCardProps {
   contentAnalysisStatus?: string | null;
 }
 
+/**
+ * Renders a collapsible card showing a candidate's response video, transcription, fluency metrics, and content analysis for a single business-case question.
+ *
+ * @param responseId - Identifier for the BCQ response; required for analyze/transcribe mutations.
+ * @param applicationId - Application identifier used when triggering transcription.
+ * @param questionNumber - Ordinal number of the question shown in the UI.
+ * @param questionTitle - Short title of the question.
+ * @param questionDescription - Brief description or prompt for the question.
+ * @param videoUrl - Source URL of the recorded response video (used to obtain a signed URL); may be null if deleted.
+ * @param videoCreatedAt - Timestamp when the video was recorded.
+ * @param transcription - Plain-text transcription of the response, when available.
+ * @param isCompleted - Whether the candidate has submitted an answer for this question.
+ * @param canEdit - Whether the current user may trigger transcription or analysis actions.
+ * @param fluencyPronunciationScore - Pronunciation score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyPaceScore - Speaking pace score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyHesitationScore - Fluidity/hesitation score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyGrammarScore - Grammar score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyOverallScore - Combined fluency score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyNotes - Optional free-form notes produced by the fluency analysis.
+ * @param contentQualityScore - Numeric content-quality score, or null if analysis not completed.
+ * @param contentStrengths - Array of identified strengths from content analysis.
+ * @param contentAreasToProbe - Array of suggested follow-up topics to probe in interview.
+ * @param contentSummary - Short summary of the content analysis.
+ * @param contentAnalysisStatus - One of 'pending' | 'analyzing' | 'completed' indicating content analysis state.
+ *
+ * @returns The React element for the response card UI.
+ */
 function ResponseCard({
   responseId,
   applicationId,
@@ -693,6 +721,9 @@ function ResponseCard({
   const [isOpen, setIsOpen] = useState(false);
   const analyzeResponse = useAnalyzeBCQResponse();
   const transcribeResponse = useTranscribeBCQResponse();
+  
+  // Use signed URL hook for secure video access
+  const { url: signedVideoUrl, isLoading: isLoadingVideoUrl } = useVideoUrl(videoUrl);
 
   const handleAnalyze = () => {
     if (!responseId) return;
@@ -701,7 +732,9 @@ function ResponseCard({
 
   const handleTranscribe = () => {
     if (!responseId || !videoUrl) return;
-    transcribeResponse.mutate({ responseId, videoUrl, applicationId });
+    // Extract path from video URL for transcription
+    const videoPath = extractVideoPath(videoUrl);
+    transcribeResponse.mutate({ responseId, videoUrl: videoPath || videoUrl, applicationId });
   };
 
   const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
@@ -812,15 +845,22 @@ function ResponseCard({
               <>
                 {/* Video Player */}
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                  <video 
-                    src={videoUrl && videoCreatedAt 
-                      ? `${videoUrl}?t=${new Date(videoCreatedAt).getTime()}` 
-                      : videoUrl ?? undefined
-                    } 
-                    controls 
-                    className="w-full h-full"
-                    preload="metadata"
-                  />
+                  {isLoadingVideoUrl ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin" />
+                    </div>
+                  ) : signedVideoUrl ? (
+                    <video 
+                      src={signedVideoUrl} 
+                      controls 
+                      className="w-full h-full"
+                      preload="metadata"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <p className="text-sm">Video unavailable</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Transcription */}
@@ -1080,6 +1120,13 @@ function ResponseCard({
                   )}
                 </div>
               </>
+            ) : isCompleted && !videoUrl ? (
+              /* Video was deleted after hiring decision */
+              <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-medium">Video Deleted</p>
+                <p className="text-xs mt-1">Video was removed after hiring decision. Transcription and analysis preserved.</p>
+              </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
                 <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />
