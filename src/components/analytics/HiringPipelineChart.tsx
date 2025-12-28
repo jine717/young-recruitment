@@ -27,7 +27,7 @@ export function HiringPipelineChart({ data }: HiringPipelineChartProps) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <CardTitle>Pipeline de Contratación</CardTitle>
+        <CardTitle>Hiring Pipeline</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">

@@ -39,12 +39,12 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Aplicaciones por Departamento
+            Applications by Department
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No hay datos de departamentos disponibles
+            No department data available
           </div>
         </CardContent>
       </Card>
@@ -54,10 +54,10 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5" />
-          Aplicaciones por Departamento
-        </CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Applications by Department
+          </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -85,7 +85,7 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
                   borderRadius: '8px',
                 }}
                 formatter={(value: number, name: string, props: any) => [
-                  `${value} aplicaciones (${props.payload.hired} contratados)`,
+                  `${value} applications (${props.payload.hired} hired)`,
                   props.payload.name,
                 ]}
               />
