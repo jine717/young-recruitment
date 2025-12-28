@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { PipelineData } from '@/hooks/useAnalytics';
+import { PipelineData } from '@/hooks/useRecruiterAnalytics';
 
 interface HiringPipelineChartProps {
   data: PipelineData[];
@@ -12,13 +12,16 @@ const COLORS = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  'hsl(210, 70%, 50%)',  // Evaluación
+  'hsl(142, 76%, 36%)',  // Contratados (green)
+  'hsl(0, 72%, 51%)',    // Rechazados (red)
 ];
 
 export function HiringPipelineChart({ data }: HiringPipelineChartProps) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <CardTitle>Hiring Pipeline</CardTitle>
+        <CardTitle>Pipeline de Contratación</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">

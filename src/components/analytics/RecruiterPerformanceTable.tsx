@@ -7,8 +7,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { RecruiterStats } from '@/hooks/useAnalytics';
 import { Users } from 'lucide-react';
+
+export interface RecruiterStats {
+  recruiterId: string;
+  recruiterName: string;
+  interviewsScheduled: number;
+  decisionsMade: number;
+  notesAdded: number;
+}
 
 interface RecruiterPerformanceTableProps {
   data: RecruiterStats[];
@@ -21,12 +28,12 @@ export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTablePro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Recruiter Performance
+            Rendimiento de Reclutadores
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No recruiter activity recorded yet
+            No hay actividad de reclutadores registrada
           </div>
         </CardContent>
       </Card>
@@ -38,18 +45,18 @@ export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTablePro
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          Recruiter Performance
+          Rendimiento de Reclutadores
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Recruiter</TableHead>
-              <TableHead className="text-center">Interviews Scheduled</TableHead>
-              <TableHead className="text-center">Decisions Made</TableHead>
-              <TableHead className="text-center">Notes Added</TableHead>
-              <TableHead className="text-center">Total Activity</TableHead>
+              <TableHead>Reclutador</TableHead>
+              <TableHead className="text-center">Entrevistas Programadas</TableHead>
+              <TableHead className="text-center">Decisiones Tomadas</TableHead>
+              <TableHead className="text-center">Notas Añadidas</TableHead>
+              <TableHead className="text-center">Actividad Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -57,10 +64,10 @@ export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTablePro
               <TableRow key={recruiter.recruiterId}>
                 <TableCell className="font-medium">{recruiter.recruiterName}</TableCell>
                 <TableCell className="text-center">{recruiter.interviewsScheduled}</TableCell>
-                <TableCell className="text-center">{recruiter.decisionseMade}</TableCell>
+                <TableCell className="text-center">{recruiter.decisionsMade}</TableCell>
                 <TableCell className="text-center">{recruiter.notesAdded}</TableCell>
                 <TableCell className="text-center font-semibold">
-                  {recruiter.interviewsScheduled + recruiter.decisionseMade + recruiter.notesAdded}
+                  {recruiter.interviewsScheduled + recruiter.decisionsMade + recruiter.notesAdded}
                 </TableCell>
               </TableRow>
             ))}

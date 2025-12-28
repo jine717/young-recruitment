@@ -1,45 +1,57 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, TrendingUp, Calendar, CheckCircle } from 'lucide-react';
-import { TimeMetrics } from '@/hooks/useAnalytics';
+import { Clock, TrendingUp, Calendar, CheckCircle, FileQuestion } from 'lucide-react';
+import { TimeMetrics, TimeDuration } from '@/hooks/useRecruiterAnalytics';
 
 interface TimeMetricsCardProps {
   metrics: TimeMetrics;
+  totalHired: number;
+  totalRejected: number;
 }
 
-export function TimeMetricsCard({ metrics }: TimeMetricsCardProps) {
+// Format duration as hours and minutes
+const formatDuration = (time: TimeDuration): string => {
+  if (time.hours === 0 && time.minutes === 0) return '0m';
+  if (time.hours === 0) return `${time.minutes}m`;
+  if (time.minutes === 0) return `${time.hours}h`;
+  return `${time.hours}h ${time.minutes}m`;
+};
+
+export function TimeMetricsCard({ metrics, totalHired, totalRejected }: TimeMetricsCardProps) {
+  const hireRate = totalHired + totalRejected > 0
+    ? `${Math.round((totalHired / (totalHired + totalRejected)) * 100)}%`
+    : 'N/A';
+
   const items = [
     {
-      label: 'Avg. Time to Hire',
-      value: `${metrics.avgTimeToHire} days`,
+      label: 'Tiempo Promedio a Revisión',
+      value: formatDuration(metrics.avgToReview),
       icon: Clock,
-      description: 'From application to offer',
+      description: 'Desde aplicación a primera revisión',
     },
     {
-      label: 'Avg. Time to Interview',
-      value: `${metrics.avgTimeToInterview} days`,
+      label: 'Tiempo Promedio a Entrevista',
+      value: formatDuration(metrics.avgToInterview),
       icon: Calendar,
-      description: 'From application to first interview',
+      description: 'Desde aplicación a primera entrevista',
     },
     {
-      label: 'Total Hired',
-      value: metrics.totalHired,
-      icon: CheckCircle,
-      description: 'Successful hires',
+      label: 'Tiempo Respuesta BCQ',
+      value: formatDuration(metrics.avgBCQResponseTime),
+      icon: FileQuestion,
+      description: 'Tiempo promedio que tardan en completar BCQ',
     },
     {
-      label: 'Hire Rate',
-      value: metrics.totalHired + metrics.totalRejected > 0
-        ? `${Math.round((metrics.totalHired / (metrics.totalHired + metrics.totalRejected)) * 100)}%`
-        : 'N/A',
+      label: 'Tasa de Contratación',
+      value: hireRate,
       icon: TrendingUp,
-      description: 'Of completed applications',
+      description: `${totalHired} contratados de ${totalHired + totalRejected} finalizados`,
     },
   ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Time & Conversion Metrics</CardTitle>
+        <CardTitle>Métricas de Tiempo y Conversión</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
