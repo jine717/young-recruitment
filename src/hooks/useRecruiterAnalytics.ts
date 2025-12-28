@@ -166,14 +166,14 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
 
   // Pipeline data for bar chart (grouped logically)
   const pipelineData: PipelineData[] = [
-    { status: 'Nuevos', count: statusCounts.pending },
-    { status: 'En Revisión', count: statusCounts.under_review },
+    { status: 'New', count: statusCounts.pending },
+    { status: 'Under Review', count: statusCounts.under_review },
     { status: 'BCQ', count: statusCounts.bcq_sent + statusCounts.bcq_received },
-    { status: 'Pre-Entrevista', count: statusCounts.reviewed + statusCounts.pre_interview },
-    { status: 'Entrevista', count: statusCounts.interview + statusCounts.interviewed },
-    { status: 'Evaluación', count: statusCounts.evaluated },
-    { status: 'Contratados', count: statusCounts.hired },
-    { status: 'Rechazados', count: statusCounts.rejected },
+    { status: 'Pre-Interview', count: statusCounts.reviewed + statusCounts.pre_interview },
+    { status: 'Interview', count: statusCounts.interview + statusCounts.interviewed },
+    { status: 'Evaluation', count: statusCounts.evaluated },
+    { status: 'Hired', count: statusCounts.hired },
+    { status: 'Rejected', count: statusCounts.rejected },
   ];
 
   // Funnel Data - cumulative progression
@@ -185,13 +185,13 @@ export function useRecruiterAnalytics(): RecruiterAnalyticsData {
   const evaluatedAndHired = statusCounts.evaluated + statusCounts.hired;
 
   const funnelData: FunnelData[] = [
-    { stage: 'Aplicados', count: totalApplications, percentage: 100 },
-    { stage: 'En Revisión', count: totalApplications - statusCounts.pending, percentage: totalApplications > 0 ? Math.round(((totalApplications - statusCounts.pending) / totalApplications) * 100) : 0 },
-    { stage: 'BCQ Enviado', count: bcqAndBeyond, percentage: totalApplications > 0 ? Math.round((bcqAndBeyond / totalApplications) * 100) : 0 },
-    { stage: 'BCQ Completado', count: statusCounts.bcq_received + statusCounts.reviewed + statusCounts.pre_interview + statusCounts.interview + statusCounts.interviewed + statusCounts.evaluated + statusCounts.hired, percentage: totalApplications > 0 ? Math.round(((statusCounts.bcq_received + statusCounts.reviewed + statusCounts.pre_interview + interviewAndBeyond) / totalApplications) * 100) : 0 },
-    { stage: 'Entrevistados', count: interviewAndBeyond, percentage: totalApplications > 0 ? Math.round((interviewAndBeyond / totalApplications) * 100) : 0 },
-    { stage: 'Evaluados', count: evaluatedAndHired, percentage: totalApplications > 0 ? Math.round((evaluatedAndHired / totalApplications) * 100) : 0 },
-    { stage: 'Contratados', count: statusCounts.hired, percentage: totalApplications > 0 ? Math.round((statusCounts.hired / totalApplications) * 100) : 0 },
+    { stage: 'Applied', count: totalApplications, percentage: 100 },
+    { stage: 'Under Review', count: totalApplications - statusCounts.pending, percentage: totalApplications > 0 ? Math.round(((totalApplications - statusCounts.pending) / totalApplications) * 100) : 0 },
+    { stage: 'BCQ Sent', count: bcqAndBeyond, percentage: totalApplications > 0 ? Math.round((bcqAndBeyond / totalApplications) * 100) : 0 },
+    { stage: 'BCQ Completed', count: statusCounts.bcq_received + statusCounts.reviewed + statusCounts.pre_interview + statusCounts.interview + statusCounts.interviewed + statusCounts.evaluated + statusCounts.hired, percentage: totalApplications > 0 ? Math.round(((statusCounts.bcq_received + statusCounts.reviewed + statusCounts.pre_interview + interviewAndBeyond) / totalApplications) * 100) : 0 },
+    { stage: 'Interviewed', count: interviewAndBeyond, percentage: totalApplications > 0 ? Math.round((interviewAndBeyond / totalApplications) * 100) : 0 },
+    { stage: 'Evaluated', count: evaluatedAndHired, percentage: totalApplications > 0 ? Math.round((evaluatedAndHired / totalApplications) * 100) : 0 },
+    { stage: 'Hired', count: statusCounts.hired, percentage: totalApplications > 0 ? Math.round((statusCounts.hired / totalApplications) * 100) : 0 },
   ];
 
   // BCQ Metrics

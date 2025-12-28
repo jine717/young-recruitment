@@ -22,7 +22,7 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileQuestion className="h-5 w-5" />
-          Métricas BCQ (Business Case Questions)
+          BCQ Metrics (Business Case Questions)
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -32,7 +32,7 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
               <FileQuestion className="h-4 w-4 text-primary" />
             </div>
             <p className="text-3xl font-bold">{metrics.bcqSent}</p>
-            <p className="text-sm text-muted-foreground">BCQ Enviados</p>
+            <p className="text-sm text-muted-foreground">BCQ Sent</p>
           </div>
           
           <div className="p-4 rounded-lg bg-muted/50 text-center">
@@ -40,7 +40,7 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             </div>
             <p className="text-3xl font-bold">{metrics.bcqCompleted}</p>
-            <p className="text-sm text-muted-foreground">BCQ Completados</p>
+            <p className="text-sm text-muted-foreground">BCQ Completed</p>
           </div>
           
           <div className="p-4 rounded-lg bg-muted/50 text-center">
@@ -48,7 +48,7 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
               <AlertCircle className="h-4 w-4 text-amber-500" />
             </div>
             <p className="text-3xl font-bold">{metrics.bcqPending}</p>
-            <p className="text-sm text-muted-foreground">BCQ Pendientes</p>
+            <p className="text-sm text-muted-foreground">BCQ Pending</p>
           </div>
           
           <div className="p-4 rounded-lg bg-muted/50 text-center">
@@ -56,14 +56,14 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
               <Clock className="h-4 w-4 text-blue-500" />
             </div>
             <p className="text-3xl font-bold">{formatMinutes(metrics.avgResponseTimeMinutes)}</p>
-            <p className="text-sm text-muted-foreground">Tiempo Promedio</p>
+            <p className="text-sm text-muted-foreground">Avg Response Time</p>
           </div>
         </div>
         
         {/* Completion Rate Progress */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Tasa de Completado</span>
+            <span className="text-sm font-medium">Completion Rate</span>
             <span className="text-sm font-bold">{metrics.completionRate}%</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
@@ -73,7 +73,7 @@ export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {metrics.bcqCompleted} de {metrics.bcqSent} candidatos completaron el BCQ
+            {metrics.bcqCompleted} of {metrics.bcqSent} candidates completed BCQ
           </p>
         </div>
       </CardContent>

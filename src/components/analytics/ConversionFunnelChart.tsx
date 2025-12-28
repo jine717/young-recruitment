@@ -21,7 +21,7 @@ export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Funnel de Conversión</CardTitle>
+        <CardTitle>Conversion Funnel</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -36,11 +36,11 @@ export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{item.stage}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{item.count} candidatos</span>
+                    <span className="text-muted-foreground">{item.count} candidates</span>
                     <span className="font-semibold">{item.percentage}%</span>
                     {index > 0 && (
                       <span className="text-xs text-muted-foreground">
-                        ({conversionFromPrevious}% del anterior)
+                        ({conversionFromPrevious}% from previous)
                       </span>
                     )}
                   </div>
