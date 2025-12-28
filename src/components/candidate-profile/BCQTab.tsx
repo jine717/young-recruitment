@@ -1093,6 +1093,13 @@ function ResponseCard({
                   )}
                 </div>
               </>
+            ) : isCompleted && !videoUrl ? (
+              /* Video was deleted after hiring decision */
+              <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-medium">Video Deleted</p>
+                <p className="text-xs mt-1">Video was removed after hiring decision. Transcription and analysis preserved.</p>
+              </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
                 <FileVideo className="h-8 w-8 mx-auto mb-2 opacity-50" />

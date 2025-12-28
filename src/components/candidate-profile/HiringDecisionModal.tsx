@@ -5,13 +5,15 @@ import { z } from 'zod';
 import { useAddHiringDecision } from '@/hooks/useHiringDecisions';
 import { useUpdateApplicationStatus } from '@/hooks/useApplications';
 import { useSendNotification, type NotificationType } from '@/hooks/useNotifications';
+import { useDeleteVideosForApplication } from '@/hooks/useDeleteVideosForApplication';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Gavel, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Gavel, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const decisionSchema = z.object({
@@ -34,6 +36,7 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
   const addDecision = useAddHiringDecision();
   const updateStatus = useUpdateApplicationStatus();
   const sendNotification = useSendNotification();
+  const deleteVideos = useDeleteVideosForApplication();
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<DecisionFormData>({
     resolver: zodResolver(decisionSchema),
@@ -47,9 +50,21 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
   });
 
   const selectedDecision = watch('decision');
+  const willDeleteVideos = selectedDecision === 'hired' || selectedDecision === 'rejected';
 
   const onSubmit = async (data: DecisionFormData) => {
     try {
+      // If hired or rejected, delete videos first
+      if (data.decision === 'hired' || data.decision === 'rejected') {
+        try {
+          const result = await deleteVideos.mutateAsync(applicationId);
+          console.log('Videos deleted:', result);
+        } catch (videoError) {
+          console.error('Error deleting videos:', videoError);
+          // Continue with decision even if video deletion fails
+        }
+      }
+
       // Save the decision
       await addDecision.mutateAsync({
         applicationId,
@@ -87,6 +102,8 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
       toast({ title: 'Error recording decision', variant: 'destructive' });
     }
   };
+
+  const isProcessing = addDecision.isPending || deleteVideos.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -181,16 +198,29 @@ export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps)
             </div>
           )}
 
+          {/* Warning about video deletion */}
+          {willDeleteVideos && (
+            <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                <strong>Videos will be permanently deleted.</strong> Upon confirming this decision, 
+                all BCQ video recordings for this candidate will be removed from storage. 
+                Transcriptions and analysis will be preserved for reference.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={addDecision.isPending}
+              disabled={isProcessing}
+              variant={willDeleteVideos ? 'destructive' : 'default'}
             >
-              {addDecision.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Confirm Decision
+              {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {deleteVideos.isPending ? 'Deleting Videos...' : 'Confirm Decision'}
             </Button>
           </div>
         </form>
