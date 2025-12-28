@@ -8,6 +8,11 @@ interface TranscribeParams {
   applicationId: string;
 }
 
+/**
+ * Creates a mutation hook that transcribes a business-case video response and invalidates related queries.
+ *
+ * @returns A React Query mutation object which, when called with an object containing `responseId`, `videoUrl`, and `applicationId`, sends `videoPath` (extracted from `videoUrl` when necessary) and `responseId` to the Supabase edge function `transcribe-video` and resolves to the edge function's response object. The resolved response is expected to include a `text` field containing the transcription.
+ */
 export function useTranscribeBCQResponse() {
   const queryClient = useQueryClient();
 

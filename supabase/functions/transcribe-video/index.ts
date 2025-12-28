@@ -6,7 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper to convert ArrayBuffer to base64
+/**
+ * Convert an ArrayBuffer to a base64-encoded string.
+ *
+ * @param buffer - The ArrayBuffer whose raw bytes will be encoded
+ * @returns The base64-encoded representation of `buffer`'s bytes
+ */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';

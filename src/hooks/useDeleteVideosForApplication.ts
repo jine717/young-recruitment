@@ -9,6 +9,14 @@ interface DeleteVideosResult {
   errors?: string[];
 }
 
+/**
+ * Provides a React Query mutation that deletes all videos for a given application.
+ *
+ * The mutation calls the Supabase edge function `delete-videos-for-application` with an `applicationId`.
+ * On successful deletion it invalidates the application's `business-case-responses` and `application-detail` queries to refresh cached data.
+ *
+ * @returns A React Query mutation object whose mutation function accepts an `applicationId` and yields a `DeleteVideosResult` describing the deletion outcome.
+ */
 export function useDeleteVideosForApplication() {
   const queryClient = useQueryClient();
 

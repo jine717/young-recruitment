@@ -21,6 +21,17 @@ interface QuestionCardProps {
   onRecordingComplete: (blob: Blob) => void;
 }
 
+/**
+ * Render a card displaying a business case question, optional explainer video, and recording controls.
+ *
+ * @param question - The business case data including title, description, optional explainer `video_url`, and identifier.
+ * @param questionIndex - Zero-based index of the current question (used for display like "Question X of Y").
+ * @param totalQuestions - Total number of questions in the set.
+ * @param isUploading - Whether a recording is currently being uploaded; shows an uploading state when `true`.
+ * @param isCompleted - Whether a response has already been recorded for this question; shows a completion state when `true`.
+ * @param onRecordingComplete - Callback invoked with the recorded `Blob` when the user finishes recording.
+ * @returns The rendered QuestionCard element.
+ */
 export function QuestionCard({
   question,
   questionIndex,

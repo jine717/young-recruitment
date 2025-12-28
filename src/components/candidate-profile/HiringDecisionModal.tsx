@@ -30,6 +30,17 @@ interface HiringDecisionModalProps {
   applicationId: string;
 }
 
+/**
+ * Render a modal dialog that lets a user record a hiring decision for a given application.
+ *
+ * The modal presents a decision form (hire, reject, or put on hold), optional fields for salary,
+ * start date or rejection reason, and a destructive warning when candidate videos will be deleted.
+ * Submitting the form persists the decision, updates application status, optionally deletes videos,
+ * and triggers notifications and UI toasts.
+ *
+ * @param applicationId - The ID of the application the decision applies to
+ * @returns The Dialog component containing the hiring decision form and its associated side effects
+ */
 export function HiringDecisionModal({ applicationId }: HiringDecisionModalProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();

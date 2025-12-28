@@ -22,6 +22,13 @@ const formatDuration = (time: TimeDuration): string => {
   return `${time.hours}h ${time.minutes}m`;
 };
 
+/**
+ * Render the recruiter analytics dashboard with role-based access control and loading states.
+ *
+ * Displays a centered loading spinner while role checks or analytics data are loading, an access-denied card with a Home link when the current user lacks required roles, or the full analytics dashboard containing KPI cards, BCQ metrics, pipeline/funnel charts, time metrics, trend and distribution charts, and a job performance table when access is granted.
+ *
+ * @returns The dashboard React element: a loading view while role/data load, an access-denied view if unauthorized, or the complete analytics dashboard populated with fetched analytics data.
+ */
 export default function RecruiterAnalytics() {
   const { hasAccess, isLoading: roleLoading } = useRoleCheck(['management', 'admin']);
   const analytics = useRecruiterAnalytics();

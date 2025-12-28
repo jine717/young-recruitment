@@ -51,6 +51,21 @@ interface UseVideoUrlResult {
   refetch: () => void;
 }
 
+/**
+ * Provides a cached, signed URL for a video (and keeps it refreshed), with loading and error state.
+ *
+ * Extracts a storage path from `videoPath` when necessary, requests a signed URL from the backend, caches the result with its expiration, schedules an automatic refresh before expiration, and falls back to the original URL when fetching fails for full URLs.
+ *
+ * @param videoPath - A storage path or a full video URL; `null`/`undefined` clears state.
+ * @param options - Optional settings for requesting the signed URL.
+ * @param options.applicationId - Optional application identifier used when requesting BCQ-protected video URLs.
+ * @param options.bcqAccessToken - Optional BCQ access token used for anonymous candidate access; may be `null`.
+ * @returns An object containing:
+ *   - `url`: the signed URL to use for playback (or the original full URL as a fallback), or `null` if none available;
+ *   - `isLoading`: `true` while a fetch is in progress, `false` otherwise;
+ *   - `error`: an error message when fetching fails, or `null` when there is no error;
+ *   - `refetch`: a function that clears the cached entry for the given path and re-requests a signed URL.
+ */
 export function useVideoUrl(
   videoPath: string | null | undefined,
   options: UseVideoUrlOptions = {}

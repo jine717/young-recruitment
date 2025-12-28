@@ -35,7 +35,12 @@ const getAuditColumns = (section: ReviewSection): { reviewedBy: string; reviewed
   return mapping[section];
 };
 
-// Shared review progress - same for all recruiters viewing the application
+/**
+ * Provides a React Query hook that retrieves the shared review progress for a given application.
+ *
+ * @param applicationId - The application ID to fetch progress for; when `undefined`, the query remains disabled.
+ * @returns The query result containing the shared `ReviewProgress` record for the application, or `null` if no record exists or the current user is not authenticated.
+ */
 export function useReviewProgress(applicationId: string | undefined) {
   return useQuery({
     queryKey: ['review-progress', applicationId],
@@ -95,6 +100,14 @@ export function useCreateReviewProgress() {
   });
 }
 
+/**
+ * Creates a React Query mutation that updates a specific review section's reviewed flag and its audit fields for an application.
+ *
+ * The mutation will insert a new shared review_progress record for the application if none exists, or update the existing record.
+ * When `reviewed` is `true` the mutation sets the corresponding reviewer to the current user and records the reviewed timestamp; when `reviewed` is `false` it clears those audit fields.
+ *
+ * @returns The mutation object which resolves to the updated `ReviewProgress` record.
+ */
 export function useUpdateReviewSection() {
   const queryClient = useQueryClient();
 

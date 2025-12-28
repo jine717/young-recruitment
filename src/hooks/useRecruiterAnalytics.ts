@@ -73,6 +73,15 @@ export interface RecruiterAnalyticsData {
   error: Error | null;
 }
 
+/**
+ * Assembles recruiter analytics and key performance indicators from applications, interviews, and hiring decisions.
+ *
+ * Produces aggregate counts, funnel and pipeline breakdowns, weekly application trends, per-job performance, AI score distribution,
+ * time-based metrics (review, interview, decision, BCQ response), BCQ-specific metrics, and top-level totals and query status.
+ *
+ * @returns The `RecruiterAnalyticsData` object containing totals (`totalApplications`, `totalHired`, `totalRejected`), `conversionToInterview`,
+ * `avgAIScore`, `funnelData`, `pipelineData`, `applicationsTrend`, `jobPerformance`, `aiScoreDistribution`, `timeMetrics`, `bcqMetrics`,
+ * and the query state fields `isLoading` and `error`. */
 export function useRecruiterAnalytics(): RecruiterAnalyticsData {
   const { data, isLoading, error } = useQuery({
     queryKey: ['recruiter-analytics'],

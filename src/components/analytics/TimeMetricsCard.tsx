@@ -16,6 +16,16 @@ const formatDuration = (time: TimeDuration): string => {
   return `${time.hours}h ${time.minutes}m`;
 };
 
+/**
+ * Renders a card showing time and conversion metrics for recruiting.
+ *
+ * Displays average time-to-review, average time-to-interview, average BCQ response time, and a computed hire rate with contextual descriptions and icons.
+ *
+ * @param metrics - TimeMetrics containing `avgToReview`, `avgToInterview`, and `avgBCQResponseTime` durations used for the displayed time values.
+ * @param totalHired - Number of hires used to compute the hire rate and summary.
+ * @param totalRejected - Number of rejections used to compute the hire rate and summary.
+ * @returns A JSX element containing a titled card with four metric tiles (label, icon, value, and description).
+ */
 export function TimeMetricsCard({ metrics, totalHired, totalRejected }: TimeMetricsCardProps) {
   const hireRate = totalHired + totalRejected > 0
     ? `${Math.round((totalHired / (totalHired + totalRejected)) * 100)}%`
