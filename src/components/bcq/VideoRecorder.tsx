@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Video, Square, RotateCcw, Check, Camera, AlertCircle, Mic, VideoOff, RefreshCw, Settings } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface VideoRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
@@ -134,6 +135,7 @@ export function VideoRecorder({
   maxDuration = 300, // Default 5 minutes
   disabled = false 
 }: VideoRecorderProps) {
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<'idle' | 'preview' | 'recording' | 'recorded'>('idle');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionError, setPermissionError] = useState<PermissionErrorType>(null);
@@ -175,18 +177,27 @@ export function VideoRecorder({
     setPermissionError(null);
     
     try {
-      // Ultra-optimized settings for minimal file size (~10-12 MB for 5 min)
+      // Optimized settings - use vertical aspect ratio on mobile for selfie-style recording
+      const videoConstraints = isMobile
+        ? {
+            facingMode: 'user',
+            width: { ideal: 480, max: 480 },     // Portrait width
+            height: { ideal: 640, max: 640 },    // Portrait height (4:5 ratio)
+            frameRate: { ideal: 20, max: 24 }
+          }
+        : {
+            facingMode: 'user',
+            width: { ideal: 640, max: 640 },     // Landscape width
+            height: { ideal: 360, max: 360 },    // Landscape height (16:9 ratio)
+            frameRate: { ideal: 20, max: 24 }
+          };
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'user', 
-          width: { ideal: 640, max: 640 },    // 360p widescreen
-          height: { ideal: 360, max: 360 },   // 360p - sufficient for face visibility
-          frameRate: { ideal: 20, max: 24 }   // Lower framerate for smaller files
-        },
+        video: videoConstraints,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 22050    // Reduced - sufficient for voice clarity
+          sampleRate: 22050
         }
       });
       
@@ -497,8 +508,12 @@ export function VideoRecorder({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Video Preview/Playback - Responsive height */}
-      <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-h-[180px] sm:max-h-[220px] md:max-h-[280px]">
+      {/* Video Preview/Playback - Mobile-optimized with vertical aspect ratio */}
+      <div className={`relative rounded-lg overflow-hidden bg-black ${
+        isMobile 
+          ? 'aspect-[4/5] min-h-[320px] max-h-[420px]'  // Vertical aspect ratio for mobile selfies
+          : 'aspect-video max-h-[220px] md:max-h-[280px]'  // Standard 16:9 for desktop
+      }`}>
         <video
           ref={videoRef}
           className="w-full h-full object-cover"

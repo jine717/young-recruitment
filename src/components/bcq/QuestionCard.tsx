@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { VideoRecorder } from './VideoRecorder';
 import { CheckCircle2, Loader2, Video as VideoIcon } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BusinessCase {
   id: string;
@@ -28,6 +29,7 @@ export function QuestionCard({
   isCompleted,
   onRecordingComplete
 }: QuestionCardProps) {
+  const isMobile = useIsMobile();
   
   return (
     <Card className="border-border bg-card shadow-sm">
@@ -68,11 +70,15 @@ export function QuestionCard({
               <VideoIcon className="w-3.5 h-3.5" />
               <span>Watch the explanation video first</span>
             </div>
-            <div className="rounded-lg overflow-hidden bg-black aspect-video max-h-[180px] sm:max-h-[220px]">
+            <div className={`rounded-lg overflow-hidden bg-black ${
+              isMobile 
+                ? 'aspect-[4/5] max-h-[280px]'  // Vertical for mobile
+                : 'aspect-video max-h-[220px]'   // Standard 16:9 for desktop
+            }`}>
               <video
                 src={question.video_url}
                 controls
-                className="w-full h-full"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
