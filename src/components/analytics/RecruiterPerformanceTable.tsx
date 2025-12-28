@@ -39,12 +39,12 @@ export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTablePro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Rendimiento de Reclutadores
+            Recruiter Performance
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No hay actividad de reclutadores registrada
+            No recruiter activity recorded
           </div>
         </CardContent>
       </Card>
@@ -54,20 +54,20 @@ export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTablePro
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Rendimiento de Reclutadores
-        </CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Recruiter Performance
+          </CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Reclutador</TableHead>
-              <TableHead className="text-center">Entrevistas Programadas</TableHead>
-              <TableHead className="text-center">Decisiones Tomadas</TableHead>
-              <TableHead className="text-center">Notas Añadidas</TableHead>
-              <TableHead className="text-center">Actividad Total</TableHead>
+              <TableHead>Recruiter</TableHead>
+              <TableHead className="text-center">Interviews Scheduled</TableHead>
+              <TableHead className="text-center">Decisions Made</TableHead>
+              <TableHead className="text-center">Notes Added</TableHead>
+              <TableHead className="text-center">Total Activity</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
