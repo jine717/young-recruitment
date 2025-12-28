@@ -103,6 +103,7 @@ export function useVideoUrl(
 
       const response = await supabase.functions.invoke('get-video-url', {
         body,
+        headers,
       });
 
       if (response.error) {
