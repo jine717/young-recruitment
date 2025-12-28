@@ -17,6 +17,12 @@ const COLORS = [
   'hsl(0, 72%, 51%)',    // Rechazados (red)
 ];
 
+/**
+ * Renders a card containing a vertical bar chart that visualizes hiring pipeline counts grouped by status.
+ *
+ * @param data - Array of pipeline entries where each item includes `status` (category label) and `count` (numeric value) to display as bars.
+ * @returns A React element: a Card with a titled header and a responsive vertical BarChart mapping each `status` to a bar colored from the component palette.
+ */
 export function HiringPipelineChart({ data }: HiringPipelineChartProps) {
   return (
     <Card className="col-span-2">

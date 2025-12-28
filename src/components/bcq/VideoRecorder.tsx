@@ -130,6 +130,14 @@ const getSupportedMimeType = (): string => {
   return '';
 };
 
+/**
+ * Interactive video recorder component that captures camera and microphone, provides a preview, a 3‑second countdown, in-session audio level monitoring, recording with an auto-stop after a configurable duration, playback for review, and submission of the recorded video.
+ *
+ * @param onRecordingComplete - Callback invoked with the recorded video `Blob` when the user confirms submission.
+ * @param maxDuration - Maximum recording duration in seconds (defaults to 300).
+ * @param disabled - When true, disables user interactions with the recorder controls.
+ * @returns A React element rendering the full video recorder UI (preview, recording controls, error guidance, and playback/submission flow).
+ */
 export function VideoRecorder({ 
   onRecordingComplete, 
   maxDuration = 300, // Default 5 minutes

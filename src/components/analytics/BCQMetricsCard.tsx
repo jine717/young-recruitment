@@ -16,6 +16,12 @@ const formatMinutes = (minutes: number): string => {
   return `${hours}h ${mins}m`;
 };
 
+/**
+ * Render a card showing Business Case Questions (BCQ) metrics.
+ *
+ * @param metrics - Object containing BCQ counts and derived values: `bcqSent`, `bcqCompleted`, `bcqPending`, `avgResponseTimeMinutes`, and `completionRate`.
+ * @returns A JSX element that renders the BCQ metrics card, including four stat tiles (sent, completed, pending, average response time) and a completion-rate progress bar.
+ */
 export function BCQMetricsCard({ metrics }: BCQMetricsCardProps) {
   return (
     <Card>

@@ -21,6 +21,17 @@ interface RecruiterPerformanceTableProps {
   data: RecruiterStats[];
 }
 
+/**
+ * Render a card showing recruiter performance metrics in a table or an empty-state message when no data is provided.
+ *
+ * @param data - Array of recruiter metrics where each item contains:
+ *   - `recruiterId`: unique identifier for the recruiter
+ *   - `recruiterName`: display name of the recruiter
+ *   - `interviewsScheduled`: number of interviews scheduled by the recruiter
+ *   - `decisionsMade`: number of hiring decisions recorded by the recruiter
+ *   - `notesAdded`: number of notes added by the recruiter
+ * @returns A React element that displays a table of recruiter metrics (including a computed total per recruiter) or a centered message when `data` is empty.
+ */
 export function RecruiterPerformanceTable({ data }: RecruiterPerformanceTableProps) {
   if (data.length === 0) {
     return (

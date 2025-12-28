@@ -15,6 +15,14 @@ const COLORS = [
   'hsl(142, 76%, 36%)',  // Contratados (green)
 ];
 
+/**
+ * Render a vertical conversion funnel chart from staged funnel data.
+ *
+ * The component displays each stage's name, candidate count, overall percentage, a colored horizontal bar sized relative to the largest stage, and (for all but the first stage) the conversion percentage from the previous stage. Bars are colorized from a predefined palette and have a minimum visible width to ensure small values remain visible.
+ *
+ * @param data - Array of funnel stages; each item should include `stage` (label), `count` (numeric count), and `percentage` (stage percentage) and is rendered in order.
+ * @returns The rendered conversion funnel chart as a JSX element.
+ */
 export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
   const maxCount = Math.max(...data.map(d => d.count), 1);
 

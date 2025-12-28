@@ -668,6 +668,33 @@ interface ResponseCardProps {
   contentAnalysisStatus?: string | null;
 }
 
+/**
+ * Renders a collapsible card showing a candidate's response video, transcription, fluency metrics, and content analysis for a single business-case question.
+ *
+ * @param responseId - Identifier for the BCQ response; required for analyze/transcribe mutations.
+ * @param applicationId - Application identifier used when triggering transcription.
+ * @param questionNumber - Ordinal number of the question shown in the UI.
+ * @param questionTitle - Short title of the question.
+ * @param questionDescription - Brief description or prompt for the question.
+ * @param videoUrl - Source URL of the recorded response video (used to obtain a signed URL); may be null if deleted.
+ * @param videoCreatedAt - Timestamp when the video was recorded.
+ * @param transcription - Plain-text transcription of the response, when available.
+ * @param isCompleted - Whether the candidate has submitted an answer for this question.
+ * @param canEdit - Whether the current user may trigger transcription or analysis actions.
+ * @param fluencyPronunciationScore - Pronunciation score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyPaceScore - Speaking pace score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyHesitationScore - Fluidity/hesitation score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyGrammarScore - Grammar score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyOverallScore - Combined fluency score from audio analysis, or null/undefined if unavailable.
+ * @param fluencyNotes - Optional free-form notes produced by the fluency analysis.
+ * @param contentQualityScore - Numeric content-quality score, or null if analysis not completed.
+ * @param contentStrengths - Array of identified strengths from content analysis.
+ * @param contentAreasToProbe - Array of suggested follow-up topics to probe in interview.
+ * @param contentSummary - Short summary of the content analysis.
+ * @param contentAnalysisStatus - One of 'pending' | 'analyzing' | 'completed' indicating content analysis state.
+ *
+ * @returns The React element for the response card UI.
+ */
 function ResponseCard({
   responseId,
   applicationId,

@@ -20,6 +20,12 @@ const COLORS = [
   'hsl(var(--chart-5))',
 ];
 
+/**
+ * Render a card with a pie chart showing applications grouped by department.
+ *
+ * @param data - Array of department statistics; each item supplies the department name, application count (used as slice value), and hired count (displayed in the tooltip). When empty, an informational empty-state card is rendered instead of the chart.
+ * @returns A React element containing a card: either a pie chart of applications by department with legend and tooltip, or an empty-state message if `data` is empty.
+ */
 export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
   const chartData = data.map((d) => ({
     name: d.departmentName,
