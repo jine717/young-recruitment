@@ -31,6 +31,7 @@ import { useSendBCQInvitation } from '@/hooks/useSendBCQInvitation';
 import { useBusinessCases, useBusinessCaseResponses } from '@/hooks/useBusinessCase';
 import { useAnalyzeBCQResponse } from '@/hooks/useBCQResponseAnalysis';
 import { useTranscribeBCQResponse } from '@/hooks/useTranscribeBCQResponse';
+import { useVideoUrl, extractVideoPath } from '@/hooks/useVideoUrl';
 import { PostBCQAnalysisModal } from './PostBCQAnalysisModal';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
@@ -693,6 +694,9 @@ function ResponseCard({
   const [isOpen, setIsOpen] = useState(false);
   const analyzeResponse = useAnalyzeBCQResponse();
   const transcribeResponse = useTranscribeBCQResponse();
+  
+  // Use signed URL hook for secure video access
+  const { url: signedVideoUrl, isLoading: isLoadingVideoUrl } = useVideoUrl(videoUrl);
 
   const handleAnalyze = () => {
     if (!responseId) return;
@@ -701,7 +705,9 @@ function ResponseCard({
 
   const handleTranscribe = () => {
     if (!responseId || !videoUrl) return;
-    transcribeResponse.mutate({ responseId, videoUrl, applicationId });
+    // Extract path from video URL for transcription
+    const videoPath = extractVideoPath(videoUrl);
+    transcribeResponse.mutate({ responseId, videoUrl: videoPath || videoUrl, applicationId });
   };
 
   const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
@@ -812,15 +818,22 @@ function ResponseCard({
               <>
                 {/* Video Player */}
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                  <video 
-                    src={videoUrl && videoCreatedAt 
-                      ? `${videoUrl}?t=${new Date(videoCreatedAt).getTime()}` 
-                      : videoUrl ?? undefined
-                    } 
-                    controls 
-                    className="w-full h-full"
-                    preload="metadata"
-                  />
+                  {isLoadingVideoUrl ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin" />
+                    </div>
+                  ) : signedVideoUrl ? (
+                    <video 
+                      src={signedVideoUrl} 
+                      controls 
+                      className="w-full h-full"
+                      preload="metadata"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <p className="text-sm">Video unavailable</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Transcription */}
