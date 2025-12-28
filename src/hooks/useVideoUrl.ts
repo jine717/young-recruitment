@@ -80,17 +80,6 @@ export function useVideoUrl(
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      // Add auth header if user is logged in
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
       const body: Record<string, string | null | undefined> = {
         videoPath: path,
       };
@@ -101,9 +90,10 @@ export function useVideoUrl(
         body.bcqAccessToken = bcqAccessToken;
       }
 
+      // supabase.functions.invoke automatically includes the Authorization header
+      // from the current session
       const response = await supabase.functions.invoke('get-video-url', {
         body,
-        headers,
       });
 
       if (response.error) {
