@@ -10,6 +10,9 @@ const COLORS = [
   'hsl(var(--chart-2))',
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(210, 70%, 50%)',  // Evaluados
+  'hsl(142, 76%, 36%)',  // Contratados (green)
 ];
 
 export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
@@ -18,7 +21,7 @@ export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Hiring Funnel</CardTitle>
+        <CardTitle>Funnel de Conversión</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -33,11 +36,11 @@ export function ConversionFunnelChart({ data }: ConversionFunnelChartProps) {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{item.stage}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{item.count} candidates</span>
+                    <span className="text-muted-foreground">{item.count} candidatos</span>
                     <span className="font-semibold">{item.percentage}%</span>
                     {index > 0 && (
                       <span className="text-xs text-muted-foreground">
-                        ({conversionFromPrevious}% from prev)
+                        ({conversionFromPrevious}% del anterior)
                       </span>
                     )}
                   </div>

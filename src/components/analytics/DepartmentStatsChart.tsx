@@ -1,7 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { DepartmentStats } from '@/hooks/useAnalytics';
 import { Building2 } from 'lucide-react';
+
+export interface DepartmentStats {
+  departmentName: string;
+  applicationCount: number;
+  hiredCount: number;
+}
 
 interface DepartmentStatsChartProps {
   data: DepartmentStats[];
@@ -28,12 +33,12 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Applications by Department
+            Aplicaciones por Departamento
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No department data available
+            No hay datos de departamentos disponibles
           </div>
         </CardContent>
       </Card>
@@ -45,7 +50,7 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Building2 className="h-5 w-5" />
-          Applications by Department
+          Aplicaciones por Departamento
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -74,7 +79,7 @@ export function DepartmentStatsChart({ data }: DepartmentStatsChartProps) {
                   borderRadius: '8px',
                 }}
                 formatter={(value: number, name: string, props: any) => [
-                  `${value} applications (${props.payload.hired} hired)`,
+                  `${value} aplicaciones (${props.payload.hired} contratados)`,
                   props.payload.name,
                 ]}
               />
