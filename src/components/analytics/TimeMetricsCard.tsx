@@ -23,35 +23,35 @@ export function TimeMetricsCard({ metrics, totalHired, totalRejected }: TimeMetr
 
   const items = [
     {
-      label: 'Tiempo Promedio a Revisión',
+      label: 'Avg Time to Review',
       value: formatDuration(metrics.avgToReview),
       icon: Clock,
-      description: 'Desde aplicación a primera revisión',
+      description: 'From application to first review',
     },
     {
-      label: 'Tiempo Promedio a Entrevista',
+      label: 'Avg Time to Interview',
       value: formatDuration(metrics.avgToInterview),
       icon: Calendar,
-      description: 'Desde aplicación a primera entrevista',
+      description: 'From application to first interview',
     },
     {
-      label: 'Tiempo Respuesta BCQ',
+      label: 'BCQ Response Time',
       value: formatDuration(metrics.avgBCQResponseTime),
       icon: FileQuestion,
-      description: 'Tiempo promedio que tardan en completar BCQ',
+      description: 'Average time to complete BCQ',
     },
     {
-      label: 'Tasa de Contratación',
+      label: 'Hire Rate',
       value: hireRate,
       icon: TrendingUp,
-      description: `${totalHired} contratados de ${totalHired + totalRejected} finalizados`,
+      description: `${totalHired} hired out of ${totalHired + totalRejected} finalized`,
     },
   ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métricas de Tiempo y Conversión</CardTitle>
+        <CardTitle>Time & Conversion Metrics</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">

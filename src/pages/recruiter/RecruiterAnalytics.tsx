@@ -31,7 +31,7 @@ export default function RecruiterAnalytics() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando analytics...</p>
+          <p className="text-muted-foreground">Loading analytics...</p>
         </div>
       </div>
     );
@@ -42,10 +42,10 @@ export default function RecruiterAnalytics() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="pt-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
-            <p className="text-muted-foreground mb-4">No tienes permisos para ver esta página.</p>
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-4">You don't have permission to view this page.</p>
             <Button asChild>
-              <Link to="/">Ir al Inicio</Link>
+              <Link to="/">Go to Home</Link>
             </Button>
           </CardContent>
         </Card>
@@ -66,7 +66,7 @@ export default function RecruiterAnalytics() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-              <p className="text-muted-foreground">Métricas de rendimiento del proceso de reclutamiento</p>
+              <p className="text-muted-foreground">Recruitment process performance metrics</p>
             </div>
           </div>
         </div>
@@ -74,40 +74,40 @@ export default function RecruiterAnalytics() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <StatsCard
-            title="Total Aplicaciones"
+            title="Total Applications"
             value={analytics.totalApplications}
             icon={Users}
-            subtitle="Todas las aplicaciones"
+            subtitle="All applications"
           />
           <StatsCard
-            title="Conversión a Entrevista"
+            title="Interview Conversion"
             value={`${analytics.conversionToInterview}%`}
             icon={TrendingUp}
-            subtitle="Aplicación → Entrevista"
+            subtitle="Application → Interview"
           />
           <StatsCard
-            title="Tiempo a Decisión"
+            title="Time to Decision"
             value={formatDuration(analytics.avgTimeToDecision)}
             icon={Clock}
-            subtitle="Promedio hasta decisión final"
+            subtitle="Average to final decision"
           />
           <StatsCard
-            title="Score IA Promedio"
+            title="Average AI Score"
             value={analytics.avgAIScore !== null ? analytics.avgAIScore : '—'}
             icon={Brain}
-            subtitle="Indicador de calidad"
+            subtitle="Quality indicator"
           />
           <StatsCard
-            title="Contratados"
+            title="Hired"
             value={analytics.totalHired}
             icon={CheckCircle}
-            subtitle="Total exitosos"
+            subtitle="Successful hires"
           />
           <StatsCard
-            title="Rechazados"
+            title="Rejected"
             value={analytics.totalRejected}
             icon={XCircle}
-            subtitle="No seleccionados"
+            subtitle="Not selected"
           />
         </div>
 
