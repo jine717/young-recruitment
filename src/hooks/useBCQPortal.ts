@@ -269,21 +269,17 @@ export function useBCQPortal(applicationId: string | undefined, token: string | 
         throw new Error(`Failed to upload video after ${maxAttempts} attempts: ${lastUploadError.message}`);
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('business-case-videos')
-        .getPublicUrl(fileName);
+      // Store only the path (not full URL) for security - signed URLs will be generated on demand
+      const videoPath = fileName;
+      console.log('Video path stored:', videoPath);
 
-      const videoUrl = urlData.publicUrl;
-      console.log('Video URL obtained:', videoUrl);
-
-      // Create or update response record
+      // Create or update response record - store only path, not full URL
       const { data: respData, error: respError } = await supabase
         .from('business_case_responses')
         .upsert({
           application_id: application.id,
           business_case_id: questionId,
-          video_url: videoUrl,
+          video_url: videoPath,
           completed_at: new Date().toISOString()
         }, {
           onConflict: 'application_id,business_case_id'

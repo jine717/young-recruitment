@@ -82,6 +82,7 @@ serve(async (req) => {
     }
 
     // Prepare video for audio analysis (if available)
+    // Use storage API with service role for private bucket access
     // Limit video size to 7MB to avoid memory issues
     const MAX_VIDEO_SIZE_BYTES = 7 * 1024 * 1024; // 7MB
     let videoBase64: string | null = null;
@@ -89,31 +90,39 @@ serve(async (req) => {
     
     if (response.video_url) {
       try {
-        console.log('Fetching video for audio analysis...');
-        const videoResponse = await fetch(response.video_url);
-        if (videoResponse.ok) {
-          const contentLength = videoResponse.headers.get('content-length');
-          const videoSize = contentLength ? parseInt(contentLength, 10) : 0;
-          
+        console.log('Fetching video for audio analysis from storage...');
+        
+        // Extract path from video_url (could be full URL or just path)
+        let videoPath = response.video_url;
+        if (videoPath.startsWith('http')) {
+          const match = videoPath.match(/\/business-case-videos\/(.+?)(?:\?|$)/);
+          if (match) {
+            videoPath = match[1];
+          }
+        }
+        
+        console.log('Video path:', videoPath);
+        
+        // Download from private bucket using service role
+        const { data: videoData, error: downloadError } = await supabase.storage
+          .from('business-case-videos')
+          .download(videoPath);
+        
+        if (downloadError) {
+          console.warn('Failed to download video from storage:', downloadError);
+          skipFluencyReason = `Failed to download video: ${downloadError.message}`;
+        } else if (videoData) {
+          const videoSize = videoData.size;
           console.log('Video size:', videoSize, 'bytes (', (videoSize / 1024 / 1024).toFixed(2), 'MB)');
           
           if (videoSize > MAX_VIDEO_SIZE_BYTES) {
             console.warn(`Video too large for fluency analysis: ${(videoSize / 1024 / 1024).toFixed(2)}MB > ${(MAX_VIDEO_SIZE_BYTES / 1024 / 1024)}MB limit`);
             skipFluencyReason = `Video too large (${(videoSize / 1024 / 1024).toFixed(1)}MB)`;
           } else {
-            const videoBuffer = await videoResponse.arrayBuffer();
-            // Double check actual buffer size
-            if (videoBuffer.byteLength > MAX_VIDEO_SIZE_BYTES) {
-              console.warn(`Video buffer too large: ${(videoBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
-              skipFluencyReason = `Video too large (${(videoBuffer.byteLength / 1024 / 1024).toFixed(1)}MB)`;
-            } else {
-              videoBase64 = arrayBufferToBase64(videoBuffer);
-              console.log('Video fetched successfully, base64 length:', videoBase64.length);
-            }
+            const videoBuffer = await videoData.arrayBuffer();
+            videoBase64 = arrayBufferToBase64(videoBuffer);
+            console.log('Video fetched successfully, base64 length:', videoBase64.length);
           }
-        } else {
-          console.warn('Failed to fetch video:', videoResponse.status);
-          skipFluencyReason = `Failed to fetch video: ${videoResponse.status}`;
         }
       } catch (videoError) {
         console.warn('Error fetching video:', videoError);
