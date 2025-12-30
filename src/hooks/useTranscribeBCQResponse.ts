@@ -11,8 +11,6 @@ interface TranscribeParams {
 
 /**
  * Creates a mutation hook that transcribes a business-case video response and invalidates related queries.
- *
- * @returns A React Query mutation object which, when called with an object containing `responseId`, `videoUrl`, and `applicationId`, sends `videoPath` (extracted from `videoUrl` when necessary) and `responseId` to the Supabase edge function `transcribe-video` and resolves to the edge function's response object. The resolved response is expected to include a `text` field containing the transcription.
  */
 export function useTranscribeBCQResponse() {
   const queryClient = useQueryClient();
@@ -26,6 +24,9 @@ export function useTranscribeBCQResponse() {
         throw new Error('Invalid video URL: could not extract path');
       }
 
+      console.log('Starting transcription for response:', responseId);
+      console.log('Video path:', videoPath);
+
       // Call the edge function which will handle downloading from private storage
       const { data, error } = await supabase.functions
         .invoke('transcribe-video', {
@@ -35,14 +36,24 @@ export function useTranscribeBCQResponse() {
           }
         });
 
+      // Handle Supabase function invocation errors
       if (error) {
-        throw new Error(`Transcription failed: ${error.message}`);
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to call transcription service');
+      }
+
+      // Handle errors returned in the response body
+      if (data?.error) {
+        console.error('Transcription service error:', data.error);
+        throw new Error(data.error);
       }
 
       if (!data?.text) {
-        throw new Error('No transcription returned');
+        console.error('No transcription in response:', data);
+        throw new Error('No transcription returned from service');
       }
 
+      console.log('Transcription completed successfully');
       return data;
     },
     onSuccess: (_, variables) => {
@@ -51,6 +62,7 @@ export function useTranscribeBCQResponse() {
     },
     onError: (error: Error) => {
       console.error('Transcription error:', error);
+      // Show the specific error message from the backend
       toast.error(error.message || 'Failed to transcribe video');
     }
   });
