@@ -6,32 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Maximum video size for Gemini inline_data (20MB)
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024;
-
-/**
- * Convert an ArrayBuffer to a base64-encoded string.
- */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 /**
  * Determine the correct MIME type based on file extension
  */
 function getMimeType(videoPath: string | null): string {
-  if (!videoPath) return 'video/webm';
+  if (!videoPath) return 'audio/webm';
   const lowerPath = videoPath.toLowerCase();
-  if (lowerPath.endsWith('.mp4')) return 'video/mp4';
-  if (lowerPath.endsWith('.webm')) return 'video/webm';
-  if (lowerPath.endsWith('.mov')) return 'video/quicktime';
-  // Default to webm for browser-recorded videos
-  return 'video/webm';
+  if (lowerPath.endsWith('.mp4')) return 'audio/mp4';
+  if (lowerPath.endsWith('.webm')) return 'audio/webm';
+  if (lowerPath.endsWith('.mov')) return 'audio/mp4';
+  return 'audio/webm';
 }
 
 serve(async (req) => {
@@ -59,12 +43,11 @@ serve(async (req) => {
       );
     }
 
-    let base64Audio: string;
-    let detectedMimeType: string;
+    let audioSource: { type: 'url', url: string, mimeType: string } | { type: 'base64', data: string, mimeType: string };
 
-    // If videoPath is provided, download from private storage
+    // If videoPath is provided, create a signed URL (no download needed - saves memory!)
     if (videoPath) {
-      console.log('Downloading video from private storage:', videoPath);
+      console.log('Creating signed URL for video:', videoPath);
       
       const supabaseUrl = Deno.env.get('SUPABASE_URL');
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -79,47 +62,27 @@ serve(async (req) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      const { data: videoData, error: downloadError } = await supabase.storage
+      // Create signed URL valid for 1 hour - Gemini will download directly
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('business-case-videos')
-        .download(videoPath);
+        .createSignedUrl(videoPath, 3600);
 
-      if (downloadError) {
-        console.error('Failed to download video:', downloadError);
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        console.error('Failed to create signed URL:', signedUrlError);
         return new Response(
-          JSON.stringify({ error: `Failed to download video: ${downloadError.message}` }),
+          JSON.stringify({ error: `Failed to access video: ${signedUrlError?.message || 'Unknown error'}` }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      if (!videoData) {
-        console.error('No video data received from storage');
-        return new Response(
-          JSON.stringify({ error: 'Video file not found in storage.' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const videoBuffer = await videoData.arrayBuffer();
-      const fileSizeMB = (videoBuffer.byteLength / 1024 / 1024).toFixed(1);
-      console.log('Video downloaded, size:', videoBuffer.byteLength, 'bytes', `(${fileSizeMB}MB)`);
-
-      // Check file size limit
-      if (videoBuffer.byteLength > MAX_VIDEO_SIZE) {
-        console.error(`Video too large: ${videoBuffer.byteLength} bytes (max: ${MAX_VIDEO_SIZE})`);
-        return new Response(
-          JSON.stringify({ 
-            error: `Video file too large (${fileSizeMB}MB). Maximum size is 20MB. Please re-record a shorter response.` 
-          }),
-          { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      base64Audio = arrayBufferToBase64(videoBuffer);
-      detectedMimeType = contentType || getMimeType(videoPath);
+      console.log('Signed URL created successfully');
+      const mimeType = contentType ? contentType.replace('video/', 'audio/') : getMimeType(videoPath);
+      audioSource = { type: 'url', url: signedUrlData.signedUrl, mimeType };
+      
     } else if (audio) {
       // Legacy: audio passed directly as base64
-      base64Audio = audio;
-      detectedMimeType = contentType || 'audio/webm';
+      const mimeType = contentType || 'audio/webm';
+      audioSource = { type: 'base64', data: audio, mimeType };
     } else {
       console.error('No video source provided');
       return new Response(
@@ -129,18 +92,41 @@ serve(async (req) => {
     }
 
     console.log('Processing audio with Gemini for transcription...');
-    console.log(`Detected MIME type: ${detectedMimeType}`);
+    console.log(`Audio source type: ${audioSource.type}`);
+    console.log(`MIME type: ${audioSource.mimeType}`);
     console.log(`Language: ${language}`);
-    console.log(`Base64 length: ${base64Audio.length} characters`);
 
-    // For Gemini, use audio/* format
-    const mimeType = detectedMimeType.startsWith('video/') 
-      ? detectedMimeType.replace('video/', 'audio/') 
-      : detectedMimeType;
+    // Build content array based on source type
+    const contentArray: any[] = [
+      {
+        type: 'text',
+        text: `You are a professional transcription specialist.
 
-    console.log(`Using MIME type for Gemini: ${mimeType}`);
+TASK: Transcribe the audio accurately in ${language}. Capture exactly what was said, including any filler words or hesitations.
 
-    // Call Gemini with audio as inline_data - ONLY transcription
+Use the transcribe_audio tool to return the transcription.`
+      }
+    ];
+
+    if (audioSource.type === 'url') {
+      // Use URL reference - Gemini downloads directly, no memory used here
+      contentArray.push({
+        type: 'file',
+        file_url: {
+          url: audioSource.url
+        }
+      });
+    } else {
+      // Legacy base64 inline data
+      contentArray.push({
+        type: 'image_url',
+        image_url: {
+          url: `data:${audioSource.mimeType};base64,${audioSource.data}`
+        }
+      });
+    }
+
+    // Call Gemini - ONLY transcription
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -152,22 +138,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `You are a professional transcription specialist.
-
-TASK: Transcribe the audio accurately in ${language}. Capture exactly what was said, including any filler words or hesitations.
-
-Use the transcribe_audio tool to return the transcription.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Audio}`
-                }
-              }
-            ]
+            content: contentArray
           }
         ],
         tools: [
@@ -274,7 +245,6 @@ Use the transcribe_audio tool to return the transcription.`
 
       if (updateError) {
         console.error('Failed to save transcription:', updateError);
-        // Don't fail the request - return the transcription anyway
         console.warn('Transcription generated but failed to save to database');
       } else {
         console.log('Transcription saved to database for response:', responseId);
