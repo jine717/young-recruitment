@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
 
@@ -7,18 +8,14 @@ const corsHeaders = {
 };
 
 /**
- * Convert an ArrayBuffer to a base64-encoded string.
- *
- * @param buffer - The ArrayBuffer whose raw bytes will be encoded
- * @returns The base64-encoded representation of `buffer`'s bytes
+ * Get file extension for FormData filename
  */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+function getFileExtension(videoPath: string | null): string {
+  if (!videoPath) return 'webm';
+  const lowerPath = videoPath.toLowerCase();
+  if (lowerPath.endsWith('.mp4')) return 'mp4';
+  if (lowerPath.endsWith('.mov')) return 'mov';
+  return 'webm';
 }
 
 serve(async (req) => {
@@ -27,143 +24,175 @@ serve(async (req) => {
   }
 
   try {
-    const { videoPath, responseId, audio, contentType = 'audio/webm', language = 'en' } = await req.json();
+    const { videoPath, responseId, audio, contentType, language = 'en' } = await req.json();
     
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    console.log('Transcription request received:', { 
+      videoPath: videoPath ? `${videoPath.substring(0, 50)}...` : null, 
+      responseId, 
+      hasAudio: !!audio,
+      contentType,
+      language 
+    });
+
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({ ok: false, error: 'AI service not configured. Please contact support.', code: 500 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    let base64Audio: string;
+    let audioBlob: Blob;
+    let filename: string;
 
-    // If videoPath is provided, download from private storage
+    // If videoPath is provided, download the video from Supabase Storage
     if (videoPath) {
-      console.log('Downloading video from private storage:', videoPath);
+      console.log('Downloading video from storage:', videoPath);
       
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error('Supabase configuration missing');
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Storage service not configured. Please contact support.', code: 500 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+      // Download the video file
       const { data: videoData, error: downloadError } = await supabase.storage
         .from('business-case-videos')
         .download(videoPath);
 
-      if (downloadError) {
-        throw new Error(`Failed to download video: ${downloadError.message}`);
+      if (downloadError || !videoData) {
+        console.error('Failed to download video:', downloadError);
+        return new Response(
+          JSON.stringify({ ok: false, error: `Failed to access video: ${downloadError?.message || 'Unknown error'}`, code: 404 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      if (!videoData) {
-        throw new Error('No video data received');
+      // Check file size (Whisper limit is 25MB)
+      const fileSizeMB = videoData.size / (1024 * 1024);
+      console.log(`Video downloaded, size: ${fileSizeMB.toFixed(2)} MB`);
+      
+      if (fileSizeMB > 25) {
+        console.error(`Video too large: ${fileSizeMB.toFixed(2)} MB`);
+        return new Response(
+          JSON.stringify({ ok: false, error: `Video is too large (${fileSizeMB.toFixed(1)} MB). Maximum size is 25 MB.`, code: 413 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      const videoBuffer = await videoData.arrayBuffer();
-      base64Audio = arrayBufferToBase64(videoBuffer);
-      console.log('Video downloaded, size:', videoBuffer.byteLength, 'bytes');
+      audioBlob = videoData;
+      const ext = getFileExtension(videoPath);
+      filename = `audio.${ext}`;
+      
     } else if (audio) {
       // Legacy: audio passed directly as base64
-      base64Audio = audio;
+      console.log('Processing base64 audio data');
+      const binaryString = atob(audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      audioBlob = new Blob([bytes], { type: contentType || 'audio/webm' });
+      filename = 'audio.webm';
     } else {
-      throw new Error('Either videoPath or audio data is required');
+      console.error('No video source provided');
+      return new Response(
+        JSON.stringify({ ok: false, error: 'No video source provided. Please try recording again.', code: 400 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Processing audio with Gemini for transcription...');
-    console.log(`Content type: ${contentType}`);
+    console.log('Sending to OpenAI Whisper for transcription...');
+    console.log(`Filename: ${filename}`);
     console.log(`Language: ${language}`);
 
-    // Determine mime type for Gemini (use audio/* format)
-    const mimeType = contentType.startsWith('video/') 
-      ? contentType.replace('video/', 'audio/') 
-      : contentType;
+    // Prepare FormData for Whisper API
+    const formData = new FormData();
+    formData.append('file', audioBlob, filename);
+    formData.append('model', 'whisper-1');
+    formData.append('language', language);
 
-    console.log(`Using mime type: ${mimeType}`);
+    // Retry logic for transient errors
+    const maxRetries = 3;
+    const retryDelays = [500, 1500, 3000]; // ms
+    let lastError: string = '';
+    let response: Response | null = null;
 
-    // Call Gemini with audio as inline_data - ONLY transcription
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `You are a professional transcription specialist.
-
-TASK: Transcribe the audio accurately in ${language}. Capture exactly what was said, including any filler words or hesitations.
-
-Use the transcribe_audio tool to return the transcription.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Audio}`
-                }
-              }
-            ]
-          }
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'transcribe_audio',
-              description: 'Return the transcription of the audio',
-              parameters: {
-                type: 'object',
-                properties: {
-                  transcription: {
-                    type: 'string',
-                    description: 'Full transcription of the audio content'
-                  }
-                },
-                required: ['transcription']
-              }
-            }
-          }
-        ],
-        tool_choice: { type: 'function', function: { name: 'transcribe_audio' } }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      if (attempt > 0) {
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${retryDelays[attempt - 1]}ms`);
+        await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
       }
-      if (response.status === 402) {
+
+      response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: formData,
+      });
+
+      // Check if we should retry (5xx errors are transient)
+      if (response.status >= 500 && response.status < 600 && attempt < maxRetries - 1) {
+        lastError = `Server error ${response.status}`;
+        console.warn(`Transient error (${response.status}), will retry...`);
+        continue;
+      }
+      
+      // Success or non-retryable error - break out
+      break;
+    }
+
+    if (!response || !response.ok) {
+      const errorText = response ? await response.text() : lastError;
+      const statusCode = response?.status || 500;
+      console.error('Whisper API error:', statusCode, errorText);
+      
+      if (statusCode === 429) {
         return new Response(
-          JSON.stringify({ error: 'Payment required. Please add funds to continue.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ ok: false, error: 'AI service is busy. Please try again in a few minutes.', code: 429 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      throw new Error(`Gemini API error: ${errorText}`);
+      // Try to parse error for more details
+      let errorDetail = 'Unknown error';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.error?.message || errorJson.message || errorText;
+      } catch {
+        errorDetail = typeof errorText === 'string' ? errorText.substring(0, 200) : 'Server error';
+      }
+      
+      console.error('Whisper processing error:', errorDetail);
+      return new Response(
+        JSON.stringify({ ok: false, error: `Transcription failed: ${errorDetail}. Please try again.`, code: statusCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const result = await response.json();
-    console.log('Gemini response received');
+    console.log('Whisper response received');
     
-    // Extract result from tool call
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      console.error('No tool call in response:', JSON.stringify(result));
-      throw new Error('No tool call response from Gemini');
+    const transcription = result.text;
+    if (!transcription) {
+      console.error('Empty transcription from Whisper');
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Transcription returned empty. The audio may be silent or unclear.', code: 422 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const analysisResult = JSON.parse(toolCall.function.arguments);
-    
     console.log('Transcription successful');
-    console.log('Transcription length:', analysisResult.transcription?.length || 0);
+    console.log('Transcription length:', transcription.length, 'characters');
 
     // If responseId is provided, update the database directly
     if (responseId) {
@@ -173,33 +202,31 @@ Use the transcribe_audio tool to return the transcription.`
 
       const { error: updateError } = await supabase
         .from('business_case_responses')
-        .update({ transcription: analysisResult.transcription })
+        .update({ transcription: transcription })
         .eq('id', responseId);
 
       if (updateError) {
         console.error('Failed to save transcription:', updateError);
-        throw new Error(`Failed to save transcription: ${updateError.message}`);
+        console.warn('Transcription generated but failed to save to database');
+      } else {
+        console.log('Transcription saved to database for response:', responseId);
       }
-
-      console.log('Transcription saved to database for response:', responseId);
     }
 
     return new Response(
       JSON.stringify({
-        text: analysisResult.transcription
+        ok: true,
+        text: transcription
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Transcription error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ ok: false, error: `Transcription failed: ${errorMessage}`, code: 500 }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
