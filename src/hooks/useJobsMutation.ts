@@ -123,12 +123,12 @@ export function useDeleteJob() {
       const stats = data.stats;
       const totalFiles = stats.files.cvs + stats.files.discs + stats.files.videos;
       toast({ 
-        title: 'Vacante eliminada',
-        description: `Se eliminaron ${stats.records.applications} candidatos y ${totalFiles} archivos.`
+        title: 'Job deleted',
+        description: `Deleted ${stats.records.applications} candidates and ${totalFiles} files.`
       });
     },
     onError: (error) => {
-      toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error deleting job', description: error.message, variant: 'destructive' });
     },
   });
 }
@@ -156,7 +156,7 @@ export function useDuplicateJob() {
       const { data: newJob, error: insertError } = await supabase
         .from('jobs')
         .insert({
-          title: `${originalJob.title} - Copia`,
+          title: `${originalJob.title} - Copy`,
           location: originalJob.location,
           type: originalJob.type,
           department_id: originalJob.department_id,
@@ -221,14 +221,14 @@ export function useDuplicateJob() {
       queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast({ 
-        title: 'Job duplicado exitosamente',
-        description: 'Se ha creado una copia incluyendo BCQ y preguntas fijas. Redirigiendo...'
+        title: 'Job duplicated successfully',
+        description: 'A copy has been created including BCQ and fixed questions. Redirecting...'
       });
       navigate(`/dashboard/jobs/${newJob.id}/edit`);
     },
     onError: (error) => {
       toast({ 
-        title: 'Error al duplicar', 
+        title: 'Error duplicating job', 
         description: error.message, 
         variant: 'destructive' 
       });

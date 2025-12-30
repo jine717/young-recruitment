@@ -11,8 +11,8 @@ const COLORS = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
-  'hsl(210, 70%, 50%)',  // Evaluados
-  'hsl(142, 76%, 36%)',  // Contratados (green)
+  'hsl(210, 70%, 50%)',  // Evaluated
+  'hsl(142, 76%, 36%)',  // Hired (green)
 ];
 
 /**
