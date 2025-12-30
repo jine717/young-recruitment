@@ -10,6 +10,7 @@ import {
   Clock, 
   CheckCircle, 
   AlertTriangle,
+  AlertCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -723,7 +724,7 @@ function ResponseCard({
   const transcribeResponse = useTranscribeBCQResponse();
   
   // Use signed URL hook for secure video access
-  const { url: signedVideoUrl, isLoading: isLoadingVideoUrl } = useVideoUrl(videoUrl);
+  const { url: signedVideoUrl, isLoading: isLoadingVideoUrl, error: videoError, refetch: refetchVideoUrl } = useVideoUrl(videoUrl);
 
   const handleAnalyze = () => {
     if (!responseId) return;
@@ -856,6 +857,20 @@ function ResponseCard({
                       className="w-full h-full"
                       preload="metadata"
                     />
+                  ) : videoError ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+                      <AlertCircle className="w-6 h-6 text-destructive/70" />
+                      <p className="text-sm text-center px-4">Error loading video</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => refetchVideoUrl()}
+                        className="mt-1"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1.5" />
+                        Retry
+                      </Button>
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                       <p className="text-sm">Video unavailable</p>

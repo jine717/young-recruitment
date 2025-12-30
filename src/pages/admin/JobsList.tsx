@@ -147,7 +147,7 @@ export default function JobsList() {
                               disabled={duplicateJob.isPending}
                             >
                               <Copy className="h-4 w-4 mr-2" />
-                              Duplicar
+                              Duplicate
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigate(`/admin/jobs/${job.id}/business-case`)}>
                               <FileText className="h-4 w-4 mr-2" />

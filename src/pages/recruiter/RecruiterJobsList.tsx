@@ -287,7 +287,7 @@ export default function RecruiterJobsList() {
                                   disabled={duplicateJob.isPending}
                                 >
                                   <Copy className="h-4 w-4 mr-2" />
-                                  Duplicar
+                                  Duplicate
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => toggleStatus(job)}>
                                   {job.status === 'published' ? (
@@ -352,35 +352,35 @@ export default function RecruiterJobsList() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Eliminar Vacante
+              Delete Job
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 {loadingDeleteInfo ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Cargando información...
+                    Loading information...
                   </div>
                 ) : jobToDelete ? (
                   <>
                     <p>
-                      ¿Estás seguro de que deseas eliminar la vacante <strong>"{jobToDelete.title}"</strong>?
+                      Are you sure you want to delete the job <strong>"{jobToDelete.title}"</strong>?
                     </p>
                     {jobToDelete.candidateCount > 0 && (
                       <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
                         <p className="text-destructive font-medium">
-                          ⚠️ Esta acción eliminará permanentemente:
+                          ⚠️ This action will permanently delete:
                         </p>
                         <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside">
-                          <li><strong>{jobToDelete.candidateCount}</strong> candidato{jobToDelete.candidateCount !== 1 ? 's' : ''} y sus aplicaciones</li>
-                          <li>Todos los CVs y evaluaciones DISC</li>
-                          <li>Respuestas del Business Case</li>
-                          <li>Evaluaciones, entrevistas y notas</li>
+                          <li><strong>{jobToDelete.candidateCount}</strong> candidate{jobToDelete.candidateCount !== 1 ? 's' : ''} and their applications</li>
+                          <li>All CVs and DISC assessments</li>
+                          <li>Business Case responses</li>
+                          <li>Evaluations, interviews and notes</li>
                         </ul>
                       </div>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      Esta acción no se puede deshacer.
+                      This action cannot be undone.
                     </p>
                   </>
                 ) : null}
@@ -388,7 +388,7 @@ export default function RecruiterJobsList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -397,10 +397,10 @@ export default function RecruiterJobsList() {
               {deleteJob.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Eliminando...
+                  Deleting...
                 </>
               ) : (
-                'Eliminar'
+                'Delete'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
