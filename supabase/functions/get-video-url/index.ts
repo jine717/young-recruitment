@@ -4,66 +4,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
 // Signed URL expiration: 4 hours (14400 seconds)
 const SIGNED_URL_EXPIRATION = 14400;
 
-/**
- * Get CORS headers with dynamic origin validation
- * Validates the request origin against an allowed list from environment
- */
-function getCorsHeaders(req: Request): Record<string, string> {
-  const requestOrigin = req.headers.get('origin') || '';
-  
-  // Read allowed origins from environment (comma-separated)
-  const allowedOriginsEnv = Deno.env.get('ALLOWED_ORIGINS');
-  
-  let allowedOrigins: string[];
-  
-  if (allowedOriginsEnv) {
-    // Production: use configured origins
-    allowedOrigins = allowedOriginsEnv.split(',').map(o => o.trim());
-  } else {
-    // Development fallback: allow localhost on common ports
-    allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:8080',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:8080',
-    ];
-    console.log('ALLOWED_ORIGINS not set, using localhost fallback');
-  }
-  
-  // Check if request origin is in allowed list
-  const isAllowed = allowedOrigins.some(allowed => {
-    // Support wildcard subdomain matching (e.g., *.lovableproject.com)
-    if (allowed.includes('*')) {
-      const pattern = allowed.replace(/\./g, '\\.').replace(/\*/g, '.*');
-      return new RegExp(`^${pattern}$`).test(requestOrigin);
-    }
-    return allowed === requestOrigin;
-  });
-  
-  // If origin is allowed, echo it back; otherwise use first allowed origin
-  const origin = isAllowed ? requestOrigin : allowedOrigins[0];
-  
-  if (!isAllowed && requestOrigin) {
-    console.warn(`Origin '${requestOrigin}' not in allowed list, defaulting to: ${origin}`);
-  }
-  
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Vary': 'Origin',
-  };
-}
+// CORS headers - using wildcard since security is enforced via JWT/BCQ token validation
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(req) });
+    return new Response(null, { headers: corsHeaders });
   }
-
-  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { videoPath, applicationId, bcqAccessToken } = await req.json();
