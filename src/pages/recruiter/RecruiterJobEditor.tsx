@@ -332,8 +332,8 @@ export default function RecruiterJobEditor() {
     setFormData({ ...formData, [field]: newArray });
     
     toast({
-      title: `${lines.length} items añadidos`,
-      description: `Se dividió el texto en ${lines.length} ${field} automáticamente`,
+      title: `${lines.length} items added`,
+      description: `Text was automatically split into ${lines.length} ${field}`,
     });
   };
 

@@ -48,7 +48,7 @@ export function RichTextEditor({
           )}
         >
           <Edit3 className="h-4 w-4" />
-          Editar
+          Edit
         </button>
         <button
           type="button"
@@ -61,7 +61,7 @@ export function RichTextEditor({
           )}
         >
           <Eye className="h-4 w-4" />
-          Vista previa
+          Preview
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export function RichTextEditor({
         <div 
           className="min-h-[150px] p-4 prose prose-neutral dark:prose-invert max-w-none"
           dangerouslySetInnerHTML={{ 
-            __html: value || '<p class="text-muted-foreground italic">Sin contenido para previsualizar</p>' 
+            __html: value || '<p class="text-muted-foreground italic">No content to preview</p>' 
           }}
         />
       )}
