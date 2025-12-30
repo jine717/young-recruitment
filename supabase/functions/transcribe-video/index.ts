@@ -97,6 +97,7 @@ serve(async (req) => {
     console.log(`Language: ${language}`);
 
     // Build content array based on source type
+    // NOTE: Lovable AI gateway uses image_url format for all media (including audio/video URLs)
     const contentArray: any[] = [
       {
         type: 'text',
@@ -109,10 +110,10 @@ Use the transcribe_audio tool to return the transcription.`
     ];
 
     if (audioSource.type === 'url') {
-      // Use URL reference - Gemini downloads directly, no memory used here
+      // Use image_url format with the signed URL - gateway downloads directly
       contentArray.push({
-        type: 'file',
-        file_url: {
+        type: 'image_url',
+        image_url: {
           url: audioSource.url
         }
       });
@@ -126,58 +127,83 @@ Use the transcribe_audio tool to return the transcription.`
       });
     }
 
-    // Call Gemini - ONLY transcription
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: contentArray
-          }
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'transcribe_audio',
-              description: 'Return the transcription of the audio',
-              parameters: {
-                type: 'object',
-                properties: {
-                  transcription: {
-                    type: 'string',
-                    description: 'Full transcription of the audio content'
-                  }
-                },
-                required: ['transcription']
+    // Retry logic for transient errors
+    const maxRetries = 3;
+    const retryDelays = [500, 1500, 3000]; // ms
+    let lastError: string = '';
+    let response: Response | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      if (attempt > 0) {
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${retryDelays[attempt - 1]}ms`);
+        await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
+      }
+
+      // Call Gemini - ONLY transcription
+      response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'user',
+              content: contentArray
+            }
+          ],
+          tools: [
+            {
+              type: 'function',
+              function: {
+                name: 'transcribe_audio',
+                description: 'Return the transcription of the audio',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    transcription: {
+                      type: 'string',
+                      description: 'Full transcription of the audio content'
+                    }
+                  },
+                  required: ['transcription']
+                }
               }
             }
-          }
-        ],
-        tool_choice: { type: 'function', function: { name: 'transcribe_audio' } }
-      }),
-    });
+          ],
+          tool_choice: { type: 'function', function: { name: 'transcribe_audio' } }
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
+      // Check if we should retry (5xx errors are transient)
+      if (response.status >= 500 && response.status < 600 && attempt < maxRetries - 1) {
+        lastError = `Server error ${response.status}`;
+        console.warn(`Transient error (${response.status}), will retry...`);
+        continue;
+      }
       
-      if (response.status === 429) {
+      // Success or non-retryable error - break out
+      break;
+    }
+
+    if (!response || !response.ok) {
+      const errorText = response ? await response.text() : lastError;
+      const statusCode = response?.status || 500;
+      console.error('Gemini API error:', statusCode, errorText);
+      
+      // Return HTTP 200 with error in body for better client handling
+      if (statusCode === 429) {
         return new Response(
-          JSON.stringify({ error: 'AI service is busy. Please try again in a few minutes.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ ok: false, error: 'AI service is busy. Please try again in a few minutes.', code: 429 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
+      if (statusCode === 402) {
         return new Response(
-          JSON.stringify({ error: 'AI service credits exhausted. Please contact support.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ ok: false, error: 'AI service credits exhausted. Please contact support.', code: 402 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
@@ -187,13 +213,13 @@ Use the transcribe_audio tool to return the transcription.`
         const errorJson = JSON.parse(errorText);
         errorDetail = errorJson.error?.message || errorJson.message || errorText;
       } catch {
-        errorDetail = errorText.substring(0, 200);
+        errorDetail = typeof errorText === 'string' ? errorText.substring(0, 200) : 'Server error';
       }
       
       console.error('AI processing error:', errorDetail);
       return new Response(
-        JSON.stringify({ error: `AI processing failed: ${errorDetail}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: `Transcription failed: ${errorDetail}. Please try again.`, code: statusCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -205,8 +231,8 @@ Use the transcribe_audio tool to return the transcription.`
     if (!toolCall) {
       console.error('No tool call in response:', JSON.stringify(result).substring(0, 500));
       return new Response(
-        JSON.stringify({ error: 'AI did not return a transcription. The audio may be unclear or too short.' }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'AI did not return a transcription. The audio may be unclear or too short.', code: 422 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -216,16 +242,16 @@ Use the transcribe_audio tool to return the transcription.`
     } catch (parseError) {
       console.error('Failed to parse tool call arguments:', toolCall.function.arguments);
       return new Response(
-        JSON.stringify({ error: 'Failed to parse transcription result.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Failed to parse transcription result.', code: 500 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
     if (!analysisResult.transcription) {
       console.error('Empty transcription in result');
       return new Response(
-        JSON.stringify({ error: 'Transcription returned empty. The audio may be silent or unclear.' }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Transcription returned empty. The audio may be silent or unclear.', code: 422 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -253,6 +279,7 @@ Use the transcribe_audio tool to return the transcription.`
 
     return new Response(
       JSON.stringify({
+        ok: true,
         text: analysisResult.transcription
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
