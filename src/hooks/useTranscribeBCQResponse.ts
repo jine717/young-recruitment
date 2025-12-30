@@ -36,16 +36,16 @@ export function useTranscribeBCQResponse() {
           }
         });
 
-      // Handle Supabase function invocation errors
+      // Handle Supabase function invocation errors (network issues, etc.)
       if (error) {
         console.error('Supabase function error:', error);
         throw new Error(error.message || 'Failed to call transcription service');
       }
 
-      // Handle errors returned in the response body
-      if (data?.error) {
+      // Handle errors returned in the response body (now always HTTP 200)
+      if (data?.ok === false || data?.error) {
         console.error('Transcription service error:', data.error);
-        throw new Error(data.error);
+        throw new Error(data.error || 'Transcription failed');
       }
 
       if (!data?.text) {
