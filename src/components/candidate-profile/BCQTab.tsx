@@ -37,6 +37,7 @@ import { PostBCQAnalysisModal } from './PostBCQAnalysisModal';
 import { format } from 'date-fns';
 import { type ReviewProgress } from '@/hooks/useReviewProgress';
 import { type AIEvaluation } from '@/hooks/useAIEvaluations';
+import { useQueryClient } from '@tanstack/react-query';
 
 const QUESTIONS_PER_PAGE = 3;
 
@@ -739,8 +740,32 @@ function ResponseCard({
   };
 
   const hasContentAnalysis = contentAnalysisStatus === 'completed' && contentQualityScore !== null;
-  const isAnalyzing = contentAnalysisStatus === 'analyzing' || analyzeResponse.isPending;
+  const isAnalyzing = analyzeResponse.isPending;
   const isTranscribing = transcribeResponse.isPending;
+  
+  // Detect stuck analysis: status is 'analyzing' but mutation is not pending (edge function failed/timed out)
+  const isStuckAnalyzing = contentAnalysisStatus === 'analyzing' && !analyzeResponse.isPending;
+  const hasError = contentAnalysisStatus === 'error';
+  
+  // Handle retry for stuck/error analysis - reset status and re-analyze
+  const queryClient = useQueryClient();
+  const handleRetryAnalysis = async () => {
+    if (!responseId) return;
+    try {
+      // Reset status to pending first
+      const { supabase } = await import('@/integrations/supabase/client');
+      await supabase
+        .from('business_case_responses')
+        .update({ content_analysis_status: 'pending' })
+        .eq('id', responseId);
+      // Invalidate cache to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['business-case-responses'] });
+      // Trigger new analysis
+      analyzeResponse.mutate(responseId);
+    } catch (err) {
+      console.error('Failed to retry analysis:', err);
+    }
+  };
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -900,26 +925,50 @@ function ResponseCard({
                       <Sparkles className="w-3.5 h-3.5" />
                       Response Analysis
                     </p>
-                    {canEdit && transcription && !hasContentAnalysis && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleAnalyze}
-                        disabled={isAnalyzing}
-                        className="h-7 text-xs"
-                      >
-                        {isAnalyzing ? (
+                  {canEdit && transcription && !hasContentAnalysis && (
+                      <div className="flex items-center gap-2">
+                        {/* Stuck/Error indicator with Retry button */}
+                        {(isStuckAnalyzing || hasError) && (
                           <>
-                            <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3 h-3 mr-1.5" />
-                            Analyze
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              {hasError ? 'Analysis failed' : 'Stuck'}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleRetryAnalysis}
+                              disabled={isAnalyzing}
+                              className="h-7 text-xs"
+                            >
+                              <RefreshCw className={`w-3 h-3 mr-1.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                              Retry
+                            </Button>
                           </>
                         )}
-                      </Button>
+                        {/* Normal Analyze button - hide when stuck/error (show retry instead) */}
+                        {!isStuckAnalyzing && !hasError && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAnalyze}
+                            disabled={isAnalyzing}
+                            className="h-7 text-xs"
+                          >
+                            {isAnalyzing ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                                Analyzing...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3 h-3 mr-1.5" />
+                                Analyze
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
 
