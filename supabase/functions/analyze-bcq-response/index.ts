@@ -16,6 +16,43 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+// Timeout wrapper for promises
+function withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(errorMessage)), ms)
+    )
+  ]);
+}
+
+// Fetch with retry for transient errors
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
+  const delays = [500, 1500, 3000];
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      // Return on success or non-retryable error
+      if (response.ok || response.status < 500) {
+        return response;
+      }
+      console.warn(`Attempt ${attempt + 1} failed with status ${response.status}`);
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      }
+    } catch (err) {
+      console.warn(`Attempt ${attempt + 1} network error:`, err);
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      } else {
+        throw err;
+      }
+    }
+  }
+  // Final attempt
+  return fetch(url, options);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -134,7 +171,7 @@ serve(async (req) => {
     // 1. Content Quality Analysis (from transcription text)
     // 2. English Fluency Analysis (from actual video/audio)
     
-    const contentAnalysisPromise = fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const contentAnalysisPromise = fetchWithRetry('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -206,7 +243,7 @@ Evaluate the content quality of this response. Use the analyze_content tool to p
     
     if (videoBase64) {
       console.log('Analyzing English fluency from audio...');
-      fluencyAnalysisPromise = fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      fluencyAnalysisPromise = fetchWithRetry('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -287,10 +324,13 @@ Use the analyze_fluency tool to provide your assessment.`
       });
     }
 
-    // Wait for both analyses
+    // Wait for both analyses with 90 second timeout
+    const ANALYSIS_TIMEOUT_MS = 90000;
     const [contentResponse, fluencyResponse] = await Promise.all([
-      contentAnalysisPromise,
-      fluencyAnalysisPromise
+      withTimeout(contentAnalysisPromise, ANALYSIS_TIMEOUT_MS, 'Content analysis timeout (90s)'),
+      fluencyAnalysisPromise 
+        ? withTimeout(fluencyAnalysisPromise, ANALYSIS_TIMEOUT_MS, 'Fluency analysis timeout (90s)') 
+        : null
     ]);
 
     // Process content analysis
